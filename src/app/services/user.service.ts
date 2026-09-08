@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
 import { map, Observable, tap } from 'rxjs';
 import { AuthResponse } from '../models/auth.model';
+import { UserSessionInfo } from '../models/session.model';
 import { ListUsersQuery, PaginatedUsers, User, UserRole, UserStatus } from '../models/user.model';
 
 /**
@@ -118,5 +119,20 @@ export class UserService {
     const form = new FormData();
     form.append('image', file);
     return this.http.post<User>(`users/${id}/profile/image`, form);
+  }
+
+  // ── Admin — sessions / équipements d'un utilisateur ───────
+  // Miroir de GET/DELETE /users/:id/sessions (nest-auth-base UserController).
+
+  getUserSessions(id: string): Observable<UserSessionInfo[]> {
+    return this.http.get<UserSessionInfo[]>(`users/${id}/sessions`);
+  }
+
+  revokeUserSession(id: string, sessionId: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`users/${id}/sessions/${sessionId}`);
+  }
+
+  revokeAllUserSessions(id: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`users/${id}/sessions`);
   }
 }

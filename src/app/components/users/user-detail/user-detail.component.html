@@ -147,7 +147,7 @@
         </div>
 
         <!-- Réinitialiser le mot de passe -->
-        <div class="card">
+        <div class="card mb-3">
           <div class="card-header">Réinitialiser le mot de passe</div>
           <div class="card-body">
             <div class="input-group">
@@ -157,6 +157,47 @@
                 Réinitialiser
               </button>
             </div>
+          </div>
+        </div>
+
+        <!-- Sessions & appareils -->
+        <div class="card">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <span>Sessions &amp; appareils @if (sessions()) { ({{ sessions()!.length }}) }</span>
+            @if ((sessions() ?? []).length > 0) {
+              <button class="btn btn-outline-danger btn-sm" [disabled]="revokingAll()" (click)="revokeAllSessions()">
+                @if (revokingAll()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                Déconnecter partout
+              </button>
+            }
+          </div>
+          <div class="card-body">
+            @if (sessions() === undefined) {
+              @for (i of [1,2]; track i) { <div class="skeleton-line mb-2" style="width:100%;"></div> }
+            } @else if (sessionsError()) {
+              <div class="alert alert-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>{{ sessionsError() }}</div>
+            } @else if (sessions()!.length === 0) {
+              <p class="text-muted mb-0" style="font-size:.85rem;">Aucune session active.</p>
+            } @else {
+              <ul class="list-group list-group-flush">
+                @for (s of sessions()!; track s.id) {
+                  <li class="list-group-item d-flex align-items-center gap-3 px-0">
+                    <i class="fas {{ deviceIcon(s.deviceType) }} text-primary-app"></i>
+                    <div class="flex-fill">
+                      <div style="font-size:.875rem;font-weight:600;">{{ s.deviceName }}</div>
+                      <div class="text-muted" style="font-size:.8rem;">
+                        {{ s.os }}<span *ngIf="s.browser"> · {{ s.browser }}</span><span *ngIf="s.ip"> · {{ s.ip }}</span>
+                      </div>
+                      <div class="text-muted" style="font-size:.78rem;">Actif le {{ s.lastActiveAt | date:'dd/MM/yyyy HH:mm' }}</div>
+                    </div>
+                    <button class="btn btn-icon btn-outline-danger btn-sm" title="Révoquer cette session"
+                      [disabled]="revokingId() === s.id" (click)="revokeSession(s)">
+                      @if (revokingId() === s.id) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="fas fa-power-off"></i> }
+                    </button>
+                  </li>
+                }
+              </ul>
+            }
           </div>
         </div>
 

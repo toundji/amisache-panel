@@ -38,4 +38,13 @@ test.describe('Parcours connecté', () => {
       await expect(page.getByRole('heading', { name: heading }).first()).toBeVisible();
     });
   }
+
+  test('la fiche utilisateur montre la carte Sessions & appareils', async ({ page }) => {
+    await page.goto('/users');
+    const firstUser = page.locator('table tbody a').first();
+    await expect(firstUser).toBeVisible();
+    await firstUser.click();
+    await expect(page).toHaveURL(/\/users\/[0-9a-f-]{8,}/i);
+    await expect(page.getByText('Sessions & appareils')).toBeVisible();
+  });
 });

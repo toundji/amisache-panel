@@ -7,6 +7,7 @@ import Swal from 'sweetalert2';
 
 import { UserService } from '../../../services/user.service';
 import { User, UserRole, UserStatus } from '../../../models/user.model';
+import { UserSessionInfo } from '../../../models/session.model';
 import { FieldSaveMixin } from '../../../shared/mixins/field-save.mixin';
 import { UserAvatarComponent } from '../../../shared/avatar/user-avatar.component';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
@@ -51,6 +52,12 @@ export class UserDetailComponent extends FieldSaveMixin implements OnInit {
   newPassword = '';
   resettingPassword = signal(false);
 
+  // ── Sessions / appareils de l'utilisateur (admin) ──────────
+  sessions = signal<UserSessionInfo[] | undefined>(undefined);
+  sessionsError = signal<string | null>(null);
+  revokingAll = signal(false);
+  revokingId = signal<string | null>(null);
+
   // ── FieldSaveMixin ──────────────────────────────────────────────────────
   protected getFormGroup(): FormGroup { return this.statusForm; }
 
@@ -69,6 +76,73 @@ export class UserDetailComponent extends FieldSaveMixin implements OnInit {
 
   ngOnInit(): void {
     this.load();
+    this.loadSessions();
+  }
+
+  // ── Sessions / appareils ──────────────────────────────────
+  private loadSessions(): void {
+    this.sessionsError.set(null);
+    this.userService.getUserSessions(this.userId).subscribe({
+      next: (list) => this.sessions.set(list),
+      error: () => {
+        this.sessions.set([]);
+        this.sessionsError.set('Impossible de charger les sessions.');
+      },
+    });
+  }
+
+  deviceIcon(type?: string): string {
+    switch (type) {
+      case 'mobile': return 'fa-mobile-screen';
+      case 'tablet': return 'fa-tablet-screen-button';
+      case 'desktop': return 'fa-desktop';
+      default: return 'fa-circle-question';
+    }
+  }
+
+  revokeSession(s: UserSessionInfo): void {
+    if (this.revokingId()) return;
+    Swal.fire({
+      title: 'Révoquer cette session ?',
+      text: `${s.deviceName}${s.os ? ' · ' + s.os : ''} sera déconnecté.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Révoquer',
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: '#dc2626',
+    }).then((r) => {
+      if (!r.isConfirmed) return;
+      this.revokingId.set(s.id);
+      this.userService.revokeUserSession(this.userId, s.id).subscribe({
+        next: () => { this.revokingId.set(null); this.loadSessions(); },
+        error: (err) => {
+          this.revokingId.set(null);
+          Swal.fire('Erreur', err?.error?.msg ?? 'Révocation impossible.', 'error');
+        },
+      });
+    });
+  }
+
+  revokeAllSessions(): void {
+    Swal.fire({
+      title: 'Déconnecter partout ?',
+      text: 'Toutes les sessions de cet utilisateur seront révoquées.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Tout révoquer',
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: '#dc2626',
+    }).then((r) => {
+      if (!r.isConfirmed) return;
+      this.revokingAll.set(true);
+      this.userService.revokeAllUserSessions(this.userId).subscribe({
+        next: () => { this.revokingAll.set(false); this.loadSessions(); },
+        error: (err) => {
+          this.revokingAll.set(false);
+          Swal.fire('Erreur', err?.error?.msg ?? 'Action impossible.', 'error');
+        },
+      });
+    });
   }
 
   private load(showLoader = false): void {
