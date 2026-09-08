@@ -1,0 +1,73 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/liturgy/donations"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Détail don</h1>
+        <p class="page-subtitle mb-0" *ngIf="donation()">{{ donorName() }}</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mb-3"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="row g-3">
+      <div class="col-lg-4"><div class="card p-4"><div class="skeleton-line" style="width:100%;height:20px;"></div></div></div>
+      <div class="col-lg-8"><div class="card p-4">@for (i of [1,2,3]; track i) { <div class="skeleton-line mb-3" style="width:100%;"></div> }</div></div>
+    </div>
+  }
+
+  @if (!loading() && donation(); as d) {
+    <div class="row g-3">
+
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header">Références</div>
+          <div class="card-body">
+            <div class="quick-info">
+              <div class="quick-info-item"><i class="fas fa-user text-primary-app"></i><span>{{ donorName() }}</span></div>
+              <div class="quick-info-item"><i class="fas fa-church text-primary-app"></i><span>{{ churchName() }}</span></div>
+              <div class="quick-info-item"><i class="fas fa-tag text-primary-app"></i><span>{{ typeName() }}</span></div>
+              @if (d.code) {
+                <div class="quick-info-item"><i class="fas fa-hashtag text-primary-app"></i><span>Code {{ d.code }}</span></div>
+              }
+            </div>
+            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">Un don est déposé par le fidèle et n'est pas modifiable depuis le back-office.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <div class="card">
+          <div class="card-header">Don</div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <div class="form-label text-muted mb-1" style="font-size:.8rem;">Montant</div>
+                <div class="fw-semibold">{{ d.amount | number:'1.0-0' }} F CFA</div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-label text-muted mb-1" style="font-size:.8rem;">Date</div>
+                <div>{{ d.date | date:'dd/MM/yyyy HH:mm' }}</div>
+              </div>
+              <div class="col-md-4">
+                <div class="form-label text-muted mb-1" style="font-size:.8rem;">Paiement</div>
+                <div><a [routerLink]="['/payment/transactions', d.paymentId]">Voir le paiement</a></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

@@ -1,0 +1,114 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-hand-holding-dollar me-2 text-primary-app"></i>Dons</h1>
+      <p class="page-subtitle">{{ pagination.totalItems() }} don(s) · total filtré {{ total() | number:'1.0-0' }} F CFA</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="search-input-group">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" class="form-control" placeholder="Donateur, type..."
+            [ngModel]="filters().search" (ngModelChange)="updateFilter('search', $event)">
+        </div>
+      </div>
+
+      <select class="form-select form-select-sm" style="max-width:220px;"
+        [ngModel]="filters().churchId" (ngModelChange)="updateFilter('churchId', $event)">
+        <option value="">Toutes les entités</option>
+        @for (c of churches() ?? []; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+      </select>
+
+      @if (hasFilter()) {
+        <button class="btn btn-sm btn-link text-muted text-decoration-none" (click)="resetFilters()">
+          <i class="fas fa-times me-1"></i>Reset
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="data-table-wrapper">
+    <div class="data-table-scroll">
+      <table class="table table-hover mb-0 data-table--cards">
+        <thead>
+          <tr>
+            <th style="width:48px;">#</th>
+            <th>Donateur</th>
+            <th class="d-none d-md-table-cell">Type</th>
+            <th class="d-none d-md-table-cell">Entité</th>
+            <th class="d-none d-lg-table-cell">Date</th>
+            <th>Montant</th>
+            <th style="width:70px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          @if (isLoading()) {
+            @for (i of [1,2,3,4,5]; track i) {
+              <tr>
+                <td><div class="skeleton-line" style="width:20px;"></div></td>
+                <td><div class="skeleton-line" style="width:160px;"></div></td>
+                <td class="d-none d-md-table-cell"><div class="skeleton-line" style="width:110px;"></div></td>
+                <td class="d-none d-md-table-cell"><div class="skeleton-line" style="width:120px;"></div></td>
+                <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:90px;"></div></td>
+                <td><div class="skeleton-line" style="width:80px;"></div></td>
+                <td><div class="skeleton-line" style="width:40px;"></div></td>
+              </tr>
+            }
+          }
+
+          @if (!isLoading() && error()) {
+            <tr><td colspan="7"><div class="alert alert-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div></td></tr>
+          }
+
+          @if (!isLoading() && !error() && filtered().length === 0) {
+            <tr>
+              <td colspan="7">
+                <div class="empty-state">
+                  <i class="fas fa-hand-holding-dollar empty-icon"></i>
+                  <p class="empty-title">Aucun don trouvé</p>
+                  <p class="empty-text">Modifiez vos filtres — les dons sont faits par les fidèles</p>
+                </div>
+              </td>
+            </tr>
+          }
+
+          @if (!isLoading() && !error()) {
+            @for (d of paged(); track d.id; let i = $index) {
+              <tr>
+                <td class="cell-index" style="font-size:.85rem;color:#9aa5b4;">{{ pagination.startItem() + i }}</td>
+                <td class="cell-title" data-label="Donateur">
+                  <a [routerLink]="['/liturgy/donations', d.id]" class="fw-semibold text-decoration-none" style="font-size:.875rem;" (click)="donationService.select(d)">
+                    {{ donorName(d) }}
+                  </a>
+                </td>
+                <td class="d-none d-md-table-cell" data-label="Type" style="font-size:.85rem;">{{ typeName(d) }}</td>
+                <td class="d-none d-md-table-cell" data-label="Entité" style="font-size:.85rem;">{{ churchName(d) }}</td>
+                <td class="d-none d-lg-table-cell text-muted" data-label="Date" style="font-size:.85rem;">{{ d.date | date:'dd/MM/yyyy' }}</td>
+                <td data-label="Montant" class="fw-semibold" style="font-size:.85rem;">{{ d.amount | number:'1.0-0' }} F CFA</td>
+                <td class="cell-actions">
+                  <a [routerLink]="['/liturgy/donations', d.id]" class="btn btn-icon btn-outline-secondary btn-sm" title="Ouvrir" (click)="donationService.select(d)">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                </td>
+              </tr>
+            }
+          }
+
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination></app-pagination>
+  </div>
+
+</div>

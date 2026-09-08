@@ -1,0 +1,233 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/liturgy/schedules"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Détail horaire</h1>
+        <p class="page-subtitle mb-0" *ngIf="schedule()">{{ typeName() }} · {{ churchName() }}</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <button class="btn btn-outline-danger btn-sm" [disabled]="deleting()" (click)="deleteSchedule()">
+        <i class="fas fa-trash me-1"></i>Supprimer
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mb-3"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="row g-3">
+      <div class="col-lg-4"><div class="card p-4"><div class="skeleton-line" style="width:100%;height:20px;"></div></div></div>
+      <div class="col-lg-8"><div class="card p-4">@for (i of [1,2,3]; track i) { <div class="skeleton-line mb-3" style="width:100%;"></div> }</div></div>
+    </div>
+  }
+
+  @if (!loading() && schedule(); as s) {
+    <div class="row g-3">
+
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header">Rattachement</div>
+          <div class="card-body">
+            <div class="quick-info">
+              <div class="quick-info-item"><i class="fas fa-church text-primary-app"></i><span>{{ churchName() }}</span></div>
+              <div class="quick-info-item"><i class="fas fa-tag text-primary-app"></i><span>{{ typeName() }}</span></div>
+              @if (s.code) {
+                <div class="quick-info-item"><i class="fas fa-hashtag text-primary-app"></i><span>Code {{ s.code }}</span></div>
+              }
+              @if (s.createdAt) {
+                <div class="quick-info-item"><i class="fas fa-calendar text-primary-app"></i><span>Créé le {{ s.createdAt | date:'dd/MM/yyyy' }}</span></div>
+              }
+            </div>
+            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">L'entité et le type sont immuables après création.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <form [formGroup]="form">
+
+          <!-- Récurrence -->
+          <div class="card mb-3">
+            <div class="card-header">Récurrence</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Fréquence</span>
+                    @if (isFieldModified('frequency') && !isFieldSaving('frequency')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('frequency')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('frequency')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('frequency')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('frequency')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <select class="form-select" formControlName="frequency">
+                    @for (f of frequencyList; track f) { <option [value]="f">{{ frequencyLabels[f] }}</option> }
+                  </select>
+                </div>
+
+                @if (needsDayOfWeek) {
+                  <div class="col-md-4">
+                    <label class="form-label d-flex align-items-center justify-content-between">
+                      <span>Jour de la semaine</span>
+                      @if (isFieldModified('dayOfWeek') && !isFieldSaving('dayOfWeek')) {
+                        <span class="d-flex gap-1">
+                          <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('dayOfWeek')"><i class="fas fa-save"></i></button>
+                          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('dayOfWeek')"><i class="fas fa-undo"></i></button>
+                        </span>
+                      }
+                      @if (isFieldSaving('dayOfWeek')) { <span class="spinner-border spinner-border-sm"></span> }
+                      @if (isFieldJustSaved('dayOfWeek')) { <i class="fas fa-check text-success"></i> }
+                    </label>
+                    <select class="form-select" formControlName="dayOfWeek">
+                      <option value="">—</option>
+                      @for (d of dayLabels; track $index) { <option [value]="$index">{{ d }}</option> }
+                    </select>
+                  </div>
+                }
+
+                @if (needsWeekOfMonth) {
+                  <div class="col-md-4">
+                    <label class="form-label d-flex align-items-center justify-content-between">
+                      <span>Semaine du mois</span>
+                      @if (isFieldModified('weekOfMonth') && !isFieldSaving('weekOfMonth')) {
+                        <span class="d-flex gap-1">
+                          <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('weekOfMonth')"><i class="fas fa-save"></i></button>
+                          <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('weekOfMonth')"><i class="fas fa-undo"></i></button>
+                        </span>
+                      }
+                      @if (isFieldSaving('weekOfMonth')) { <span class="spinner-border spinner-border-sm"></span> }
+                      @if (isFieldJustSaved('weekOfMonth')) { <i class="fas fa-check text-success"></i> }
+                    </label>
+                    <select class="form-select" formControlName="weekOfMonth">
+                      <option value="">—</option>
+                      @for (w of weekList; track w) { <option [value]="w">{{ w }}ᵉ</option> }
+                    </select>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Célébration -->
+          <div class="card mb-3">
+            <div class="card-header">Célébration</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Heure</span>
+                    @if (isFieldModified('time') && !isFieldSaving('time')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('time')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('time')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('time')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('time')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="time" class="form-control" formControlName="time">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Durée (min)</span>
+                    @if (isFieldModified('duration') && !isFieldSaving('duration')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('duration')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('duration')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('duration')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('duration')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="number" min="1" class="form-control" formControlName="duration">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Langue</span>
+                    @if (isFieldModified('language') && !isFieldSaving('language')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('language')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('language')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('language')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('language')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="text" class="form-control" formControlName="language" maxlength="10">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Temps liturgique</span>
+                    @if (isFieldModified('season') && !isFieldSaving('season')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('season')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('season')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('season')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('season')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <select class="form-select" formControlName="season">
+                    @for (s2 of seasonList; track s2) { <option [value]="s2">{{ seasonLabels[s2] }}</option> }
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Période de validité -->
+          <div class="card">
+            <div class="card-header">Période de validité</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Début</span>
+                    @if (isFieldModified('startDate') && !isFieldSaving('startDate')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('startDate')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('startDate')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('startDate')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('startDate')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="date" class="form-control" formControlName="startDate">
+                  <div class="form-text">Pour un horaire ponctuel, c'est la date de la célébration.</div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Fin</span>
+                    @if (isFieldModified('endDate') && !isFieldSaving('endDate')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('endDate')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('endDate')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('endDate')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('endDate')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="date" class="form-control" formControlName="endDate">
+                  <div class="form-text">Vide = pas de fin (horaire permanent).</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

@@ -243,6 +243,54 @@
           </div>
 
         </form>
+
+        <!-- Emprise géographique (polygone — PATCH dédié, hors formulaire) -->
+        <div class="card mt-3">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <span>Emprise géographique</span>
+            @if (isPerimeterModified() && !perimeterSaving()) {
+              <div class="btn-group btn-group-sm">
+                <button type="button" class="btn btn-outline-warning" [disabled]="!isPerimeterValid()" (click)="savePerimeter()"><i class="fas fa-save"></i></button>
+                <button type="button" class="btn btn-outline-secondary" (click)="resetPerimeter()"><i class="fas fa-undo"></i></button>
+              </div>
+            }
+            @if (perimeterSaving()) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+            @if (perimeterJustSaved()) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+          </div>
+          <div class="card-body">
+            @if (perimeterPoints().length === 0) {
+              <p class="text-muted mb-3" style="font-size:.85rem;"><i class="fas fa-draw-polygon me-1"></i>Aucune emprise définie.</p>
+            }
+            @for (pt of perimeterPoints(); track $index) {
+              <div class="row g-2 align-items-center mb-2">
+                <div class="col-auto text-muted" style="font-size:.8rem;width:32px;">#{{ $index + 1 }}</div>
+                <div class="col">
+                  <input type="number" step="any" class="form-control form-control-sm" placeholder="Latitude"
+                    [value]="pt.lat ?? ''" (input)="updatePerimeterPoint($index, 'lat', $any($event.target).value)">
+                </div>
+                <div class="col">
+                  <input type="number" step="any" class="form-control form-control-sm" placeholder="Longitude"
+                    [value]="pt.lng ?? ''" (input)="updatePerimeterPoint($index, 'lng', $any($event.target).value)">
+                </div>
+                <div class="col-auto">
+                  <button type="button" class="btn btn-icon btn-outline-danger btn-sm" title="Retirer ce sommet" (click)="removePerimeterPoint($index)">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            }
+            <button type="button" class="btn btn-outline-secondary btn-sm mt-1"
+              [disabled]="perimeterPoints().length >= PERIMETER_MAX" (click)="addPerimeterPoint()">
+              <i class="fas fa-plus me-1"></i>Ajouter un sommet
+            </button>
+            <div class="form-text mt-2">
+              {{ perimeterPoints().length }} sommet(s) — {{ PERIMETER_MIN }} à {{ PERIMETER_MAX }} requis, ring fermé automatiquement.
+              @if (perimeterPoints().length > 0 && !isPerimeterValid()) {
+                <span class="text-danger d-block">Chaque sommet doit avoir une latitude et une longitude, et le total doit être compris entre {{ PERIMETER_MIN }} et {{ PERIMETER_MAX }}.</span>
+              }
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   }

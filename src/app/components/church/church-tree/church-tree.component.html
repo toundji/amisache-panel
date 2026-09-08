@@ -1,0 +1,86 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-diagram-project me-2 text-primary-app"></i>Arborescence des entités</h1>
+      <p class="page-subtitle">{{ totalCount() }} entité(s) · hiérarchie ecclésiale</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <a routerLink="/churches" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-list me-1"></i>Vue liste
+      </a>
+    </div>
+  </div>
+
+  @if (!isLoading() && !error() && roots().length > 0) {
+    <div class="d-flex align-items-center gap-2 mb-3">
+      <button class="btn btn-sm btn-link text-decoration-none p-0" (click)="expandAll()">
+        <i class="fas fa-angles-down me-1"></i>Tout déplier
+      </button>
+      <span class="text-muted">·</span>
+      <button class="btn btn-sm btn-link text-decoration-none p-0" (click)="collapseAll()">
+        <i class="fas fa-angles-up me-1"></i>Tout replier
+      </button>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="card p-4">
+      @for (i of [1,2,3,4,5]; track i) { <div class="skeleton-line mb-3" style="width:100%;"></div> }
+    </div>
+  }
+
+  @if (!isLoading() && error()) {
+    <div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div>
+  }
+
+  @if (!isLoading() && !error() && roots().length === 0) {
+    <div class="empty-state">
+      <i class="fas fa-diagram-project empty-icon"></i>
+      <p class="empty-title">Aucune entité</p>
+      <p class="empty-text">Créez une entité racine (conférence épiscopale) pour démarrer la hiérarchie.</p>
+    </div>
+  }
+
+  @if (!isLoading() && !error() && roots().length > 0) {
+    <div class="card">
+      <div class="card-body tree-root">
+        @for (node of roots(); track node.church.id) {
+          <ng-container *ngTemplateOutlet="nodeTpl; context: { $implicit: node, depth: 0 }"></ng-container>
+        }
+      </div>
+    </div>
+  }
+
+</div>
+
+<ng-template #nodeTpl let-node let-depth="depth">
+  <div class="tree-node" [style.margin-left.px]="depth * 20">
+    <div class="tree-row">
+      @if (node.children.length > 0) {
+        <button type="button" class="tree-toggle" (click)="toggle(node.church.id)"
+          [attr.aria-expanded]="!isCollapsed(node.church.id)" title="Déplier / replier">
+          <i class="fas" [class.fa-caret-right]="isCollapsed(node.church.id)" [class.fa-caret-down]="!isCollapsed(node.church.id)"></i>
+        </button>
+      } @else {
+        <span class="tree-toggle tree-toggle--leaf"><i class="fas fa-circle"></i></span>
+      }
+      <span class="tree-type">{{ typeLabel(node) }}</span>
+      <a [routerLink]="['/churches', node.church.id]" class="tree-name" (click)="churchService.select(node.church)">
+        {{ node.church.name }}
+      </a>
+      <span class="status-badge" [class]="statusBadgeClass(node)">{{ statusLabel(node) }}</span>
+      @if (node.children.length > 0) {
+        <span class="tree-count" title="Entités enfants directes">{{ node.children.length }}</span>
+      }
+    </div>
+    @if (node.children.length > 0 && !isCollapsed(node.church.id)) {
+      @for (child of node.children; track child.church.id) {
+        <ng-container *ngTemplateOutlet="nodeTpl; context: { $implicit: child, depth: depth + 1 }"></ng-container>
+      }
+    }
+  </div>
+</ng-template>

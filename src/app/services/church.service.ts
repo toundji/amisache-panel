@@ -7,6 +7,7 @@ import {
   CreateChurchDto,
   ListChurchAdminQuery,
   PaginatedChurches,
+  SetPerimeterDto,
   UpdateChurchDto,
   ValidationStatus,
 } from '../models/church.model';
@@ -77,6 +78,11 @@ export class ChurchService {
 
   updateStatus(id: string, status: ValidationStatus): Observable<{ success: boolean }> {
     return this.http.patch<{ success: boolean }>(`churches/${id}/status`, { status });
+  }
+
+  /** Définit l'emprise géographique (4 à 20 sommets). */
+  setPerimeter(id: string, body: SetPerimeterDto): Observable<Church> {
+    return this.http.patch<Church>(`churches/${id}/perimeter`, body);
   }
 
   updateBanner(id: string, image: File): Observable<Church> {

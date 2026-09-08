@@ -7,6 +7,7 @@ import {
   ListTypeAdminQuery,
   PaginatedTypes,
   TypeItem,
+  TypeScope,
   UpdateTypeDto,
 } from '../models/type.model';
 
@@ -23,13 +24,28 @@ export class TypeService {
   private typesSignal = signal<TypeItem[] | undefined>(undefined);
   private paginationMetaSignal = signal({ total: 0, page: 1, limit: 20, totalPages: 1 });
   private selectedSignal = signal<TypeItem | null>(null);
+  // Types actifs par scope (GET /types public) — alimente les sélecteurs des
+  // modules métier (horaire, intention, sacrement, don...).
+  private activeByScopeSignal = signal<Partial<Record<TypeScope, TypeItem[]>>>({});
 
   readonly types = this.typesSignal.asReadonly();
   readonly paginationMeta = this.paginationMetaSignal.asReadonly();
   readonly selected = this.selectedSignal.asReadonly();
+  readonly activeByScope = this.activeByScopeSignal.asReadonly();
 
   select(type: TypeItem): void {
     this.selectedSignal.set(type);
+  }
+
+  /** Types actifs d'un scope donné, pour les sélecteurs (résultat mémorisé par scope). */
+  activeForScope(scope: TypeScope): TypeItem[] | undefined {
+    return this.activeByScopeSignal()[scope];
+  }
+
+  listActive(scope: TypeScope): Observable<TypeItem[]> {
+    return this.http
+      .get<TypeItem[]>('types', { params: new HttpParams().set('scope', scope) })
+      .pipe(tap((items) => this.activeByScopeSignal.update((m) => ({ ...m, [scope]: items }))));
   }
 
   listAdmin(query: ListTypeAdminQuery = {}): Observable<PaginatedTypes> {

@@ -46,6 +46,16 @@ export interface Address {
   villageId?: string;
 }
 
+/**
+ * Emprise géographique de l'entité (paroisse notamment). GeoJSON Polygon
+ * simple renvoyé par l'API : un seul ring fermé (dernier sommet = premier).
+ * `coordinates[0]` = [[lng, lat], ...].
+ */
+export interface GeoPolygon {
+  type: 'Polygon';
+  coordinates: [number, number][][];
+}
+
 export interface Church {
   id: string;
   type: EntityType;
@@ -59,6 +69,8 @@ export interface Church {
   parentId?: string;
   countryId?: string;
   address: Address;
+  /** Absent tant qu'aucune emprise n'a été définie. */
+  perimeter?: GeoPolygon;
   code?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -105,6 +117,14 @@ export interface UpdateChurchDto {
     landmark?: string;
     location?: { lat: number; lng: number };
   };
+}
+
+/**
+ * Corps de PATCH /churches/:id/perimeter. 4 à 20 sommets ; le ring fermé
+ * (dernier point = premier) est reconstitué côté serveur.
+ */
+export interface SetPerimeterDto {
+  points: { lat: number; lng: number }[];
 }
 
 export interface ListChurchAdminQuery {

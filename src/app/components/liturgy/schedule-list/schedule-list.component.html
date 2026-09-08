@@ -1,0 +1,125 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-calendar-day me-2 text-primary-app"></i>Horaires liturgiques</h1>
+      <p class="page-subtitle">{{ pagination.totalItems() }} horaire(s)</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <a routerLink="/liturgy/schedules/new" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i>Nouvel horaire
+      </a>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="search-input-group">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" class="form-control" placeholder="Type, entité..."
+            [ngModel]="filters().search" (ngModelChange)="updateFilter('search', $event)">
+        </div>
+      </div>
+
+      <select class="form-select form-select-sm" style="max-width:220px;"
+        [ngModel]="filters().churchId" (ngModelChange)="updateFilter('churchId', $event)">
+        <option value="">Toutes les entités</option>
+        @for (c of churches() ?? []; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+      </select>
+
+      <select class="form-select form-select-sm" style="max-width:170px;"
+        [ngModel]="filters().frequency" (ngModelChange)="updateFilter('frequency', $event)">
+        <option value="">Toutes fréquences</option>
+        @for (f of frequencyList; track f) { <option [value]="f">{{ frequencyLabels[f] }}</option> }
+      </select>
+
+      @if (hasFilter()) {
+        <button class="btn btn-sm btn-link text-muted text-decoration-none" (click)="resetFilters()">
+          <i class="fas fa-times me-1"></i>Reset
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="data-table-wrapper">
+    <div class="data-table-scroll">
+      <table class="table table-hover mb-0 data-table--cards">
+        <thead>
+          <tr>
+            <th style="width:48px;">#</th>
+            <th>Type</th>
+            <th class="d-none d-md-table-cell">Entité</th>
+            <th class="d-none d-md-table-cell">Fréquence</th>
+            <th class="d-none d-lg-table-cell">Récurrence</th>
+            <th style="width:90px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          @if (isLoading()) {
+            @for (i of [1,2,3,4,5]; track i) {
+              <tr>
+                <td><div class="skeleton-line" style="width:20px;"></div></td>
+                <td><div class="skeleton-line" style="width:150px;"></div></td>
+                <td class="d-none d-md-table-cell"><div class="skeleton-line" style="width:120px;"></div></td>
+                <td class="d-none d-md-table-cell"><div class="skeleton-line" style="width:90px;"></div></td>
+                <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:160px;"></div></td>
+                <td><div class="skeleton-line" style="width:60px;"></div></td>
+              </tr>
+            }
+          }
+
+          @if (!isLoading() && error()) {
+            <tr><td colspan="6"><div class="alert alert-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div></td></tr>
+          }
+
+          @if (!isLoading() && !error() && filtered().length === 0) {
+            <tr>
+              <td colspan="6">
+                <div class="empty-state">
+                  <i class="fas fa-calendar-day empty-icon"></i>
+                  <p class="empty-title">Aucun horaire trouvé</p>
+                  <p class="empty-text">Modifiez vos filtres ou créez un nouvel horaire</p>
+                </div>
+              </td>
+            </tr>
+          }
+
+          @if (!isLoading() && !error()) {
+            @for (s of paged(); track s.id; let i = $index) {
+              <tr>
+                <td class="cell-index" style="font-size:.85rem;color:#9aa5b4;">{{ pagination.startItem() + i }}</td>
+                <td class="cell-title" data-label="Type">
+                  <a [routerLink]="['/liturgy/schedules', s.id]" class="fw-semibold text-decoration-none" style="font-size:.875rem;" (click)="scheduleService.select(s)">
+                    {{ typeName(s) }}
+                  </a>
+                </td>
+                <td class="d-none d-md-table-cell" data-label="Entité" style="font-size:.85rem;">{{ churchName(s) }}</td>
+                <td class="d-none d-md-table-cell" data-label="Fréquence" style="font-size:.85rem;">{{ frequencyLabels[s.frequency] }}</td>
+                <td class="d-none d-lg-table-cell text-muted" data-label="Récurrence" style="font-size:.85rem;">{{ recurrenceSummary(s) }}</td>
+                <td class="cell-actions">
+                  <div class="d-flex gap-1">
+                    <a [routerLink]="['/liturgy/schedules', s.id]" class="btn btn-icon btn-outline-secondary btn-sm" title="Modifier" (click)="scheduleService.select(s)">
+                      <i class="fas fa-pen"></i>
+                    </a>
+                    <button class="btn btn-icon btn-outline-danger btn-sm" title="Supprimer" (click)="deleteSchedule(s)">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination></app-pagination>
+  </div>
+
+</div>

@@ -1,0 +1,216 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/community/publications"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Détail publication</h1>
+        <p class="page-subtitle mb-0" *ngIf="publication()">{{ typeName() }} · {{ churchName() }}</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <button class="btn btn-outline-danger btn-sm" [disabled]="deleting()" (click)="deletePublication()">
+        <i class="fas fa-trash me-1"></i>Supprimer
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mb-3"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="row g-3">
+      <div class="col-lg-4"><div class="card p-4"><div class="skeleton-line" style="width:100%;height:20px;"></div></div></div>
+      <div class="col-lg-8"><div class="card p-4">@for (i of [1,2,3]; track i) { <div class="skeleton-line mb-3" style="width:100%;"></div> }</div></div>
+    </div>
+  }
+
+  @if (!loading() && publication(); as p) {
+    <div class="row g-3">
+
+      <div class="col-lg-4">
+        <div class="card mb-3">
+          <div class="card-header">Statut</div>
+          <div class="card-body text-center">
+            <span class="status-badge" [class]="statusBadge(p.status)">{{ statusLabels[p.status] }}</span>
+            <div class="d-flex flex-column gap-2 mt-3">
+              @for (s of statusList; track s) {
+                <button class="btn btn-outline-secondary btn-sm" [disabled]="statusSaving() || p.status === s" (click)="setStatus(s)">
+                  {{ statusLabels[s] }}
+                </button>
+              }
+            </div>
+            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">Passage en « Publiée » : la date de publication est posée automatiquement.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Références</div>
+          <div class="card-body">
+            <div class="quick-info">
+              <div class="quick-info-item"><i class="fas fa-church text-primary-app"></i><span>{{ churchName() }}</span></div>
+              <div class="quick-info-item"><i class="fas fa-tag text-primary-app"></i><span>{{ typeName() }}</span></div>
+              @if (p.groupId) {
+                <div class="quick-info-item"><i class="fas fa-people-group text-primary-app"></i><span>{{ p.group?.name ?? 'Groupe ' + p.groupId }}</span></div>
+              }
+              @if (p.publishedAt) {
+                <div class="quick-info-item"><i class="fas fa-bullhorn text-primary-app"></i><span>Publiée le {{ p.publishedAt | date:'dd/MM/yyyy' }}</span></div>
+              }
+              @if (p.code) {
+                <div class="quick-info-item"><i class="fas fa-hashtag text-primary-app"></i><span>Code {{ p.code }}</span></div>
+              }
+            </div>
+            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">L'entité, le groupe et le type sont immuables.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <form [formGroup]="form">
+
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Titre</span>
+              @if (isFieldModified('title') && !isFieldSaving('title')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('title')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('title')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('title')) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (isFieldJustSaved('title')) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+            </div>
+            <div class="card-body">
+              <input type="text" class="form-control" formControlName="title" maxlength="200"
+                [class.border-warning]="isFieldModified('title') && !isFieldJustSaved('title') && !isFieldSaving('title')"
+                [class.border-success]="isFieldJustSaved('title')">
+            </div>
+          </div>
+
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Contenu</span>
+              @if (isFieldModified('content') && !isFieldSaving('content')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('content')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('content')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('content')) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (isFieldJustSaved('content')) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+            </div>
+            <div class="card-body">
+              <textarea class="form-control" rows="10" formControlName="content"
+                [class.border-warning]="isFieldModified('content') && !isFieldJustSaved('content') && !isFieldSaving('content')"
+                [class.border-success]="isFieldJustSaved('content')"></textarea>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Fenêtre d'affichage</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Début</span>
+                    @if (isFieldModified('startDate') && !isFieldSaving('startDate')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('startDate')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('startDate')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('startDate')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('startDate')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="date" class="form-control" formControlName="startDate">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Fin</span>
+                    @if (isFieldModified('endDate') && !isFieldSaving('endDate')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('endDate')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('endDate')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('endDate')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('endDate')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="date" class="form-control" formControlName="endDate">
+                </div>
+              </div>
+              <div class="form-text mt-2">Vide des deux côtés = affichage permanent une fois publiée.</div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">Médias @if (media()) { ({{ media()!.length }}) }</div>
+          <div class="card-body">
+
+            <form [formGroup]="mediaForm" (ngSubmit)="addMedia()" class="row g-2 align-items-end mb-3">
+              <div class="col-sm-3">
+                <label class="form-label" style="font-size:.8rem;">Nature</label>
+                <select class="form-select form-select-sm" formControlName="kind">
+                  @for (k of kindList; track k) { <option [value]="k">{{ kindLabels[k] }}</option> }
+                </select>
+              </div>
+              <div class="col-sm-3">
+                <label class="form-label" style="font-size:.8rem;">Fournisseur</label>
+                <select class="form-select form-select-sm" formControlName="provider">
+                  @for (pr of providerList; track pr) { <option [value]="pr">{{ providerLabels[pr] }}</option> }
+                </select>
+              </div>
+              <div class="col-sm-4">
+                <label class="form-label" style="font-size:.8rem;">URL</label>
+                <input type="url" class="form-control form-control-sm" formControlName="url" placeholder="https://...">
+              </div>
+              <div class="col-sm-2">
+                <button type="submit" class="btn btn-primary btn-sm w-100" [disabled]="mediaAdding()">
+                  @if (mediaAdding()) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="fas fa-plus"></i> } Ajouter
+                </button>
+              </div>
+            </form>
+
+            @if (mediaLoading()) {
+              @for (i of [1,2]; track i) { <div class="skeleton-line mb-2" style="width:100%;"></div> }
+            } @else if (mediaError()) {
+              <div class="alert alert-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>{{ mediaError() }}</div>
+            } @else if ((media() ?? []).length === 0) {
+              <p class="text-muted mb-0" style="font-size:.85rem;">Aucun média rattaché.</p>
+            } @else {
+              <div class="data-table-scroll">
+                <table class="table table-sm mb-0">
+                  <thead><tr><th style="width:40px;">#</th><th>Nature</th><th>Fournisseur</th><th>URL</th><th style="width:60px;"></th></tr></thead>
+                  <tbody>
+                    @for (m of media()!; track m.id; let i = $index) {
+                      <tr>
+                        <td class="text-muted" style="font-size:.8rem;">{{ i + 1 }}</td>
+                        <td style="font-size:.85rem;">{{ kindLabels[m.kind] }}</td>
+                        <td style="font-size:.85rem;">{{ providerLabels[m.provider] }}</td>
+                        <td style="font-size:.8rem;word-break:break-all;"><a [href]="m.url" target="_blank" rel="noopener">{{ m.url }}</a></td>
+                        <td>
+                          <button class="btn btn-icon btn-outline-danger btn-sm" title="Retirer" (click)="removeMedia(m)">
+                            <i class="fas fa-times"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

@@ -46,9 +46,31 @@ export class SidebarComponent implements OnInit, OnDestroy {
       title: 'Hiérarchie ecclésiale', icon: 'fas fa-church',
       children: [
         { title: 'Entités', icon: 'fas fa-sitemap', route: '/churches' },
+        { title: 'Arborescence', icon: 'fas fa-diagram-project', route: '/churches/tree' },
         { title: 'Clergé & personnel', icon: 'fas fa-user-tie', route: '/clergy-members' },
         { title: 'Entrées', icon: 'fas fa-door-open', route: '/entrances' },
         { title: 'Abonnements fidèles', icon: 'fas fa-hand-holding-heart', route: '/memberships' },
+      ],
+    },
+    {
+      title: 'Vie liturgique', icon: 'fas fa-hands-praying',
+      children: [
+        { title: 'Horaires', icon: 'fas fa-calendar-day', route: '/liturgy/schedules' },
+        { title: 'Demandes', icon: 'fas fa-envelope-open-text', route: '/liturgy/requests' },
+        { title: 'Dons', icon: 'fas fa-hand-holding-dollar', route: '/liturgy/donations' },
+      ],
+    },
+    {
+      title: 'Paiements', icon: 'fas fa-money-bill-transfer',
+      children: [
+        { title: 'Moyens de paiement', icon: 'fas fa-wallet', route: '/payment/methods' },
+      ],
+    },
+    {
+      title: 'Communauté', icon: 'fas fa-people-group',
+      children: [
+        { title: 'Groupes', icon: 'fas fa-people-line', route: '/community/groups' },
+        { title: 'Publications', icon: 'fas fa-newspaper', route: '/community/publications' },
       ],
     },
     {

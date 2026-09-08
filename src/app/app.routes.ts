@@ -37,6 +37,7 @@ import { TypeDetailComponent } from './components/type/type-detail/type-detail.c
 import { ChurchListComponent } from './components/church/church-list/church-list.component';
 import { ChurchCreateComponent } from './components/church/church-create/church-create.component';
 import { ChurchDetailComponent } from './components/church/church-detail/church-detail.component';
+import { ChurchTreeComponent } from './components/church/church-tree/church-tree.component';
 import { ClergyMemberListComponent } from './components/church/clergy-member-list/clergy-member-list.component';
 import { ClergyMemberCreateComponent } from './components/church/clergy-member-create/clergy-member-create.component';
 import { ClergyMemberDetailComponent } from './components/church/clergy-member-detail/clergy-member-detail.component';
@@ -44,6 +45,23 @@ import { EntranceListComponent } from './components/church/entrance-list/entranc
 import { EntranceCreateComponent } from './components/church/entrance-create/entrance-create.component';
 import { EntranceDetailComponent } from './components/church/entrance-detail/entrance-detail.component';
 import { MembershipListComponent } from './components/church/membership-list/membership-list.component';
+import { ScheduleListComponent } from './components/liturgy/schedule-list/schedule-list.component';
+import { ScheduleCreateComponent } from './components/liturgy/schedule-create/schedule-create.component';
+import { ScheduleDetailComponent } from './components/liturgy/schedule-detail/schedule-detail.component';
+import { RequestListComponent } from './components/liturgy/request-list/request-list.component';
+import { RequestDetailComponent } from './components/liturgy/request-detail/request-detail.component';
+import { DonationListComponent } from './components/liturgy/donation-list/donation-list.component';
+import { DonationDetailComponent } from './components/liturgy/donation-detail/donation-detail.component';
+import { PaymentMethodListComponent } from './components/payment/payment-method-list/payment-method-list.component';
+import { PaymentMethodCreateComponent } from './components/payment/payment-method-create/payment-method-create.component';
+import { PaymentMethodDetailComponent } from './components/payment/payment-method-detail/payment-method-detail.component';
+import { PaymentDetailComponent } from './components/payment/payment-detail/payment-detail.component';
+import { GroupListComponent } from './components/community/group-list/group-list.component';
+import { GroupCreateComponent } from './components/community/group-create/group-create.component';
+import { GroupDetailComponent } from './components/community/group-detail/group-detail.component';
+import { PublicationListComponent } from './components/community/publication-list/publication-list.component';
+import { PublicationCreateComponent } from './components/community/publication-create/publication-create.component';
+import { PublicationDetailComponent } from './components/community/publication-detail/publication-detail.component';
 import { AuthGuard } from './core/guards/auth.guard';
 import { NoAuthGuard } from './core/guards/no-auth.guard';
 
@@ -82,6 +100,7 @@ export const routes: Routes = [
       { path: 'types/:id', component: TypeDetailComponent, title: 'Détail type' },
       { path: 'churches', component: ChurchListComponent, title: 'Entités ecclésiales' },
       { path: 'churches/new', component: ChurchCreateComponent, title: 'Nouvelle entité' },
+      { path: 'churches/tree', component: ChurchTreeComponent, title: 'Arborescence des entités' },
       { path: 'churches/:id', component: ChurchDetailComponent, title: 'Détail entité' },
       { path: 'clergy-members', component: ClergyMemberListComponent, title: 'Clergé & personnel' },
       { path: 'clergy-members/new', component: ClergyMemberCreateComponent, title: 'Nouvelle affectation' },
@@ -90,6 +109,23 @@ export const routes: Routes = [
       { path: 'entrances/new', component: EntranceCreateComponent, title: 'Nouvelle entrée' },
       { path: 'entrances/:id', component: EntranceDetailComponent, title: 'Détail entrée' },
       { path: 'memberships', component: MembershipListComponent, title: 'Abonnements fidèles' },
+      { path: 'liturgy/schedules', component: ScheduleListComponent, title: 'Horaires liturgiques' },
+      { path: 'liturgy/schedules/new', component: ScheduleCreateComponent, title: 'Nouvel horaire' },
+      { path: 'liturgy/schedules/:id', component: ScheduleDetailComponent, title: 'Détail horaire' },
+      { path: 'liturgy/requests', component: RequestListComponent, title: 'Demandes' },
+      { path: 'liturgy/requests/:id', component: RequestDetailComponent, title: 'Détail demande' },
+      { path: 'liturgy/donations', component: DonationListComponent, title: 'Dons' },
+      { path: 'liturgy/donations/:id', component: DonationDetailComponent, title: 'Détail don' },
+      { path: 'payment/methods', component: PaymentMethodListComponent, title: 'Moyens de paiement' },
+      { path: 'payment/methods/new', component: PaymentMethodCreateComponent, title: 'Nouveau moyen de paiement' },
+      { path: 'payment/methods/:id', component: PaymentMethodDetailComponent, title: 'Détail moyen de paiement' },
+      { path: 'payment/transactions/:id', component: PaymentDetailComponent, title: 'Détail paiement' },
+      { path: 'community/groups', component: GroupListComponent, title: 'Groupes' },
+      { path: 'community/groups/new', component: GroupCreateComponent, title: 'Nouveau groupe' },
+      { path: 'community/groups/:id', component: GroupDetailComponent, title: 'Détail groupe' },
+      { path: 'community/publications', component: PublicationListComponent, title: 'Publications' },
+      { path: 'community/publications/new', component: PublicationCreateComponent, title: 'Nouvelle publication' },
+      { path: 'community/publications/:id', component: PublicationDetailComponent, title: 'Détail publication' },
       { path: 'settings', component: SettingsListComponent, title: 'Paramètres' },
       { path: 'settings/new', component: SettingsCreateComponent, title: 'Nouveau setting' },
       { path: 'settings/:id', component: SettingsDetailComponent, title: 'Détail setting' },

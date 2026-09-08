@@ -9,6 +9,9 @@
       <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
         <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
       </button>
+      <a routerLink="/churches/tree" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-diagram-project me-1"></i>Arborescence
+      </a>
       <a routerLink="/churches/new" class="btn btn-primary btn-sm">
         <i class="fas fa-plus me-1"></i>Nouvelle entité
       </a>

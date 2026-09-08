@@ -45,6 +45,14 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
   statusSaving = signal(false);
   bannerUploading = signal(false);
 
+  // ── Emprise géographique (polygone, 4 à 20 sommets — PATCH dédié) ──
+  perimeterPoints = signal<{ lat: number | null; lng: number | null }[]>([]);
+  perimeterSaving = signal(false);
+  perimeterJustSaved = signal(false);
+  private originalPerimeter = '[]';
+  readonly PERIMETER_MIN = 4;
+  readonly PERIMETER_MAX = 20;
+
   typeLabels = ENTITY_TYPE_LABELS;
   statusLabels = VALIDATION_STATUS_LABELS;
   statusList = Object.values(ValidationStatus);
@@ -87,6 +95,7 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
     super();
     this.initOriginalValues();
     this.snapshotAddress();
+    if (this.stub) this.seedPerimeter(this.stub);
   }
 
   ngOnInit(): void {
@@ -117,6 +126,7 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
         });
         this.initOriginalValues();
         this.snapshotAddress();
+        this.seedPerimeter(church);
 
         this.loading.set(false);
         this.refreshing.set(false);
@@ -230,6 +240,73 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
         Swal.fire('Erreur', err?.error?.msg ?? 'Upload impossible.', 'error');
       },
     });
+  }
+
+  // ── Emprise géographique ─────────────────────────────────
+  private seedPerimeter(church: Church): void {
+    const ring = church.perimeter?.coordinates?.[0] ?? [];
+    // Le ring renvoyé par l'API est fermé (dernier sommet = premier) — on le retire pour l'édition.
+    const open = ring.length > 1 ? ring.slice(0, -1) : ring;
+    const points = open.map(([lng, lat]) => ({ lat, lng }));
+    this.perimeterPoints.set(points);
+    this.originalPerimeter = JSON.stringify(points);
+  }
+
+  addPerimeterPoint(): void {
+    if (this.perimeterPoints().length >= this.PERIMETER_MAX) return;
+    this.perimeterPoints.update((pts) => [...pts, { lat: null, lng: null }]);
+  }
+
+  removePerimeterPoint(index: number): void {
+    this.perimeterPoints.update((pts) => pts.filter((_, i) => i !== index));
+  }
+
+  updatePerimeterPoint(index: number, axis: 'lat' | 'lng', value: string): void {
+    const num = value === '' ? null : Number(value);
+    this.perimeterPoints.update((pts) =>
+      pts.map((p, i) => (i === index ? { ...p, [axis]: num } : p)),
+    );
+  }
+
+  isPerimeterModified(): boolean {
+    return JSON.stringify(this.perimeterPoints()) !== this.originalPerimeter;
+  }
+
+  isPerimeterValid(): boolean {
+    const pts = this.perimeterPoints();
+    return (
+      pts.length >= this.PERIMETER_MIN &&
+      pts.length <= this.PERIMETER_MAX &&
+      pts.every((p) => p.lat !== null && p.lng !== null && !Number.isNaN(p.lat) && !Number.isNaN(p.lng))
+    );
+  }
+
+  resetPerimeter(): void {
+    this.perimeterPoints.set(JSON.parse(this.originalPerimeter));
+  }
+
+  savePerimeter(): void {
+    const church = this.church();
+    if (!church || this.perimeterSaving() || !this.isPerimeterModified() || !this.isPerimeterValid()) return;
+
+    this.perimeterSaving.set(true);
+    this.churchService
+      .setPerimeter(church.id, {
+        points: this.perimeterPoints().map((p) => ({ lat: Number(p.lat), lng: Number(p.lng) })),
+      })
+      .subscribe({
+        next: (updated) => {
+          this.church.set(updated);
+          this.seedPerimeter(updated);
+          this.perimeterSaving.set(false);
+          this.perimeterJustSaved.set(true);
+          setTimeout(() => this.perimeterJustSaved.set(false), 2000);
+        },
+        error: (err) => {
+          this.perimeterSaving.set(false);
+          Swal.fire('Erreur', err?.error?.msg ?? "Enregistrement de l'emprise impossible.", 'error');
+        },
+      });
   }
 
   deleteChurch(): void {
