@@ -29,7 +29,8 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: process.env.E2E_WATCH ? 'on' : 'retain-on-failure',
+    launchOptions: process.env.E2E_WATCH ? { slowMo: 350 } : {},
   },
 
   projects: [
@@ -37,13 +38,23 @@ export default defineConfig({
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-      testIgnore: /authenticated\.spec\.ts/,
+      testIgnore: [/authenticated\.spec\.ts/, /tour\.spec\.ts/],
     },
     {
       name: 'chromium-auth',
       testMatch: /authenticated\.spec\.ts/,
       dependencies: ['setup'],
       use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/user.json' },
+    },
+    // Démo visuelle — lancer explicitement : npm run e2e:tour
+    {
+      name: 'tour',
+      testMatch: /tour\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        video: 'on',
+        launchOptions: { slowMo: 300 },
+      },
     },
   ],
 

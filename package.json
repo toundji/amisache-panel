@@ -7,9 +7,10 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "e2e": "playwright test",
+    "e2e": "playwright test --project=setup --project=chromium --project=chromium-auth",
     "e2e:ui": "playwright test --ui",
-    "e2e:headed": "playwright test --headed",
+    "e2e:headed": "npm run e2e -- --headed",
+    "e2e:tour": "playwright test --project=tour --headed --workers=1",
     "e2e:report": "playwright show-report"
   },
   "private": true,

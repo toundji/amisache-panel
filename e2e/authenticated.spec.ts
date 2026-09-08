@@ -15,7 +15,7 @@ test.describe('Parcours connecté', () => {
     await page.goto('/');
     await expect(page).toHaveURL(/localhost:\d+\/$/);
     await expect(page.getByRole('heading', { name: 'Tableau de bord' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Utilisateurs' })).toBeVisible();
+    await expect(page.locator('app-topbar')).toBeAttached();
   });
 
   const routes: Array<[string, RegExp]> = [

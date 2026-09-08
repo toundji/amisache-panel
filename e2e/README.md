@@ -14,6 +14,17 @@ npm run e2e:report     # rouvrir le dernier rapport HTML
 `playwright.config.ts` démarre `ng serve` sur le port **4200** (réutilise un
 serveur déjà en place hors CI). Surcharge possible : `E2E_PORT`, `E2E_BASE_URL`.
 
+## Lancer une démo visible
+
+```bash
+E2E_EMAIL=... E2E_PASSWORD=... npm run e2e:tour
+```
+
+Ouvre un vrai navigateur (headed, ralenti), se connecte, passe sur les
+14 grandes sections, et enregistre **une vidéo continue** dans
+`test-results/…/video.webm`. `npm run e2e:headed` fait pareil pour toute
+la suite (fenêtres multiples).
+
 ## Projets Playwright
 
 | Projet | Specs | Auth |
@@ -21,6 +32,7 @@ serveur déjà en place hors CI). Surcharge possible : `E2E_PORT`, `E2E_BASE_URL
 | `setup` | `auth.setup.ts` | se connecte une fois, sauve `storageState` dans `e2e/.auth/user.json` (gitignoré) |
 | `chromium` | `smoke.spec.ts`, `login-form.spec.ts` | déconnecté |
 | `chromium-auth` | `authenticated.spec.ts` | rejoue le `storageState` du projet `setup` (aucun login par test) |
+| `tour` | `tour.spec.ts` | démo visuelle, hors `npm run e2e` (lancer via `npm run e2e:tour`) |
 
 | Fichier | Couverture |
 |---|---|
