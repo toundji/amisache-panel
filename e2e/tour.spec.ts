@@ -32,6 +32,7 @@ test.describe('Visite guidée', () => {
       ['/liturgy/requests', /Demandes/i],
       ['/liturgy/donations', /Dons/i],
       ['/payment/methods', /Moyens de paiement/i],
+      ['/payment/transactions', /Paiements/i],
       ['/community/groups', /Groupes/i],
       ['/community/publications', /Publications/i],
       ['/geo/countries', /Pays/i],

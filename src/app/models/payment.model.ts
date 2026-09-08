@@ -57,3 +57,8 @@ export interface Payment {
 export interface UpdatePaymentStatusDto {
   status: PaymentStatus.CONFIRMED | PaymentStatus.REJECTED;
 }
+
+/** Filtre des listes /payments/admin et /payments/church/:churchId. */
+export interface ListPaymentQuery {
+  status?: PaymentStatus;
+}

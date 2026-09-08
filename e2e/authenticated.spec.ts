@@ -26,6 +26,7 @@ test.describe('Parcours connecté', () => {
     ['/liturgy/requests', /Demandes/i],
     ['/liturgy/donations', /Dons/i],
     ['/payment/methods', /Moyens de paiement/i],
+    ['/payment/transactions', /Paiements/i],
     ['/community/groups', /Groupes/i],
     ['/community/publications', /Publications/i],
   ];

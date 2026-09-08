@@ -56,6 +56,7 @@ import { PaymentMethodListComponent } from './components/payment/payment-method-
 import { PaymentMethodCreateComponent } from './components/payment/payment-method-create/payment-method-create.component';
 import { PaymentMethodDetailComponent } from './components/payment/payment-method-detail/payment-method-detail.component';
 import { PaymentDetailComponent } from './components/payment/payment-detail/payment-detail.component';
+import { PaymentListComponent } from './components/payment/payment-list/payment-list.component';
 import { GroupListComponent } from './components/community/group-list/group-list.component';
 import { GroupCreateComponent } from './components/community/group-create/group-create.component';
 import { GroupDetailComponent } from './components/community/group-detail/group-detail.component';
@@ -119,6 +120,7 @@ export const routes: Routes = [
       { path: 'payment/methods', component: PaymentMethodListComponent, title: 'Moyens de paiement' },
       { path: 'payment/methods/new', component: PaymentMethodCreateComponent, title: 'Nouveau moyen de paiement' },
       { path: 'payment/methods/:id', component: PaymentMethodDetailComponent, title: 'Détail moyen de paiement' },
+      { path: 'payment/transactions', component: PaymentListComponent, title: 'Paiements' },
       { path: 'payment/transactions/:id', component: PaymentDetailComponent, title: 'Détail paiement' },
       { path: 'community/groups', component: GroupListComponent, title: 'Groupes' },
       { path: 'community/groups/new', component: GroupCreateComponent, title: 'Nouveau groupe' },

@@ -63,6 +63,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     {
       title: 'Paiements', icon: 'fas fa-money-bill-transfer',
       children: [
+        { title: 'Paiements', icon: 'fas fa-receipt', route: '/payment/transactions' },
         { title: 'Moyens de paiement', icon: 'fas fa-wallet', route: '/payment/methods' },
       ],
     },
