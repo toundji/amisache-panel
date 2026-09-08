@@ -1,0 +1,289 @@
+<div class="container-fluid px-0">
+
+  <!-- En-tête -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-users me-2 text-primary-app"></i>Utilisateurs</h1>
+      <p class="page-subtitle">{{ pagination.totalItems() }} utilisateur(s)</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <a routerLink="/users/new" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i>Nouvel utilisateur
+      </a>
+    </div>
+  </div>
+
+  <!-- Barre de filtres -->
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="search-input-group">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" class="form-control" placeholder="Email, prénom, nom..."
+            [ngModel]="filters().search" (ngModelChange)="updateFilter('search', $event)">
+        </div>
+      </div>
+
+      <button class="btn btn-outline-secondary btn-sm position-relative" type="button" data-bs-toggle="offcanvas"
+        data-bs-target="#filtersOffcanvas">
+        <i class="fas fa-sliders-h"></i>
+        <span class="ms-1">Filtres</span>
+        @if (hasAdvancedFilters()) {
+          <span class="filter-active-dot"></span>
+        }
+      </button>
+
+      <app-column-visibility></app-column-visibility>
+
+      @if (hasAdvancedFilters() || filters().search) {
+        <button class="btn btn-sm btn-link text-muted text-decoration-none" (click)="resetFilters()">
+          <i class="fas fa-times me-1"></i>Reset
+        </button>
+      }
+    </div>
+
+    @if (hasAdvancedFilters()) {
+      <div class="d-flex flex-wrap gap-1 mt-2">
+        @if (filters().status) {
+          <span class="filter-tag">
+            {{ filters().status }}
+            <i class="fas fa-times remove-tag ms-1" (click)="updateFilter('status', '')"></i>
+          </span>
+        }
+        @if (filters().role) {
+          <span class="filter-tag">
+            {{ filters().role }}
+            <i class="fas fa-times remove-tag ms-1" (click)="updateFilter('role', '')"></i>
+          </span>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Tableau -->
+  <div class="data-table-wrapper">
+    <div class="data-table-scroll">
+    <table class="table table-hover mb-0 data-table--cards">
+      <thead>
+        <tr>
+          <th style="width:48px;">#</th>
+          <th class="sortable" (click)="toggleSort('firstName')">
+            Utilisateur
+            <i class="fas ms-1" [class.fa-sort]="filters().sortBy !== 'firstName'"
+              [class.fa-sort-up]="filters().sortBy === 'firstName' && filters().sortOrder === 'asc'"
+              [class.fa-sort-down]="filters().sortBy === 'firstName' && filters().sortOrder === 'desc'"></i>
+          </th>
+          @if (columnVisibility.isVisible('email')) {
+            <th class="d-none d-md-table-cell sortable" (click)="toggleSort('email')">
+              Email
+              <i class="fas ms-1" [class.fa-sort]="filters().sortBy !== 'email'"
+                [class.fa-sort-up]="filters().sortBy === 'email' && filters().sortOrder === 'asc'"
+                [class.fa-sort-down]="filters().sortBy === 'email' && filters().sortOrder === 'desc'"></i>
+            </th>
+          }
+          @if (columnVisibility.isVisible('roles')) {
+            <th class="d-none d-lg-table-cell">Rôle(s)</th>
+          }
+          @if (columnVisibility.isVisible('status')) {
+            <th class="sortable" (click)="toggleSort('status')">
+              Statut
+              <i class="fas ms-1" [class.fa-sort]="filters().sortBy !== 'status'"
+                [class.fa-sort-up]="filters().sortBy === 'status' && filters().sortOrder === 'asc'"
+                [class.fa-sort-down]="filters().sortBy === 'status' && filters().sortOrder === 'desc'"></i>
+            </th>
+          }
+          @if (columnVisibility.isVisible('createdAt')) {
+            <th class="d-none d-lg-table-cell sortable" (click)="toggleSort('createdAt')">
+              Créé le
+              <i class="fas ms-1" [class.fa-sort]="filters().sortBy !== 'createdAt'"
+                [class.fa-sort-up]="filters().sortBy === 'createdAt' && filters().sortOrder === 'asc'"
+                [class.fa-sort-down]="filters().sortBy === 'createdAt' && filters().sortOrder === 'desc'"></i>
+            </th>
+          }
+          <th style="width:90px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- Skeleton — premier chargement -->
+        @if (isLoading()) {
+          @for (i of [1,2,3,4,5]; track i) {
+            <tr>
+              <td><div class="skeleton-line" style="width:20px;"></div></td>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="skeleton-line rounded-circle" style="width:36px;height:36px;flex-shrink:0;"></div>
+                  <div class="skeleton-line" style="width:120px;"></div>
+                </div>
+              </td>
+              @if (columnVisibility.isVisible('email')) {
+                <td class="d-none d-md-table-cell"><div class="skeleton-line" style="width:140px;"></div></td>
+              }
+              @if (columnVisibility.isVisible('roles')) {
+                <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:70px;height:20px;border-radius:10px;"></div></td>
+              }
+              @if (columnVisibility.isVisible('status')) {
+                <td><div class="skeleton-line" style="width:80px;height:22px;border-radius:20px;"></div></td>
+              }
+              @if (columnVisibility.isVisible('createdAt')) {
+                <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:80px;"></div></td>
+              }
+              <td><div class="skeleton-line" style="width:60px;"></div></td>
+            </tr>
+          }
+        }
+
+        <!-- Erreur -->
+        @if (!isLoading() && error()) {
+          <tr>
+            <td colspan="7">
+              <div class="alert alert-danger mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+              </div>
+            </td>
+          </tr>
+        }
+
+        <!-- État vide -->
+        @if (!isLoading() && !error() && users()!.length === 0) {
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                <i class="fas fa-users empty-icon"></i>
+                <p class="empty-title">Aucun utilisateur trouvé</p>
+                <p class="empty-text">Modifiez vos filtres pour élargir la recherche</p>
+              </div>
+            </td>
+          </tr>
+        }
+
+        <!-- Données -->
+        @if (!isLoading() && !error()) {
+          @for (user of users()!; track user.id; let i = $index) {
+            <tr>
+              <td class="cell-index" style="font-size:.85rem;color:#9aa5b4;">{{ pagination.startItem() + i }}</td>
+              <td class="cell-title" data-label="Utilisateur">
+                <div class="d-flex align-items-center gap-2">
+                  <app-user-avatar [user]="user" size="sm"></app-user-avatar>
+                  <div>
+                    <a [routerLink]="['/users', user.id]" class="fw-semibold text-decoration-none" style="font-size:.875rem;" (click)="userService.select(user)">
+                      {{ getFullName(user) }}
+                    </a>
+                    <div class="text-muted font-mono" style="font-size:.75rem;">{{ user.code || '—' }}</div>
+                  </div>
+                </div>
+              </td>
+              @if (columnVisibility.isVisible('email')) {
+                <td class="d-none d-md-table-cell" data-label="Email" style="font-size:.85rem;">{{ user.email || '—' }}</td>
+              }
+              @if (columnVisibility.isVisible('roles')) {
+                <td class="d-none d-lg-table-cell" data-label="Rôle(s)">
+                  @for (role of user.roles; track role) {
+                    <span class="role-badge me-1" [class]="'role-' + role">{{ role }}</span>
+                  }
+                </td>
+              }
+              @if (columnVisibility.isVisible('status')) {
+                <td data-label="Statut"><span class="status-badge" [class]="'status-' + user.status">{{ user.status }}</span></td>
+              }
+              @if (columnVisibility.isVisible('createdAt')) {
+                <td class="d-none d-lg-table-cell text-muted" data-label="Créé le" style="font-size:.8rem;">{{ user.createdAt | date:'dd/MM/yyyy' }}</td>
+              }
+              <td class="cell-actions">
+                <div class="d-flex gap-1">
+                  <a [routerLink]="['/users', user.id]" class="btn btn-icon btn-outline-secondary btn-sm" title="Voir" (click)="userService.select(user)">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <div class="dropdown d-inline-block">
+                    <button class="btn btn-icon btn-outline-secondary btn-sm dropdown-toggle" data-bs-toggle="dropdown" title="Actions">
+                      <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                      @if (user.status !== UserStatus.active) {
+                        <li><button class="dropdown-item" (click)="quickUpdateStatus(user, UserStatus.active)"><i class="fas fa-check-circle me-2 text-success"></i>Activer</button></li>
+                      }
+                      @if (user.status !== UserStatus.blocked) {
+                        <li><button class="dropdown-item" (click)="quickUpdateStatus(user, UserStatus.blocked)"><i class="fas fa-ban me-2 text-danger"></i>Bloquer</button></li>
+                      }
+                      <li><hr class="dropdown-divider"></li>
+                      <li><button class="dropdown-item text-danger" (click)="deleteUser(user)"><i class="fas fa-trash me-2"></i>Supprimer</button></li>
+                    </ul>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+
+      </tbody>
+    </table>
+    </div>
+
+    <app-pagination></app-pagination>
+  </div>
+
+</div>
+
+<!-- Offcanvas filtres avancés -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="filtersOffcanvas" appBackDismiss>
+  <div class="offcanvas-header border-bottom">
+    <h5 class="offcanvas-title">
+      <i class="fas fa-sliders-h me-2 text-primary-app"></i>Filtres avancés
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+
+    <div class="mb-4">
+      <label class="form-label">Statut</label>
+      <div class="d-flex flex-column gap-2">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="statusFilter" id="statusAll"
+            [checked]="filters().status === ''" (change)="updateFilter('status', '')">
+          <label class="form-check-label" for="statusAll">Tous</label>
+        </div>
+        @for (s of statusList; track s) {
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="statusFilter" [id]="'status_' + s"
+              [checked]="filters().status === s" (change)="updateFilter('status', s)">
+            <label class="form-check-label" [for]="'status_' + s">
+              <span class="status-badge" [class]="'status-' + s">{{ s }}</span>
+            </label>
+          </div>
+        }
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="mb-4">
+      <label class="form-label">Rôle</label>
+      <div class="d-flex flex-column gap-2">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="roleFilter" id="roleAll"
+            [checked]="filters().role === ''" (change)="updateFilter('role', '')">
+          <label class="form-check-label" for="roleAll">Tous</label>
+        </div>
+        @for (r of roleList; track r) {
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="roleFilter" [id]="'role_' + r"
+              [checked]="filters().role === r" (change)="updateFilter('role', r)">
+            <label class="form-check-label" [for]="'role_' + r">
+              <span class="role-badge" [class]="'role-' + r">{{ r }}</span>
+            </label>
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
+
+  <div class="offcanvas-footer border-top p-3">
+    <button class="btn btn-outline-secondary w-100" (click)="resetFilters()" data-bs-dismiss="offcanvas">
+      <i class="fas fa-undo me-1"></i>Réinitialiser les filtres
+    </button>
+  </div>
+</div>

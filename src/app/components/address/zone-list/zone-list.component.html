@@ -1,0 +1,123 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-draw-polygon me-2 text-primary-app"></i>Zones</h1>
+      <p class="page-subtitle">{{ pagination.totalItems() }} zone(s)</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <a routerLink="/geo/zones/new" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i>Nouvelle zone
+      </a>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="search-input-group">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" class="form-control" placeholder="Nom, niveau sauté..."
+            [ngModel]="filters().search" (ngModelChange)="updateFilter('search', $event)">
+        </div>
+      </div>
+
+      <select class="form-select form-select-sm" style="max-width:240px;"
+        [ngModel]="filters().regionId" (ngModelChange)="updateFilter('regionId', $event)">
+        <option value="">Toutes les régions</option>
+        @for (r of regions() ?? []; track r.id) {
+          <option [value]="r.id">{{ r.name }}</option>
+        }
+      </select>
+
+      @if (hasFilter()) {
+        <button class="btn btn-sm btn-link text-muted text-decoration-none" (click)="resetFilters()">
+          <i class="fas fa-times me-1"></i>Reset
+        </button>
+      }
+    </div>
+  </div>
+
+  <div class="data-table-wrapper">
+    <div class="data-table-scroll">
+      <table class="table table-hover mb-0 data-table--cards">
+        <thead>
+          <tr>
+            <th style="width:48px;">#</th>
+            <th>Nom</th>
+            <th class="d-none d-md-table-cell">Région</th>
+            <th class="d-none d-lg-table-cell">Niveau sauté</th>
+            <th class="d-none d-lg-table-cell">Créée le</th>
+            <th style="width:90px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          @if (isLoading()) {
+            @for (i of [1,2,3,4,5]; track i) {
+              <tr>
+                <td><div class="skeleton-line" style="width:20px;"></div></td>
+                <td><div class="skeleton-line" style="width:160px;"></div></td>
+                <td class="d-none d-md-table-cell"><div class="skeleton-line" style="width:110px;"></div></td>
+                <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:110px;"></div></td>
+                <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:90px;"></div></td>
+                <td><div class="skeleton-line" style="width:60px;"></div></td>
+              </tr>
+            }
+          }
+
+          @if (!isLoading() && error()) {
+            <tr>
+              <td colspan="6"><div class="alert alert-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div></td>
+            </tr>
+          }
+
+          @if (!isLoading() && !error() && filteredZones().length === 0) {
+            <tr>
+              <td colspan="6">
+                <div class="empty-state">
+                  <i class="fas fa-draw-polygon empty-icon"></i>
+                  <p class="empty-title">Aucune zone trouvée</p>
+                  <p class="empty-text">Modifiez vos filtres ou créez une nouvelle zone</p>
+                </div>
+              </td>
+            </tr>
+          }
+
+          @if (!isLoading() && !error()) {
+            @for (zone of pagedZones(); track zone.id; let i = $index) {
+              <tr>
+                <td class="cell-index" style="font-size:.85rem;color:#9aa5b4;">{{ pagination.startItem() + i }}</td>
+                <td class="cell-title" data-label="Nom">
+                  <a [routerLink]="['/geo/zones', zone.id]" class="fw-semibold text-decoration-none" style="font-size:.875rem;" (click)="zoneService.select(zone)">
+                    {{ zone.name }}
+                  </a>
+                </td>
+                <td class="d-none d-md-table-cell" data-label="Région" style="font-size:.85rem;">{{ regionLabel(zone.regionId) }}</td>
+                <td class="d-none d-lg-table-cell text-muted" data-label="Niveau sauté" style="font-size:.85rem;">{{ zone.parentSub || '—' }}</td>
+                <td class="d-none d-lg-table-cell text-muted" data-label="Créée le" style="font-size:.85rem;">{{ zone.createdAt ? (zone.createdAt | date:'dd/MM/yyyy') : '—' }}</td>
+                <td class="cell-actions">
+                  <div class="d-flex gap-1">
+                    <a [routerLink]="['/geo/zones', zone.id]" class="btn btn-icon btn-outline-secondary btn-sm" title="Modifier" (click)="zoneService.select(zone)">
+                      <i class="fas fa-pen"></i>
+                    </a>
+                    <button class="btn btn-icon btn-outline-danger btn-sm" title="Supprimer" (click)="deleteZone(zone)">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination></app-pagination>
+  </div>
+
+</div>

@@ -1,0 +1,112 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-user-circle me-2 text-primary-app"></i>Mon profil</h1>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+      <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mb-3">
+      <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="text-center py-5"><span class="spinner-border text-primary"></span></div>
+  } @else {
+    <div class="row g-3">
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-body text-center">
+            <div class="mx-auto mb-3" style="width:80px;">
+              <app-user-avatar [user]="authService.user() ?? undefined" size="lg"></app-user-avatar>
+            </div>
+            <h6>{{ authService.user()?.firstName }} {{ authService.user()?.lastName }}</h6>
+            <p class="text-muted text-sm mb-3">{{ authService.user()?.email }}</p>
+            <label class="btn btn-sm btn-outline-primary">
+              <i class="fas fa-camera me-2"></i>Changer la photo
+              <input type="file" accept="image/png,image/jpeg" hidden (change)="onAvatarSelected($event)">
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <!-- Informations personnelles — FieldSaveMixin -->
+        <div class="card mb-3">
+          <div class="card-header">Informations personnelles</div>
+          <div class="card-body">
+            <form [formGroup]="profileForm">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Prénom</label>
+                  <div class="input-group">
+                    <input type="text" class="form-control" formControlName="firstName"
+                      [class.border-warning]="isFieldModified('firstName') && !isFieldJustSaved('firstName') && !isFieldSaving('firstName')"
+                      [class.border-success]="isFieldJustSaved('firstName')">
+                    @if (isFieldModified('firstName') && !isFieldSaving('firstName')) {
+                      <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('firstName')"><i class="fas fa-save"></i></button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('firstName')"><i class="fas fa-undo"></i></button>
+                    }
+                    @if (isFieldSaving('firstName')) {
+                      <span class="input-group-text bg-info text-white"><span class="spinner-border spinner-border-sm"></span></span>
+                    }
+                    @if (isFieldJustSaved('firstName')) {
+                      <span class="input-group-text bg-success text-white"><i class="fas fa-check"></i></span>
+                    }
+                  </div>
+                </div>
+
+                <div class="col-md-6">
+                  <label class="form-label">Nom</label>
+                  <div class="input-group">
+                    <input type="text" class="form-control" formControlName="lastName"
+                      [class.border-warning]="isFieldModified('lastName') && !isFieldJustSaved('lastName') && !isFieldSaving('lastName')"
+                      [class.border-success]="isFieldJustSaved('lastName')">
+                    @if (isFieldModified('lastName') && !isFieldSaving('lastName')) {
+                      <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('lastName')"><i class="fas fa-save"></i></button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('lastName')"><i class="fas fa-undo"></i></button>
+                    }
+                    @if (isFieldSaving('lastName')) {
+                      <span class="input-group-text bg-info text-white"><span class="spinner-border spinner-border-sm"></span></span>
+                    }
+                    @if (isFieldJustSaved('lastName')) {
+                      <span class="input-group-text bg-success text-white"><i class="fas fa-check"></i></span>
+                    }
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Mot de passe -->
+        <div class="card">
+          <div class="card-header">Changer le mot de passe</div>
+          <div class="card-body">
+            <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+              <div class="mb-3">
+                <label class="form-label">Mot de passe actuel</label>
+                <input type="password" class="form-control" formControlName="oldPassword">
+                <app-field-errors [formGroup]="passwordForm" controlName="oldPassword" fieldLabel="Le mot de passe actuel"></app-field-errors>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Nouveau mot de passe</label>
+                <input type="password" class="form-control" formControlName="newPassword">
+                <app-field-errors [formGroup]="passwordForm" controlName="newPassword" fieldLabel="Le nouveau mot de passe"></app-field-errors>
+              </div>
+              <button type="submit" class="btn btn-outline-primary" [disabled]="savingPassword()">
+                @if (savingPassword()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                Changer le mot de passe
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Amisache</title>
+  <circle cx="32" cy="34" r="22" fill="none" stroke="#D4AF37" stroke-width="3"/>
+  <path d="M12 40a20 20 0 0 0 40 0z" fill="#16235C"/>
+  <rect x="29.4" y="15" width="5.2" height="27" rx="1.2" fill="#D4AF37"/>
+  <rect x="22.5" y="23" width="19" height="5.2" rx="1.2" fill="#D4AF37"/>
+  <path d="M32 1l2.6 7.4L42 11l-7.4 2.6L32 21l-2.6-7.4L22 11l7.4-2.6z" fill="#D4AF37"/>
+</svg>

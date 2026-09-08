@@ -1,0 +1,102 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// _base.scss — Reset, body, CSS custom properties, layout shell, scrollbar
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── CSS Custom Properties ─────────────────────────────────────────────────────
+// Accessibles via var() dans tous les fichiers SCSS et templates HTML
+:root {
+  // Couleurs — palette Amisache (documents/charte-graphique.md)
+  --color-primary:   #16235C; // Bleu firmament
+  --color-secondary: #5E9FD6; // Bleu ciel
+  --color-dark:      #16235C;
+  --color-gold:      #D4AF37; // Or de gloire — accents, jamais texte fin
+
+  // Police des grands titres (serif noble, cf. charte §4) — appliquée
+  // ponctuellement (page-title, écran de login, logotype), pas globalement.
+  --font-heading: 'Cormorant', Georgia, 'Times New Roman', serif;
+
+  // Dégradés — le ciel qui s'ouvre
+  --gradient-primary: linear-gradient(135deg, #16235C 0%, #16235C 34%, #D4AF37 100%); // bleu firmament dominant (~67/33) → or de gloire
+  --gradient-navbar:  linear-gradient(90deg, #16235C 0%, #16235C 34%, #D4AF37 56%, #16235C 82%, #16235C 100%); // or en lueur au centre, bleu aux extrémités (contrôles lisibles)
+
+  // Layout
+  --sidebar-width:           280px;
+  --sidebar-collapsed-width: 68px;
+  --navbar-height:           64px;
+
+  // Ombres
+  --shadow-card: 0 2px 12px rgba(22, 35, 92, .07);
+  --shadow-md:   0 4px 20px rgba(22, 35, 92, .12);
+}
+
+// ── Base ──────────────────────────────────────────────────────────────────────
+body {
+  background-color: #F7FAFE; // Blanc nuage
+  color: #2d3748;
+  -webkit-font-smoothing: antialiased;
+
+  // Posé par shared/modal/ (ModalComponent) tant qu'une modale est ouverte —
+  // empêche le double scroll (page derrière + corps de la modale).
+  &.modal-open { overflow: hidden; }
+}
+
+// ── Layout shell ──────────────────────────────────────────────────────────────
+.dashboard-wrapper {
+  min-height: 100vh;
+  padding-top: var(--navbar-height);
+}
+
+.main-content {
+  margin-left: var(--sidebar-width);
+  min-height: calc(100vh - var(--navbar-height));
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.3s ease;
+
+  &.sidebar-collapsed { margin-left: var(--sidebar-collapsed-width); }
+
+  @media (max-width: 768px) { margin-left: 0 !important; }
+}
+
+.content-wrapper {
+  flex: 1;
+  padding: 1.5rem;
+  position: relative;
+
+  // Sur petit écran, 1.5rem de chaque côté ampute trop la largeur utile
+  @media (max-width: 575.98px) { padding: 1rem .875rem; }
+}
+
+// Overlay sidebar mobile
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .45);
+  z-index: 1025;
+  backdrop-filter: blur(2px);
+
+  &.show { display: block; }
+}
+
+// ── Animations globales ───────────────────────────────────────────────────────
+@keyframes shimmer {
+  0%   { background-position:  200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+// ── Scrollbar ─────────────────────────────────────────────────────────────────
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: #EAF2FB; }
+::-webkit-scrollbar-thumb  { background: #C9DFF4; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #93BEE6; }

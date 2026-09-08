@@ -1,0 +1,483 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// _components.scss — Composants custom réutilisables. Uniquement ce que
+// Bootstrap n'a pas : page-header, stat-card, status-badge, role-badge,
+// filter-bar, data-table-wrapper, avatar, skeleton, empty-state, detail-*.
+// Tout ce qui sera utilisé par PLUSIEURS pages futures du template vit ici,
+// pas dans le SCSS d'un composant particulier.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Page header ───────────────────────────────────────────────────────────────
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  .page-title {
+    font-family: var(--font-heading); // Cormorant — grand titre (charte §4)
+    font-size: 1.7rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin: 0 0 .15rem;
+    letter-spacing: 0;
+    line-height: 1.15;
+  }
+
+  .page-subtitle {
+    font-size: .83rem;
+    color: #718096;
+    margin: 0;
+  }
+
+  // Mobile — le bloc d'actions passe pleine largeur sous le titre
+  @media (max-width: 575.98px) {
+    gap: .75rem;
+    margin-bottom: 1rem;
+
+    > *:last-child { width: 100%; }
+    > *:last-child .btn { flex: 1 1 auto; }
+  }
+}
+
+// ── Stat cards (KPI) ──────────────────────────────────────────────────────────
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: #fff;
+  border: 1px solid #e8edf5;
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
+  transition: transform .2s ease, box-shadow .2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+
+    &.icon-primary { background: rgba(22,35,92,.1);   color: var(--color-primary); }
+    &.icon-success { background: rgba(47,158,110,.12); color: #2f9e6e; }
+    &.icon-warning { background: rgba(212,175,55,.18); color: #856A16; }
+    &.icon-danger  { background: rgba(220,38,38,.1);   color: #dc2626; }
+    &.icon-info    { background: rgba(94,159,214,.16); color: #3E77B0; }
+  }
+
+  .stat-value {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #1a202c;
+    line-height: 1;
+    margin-bottom: .2rem;
+  }
+
+  .stat-label {
+    font-size: .74rem;
+    color: #718096;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+
+  // Cartes en grille 2 colonnes sur mobile (col-6) — icône réduite pour
+  // laisser la place au libellé, qui sinon se compresse ou passe à la ligne.
+  @media (max-width: 576px) {
+    gap: .65rem;
+    padding: .9rem;
+
+    .stat-icon {
+      width: 36px;
+      height: 36px;
+      font-size: .9rem;
+      border-radius: 8px;
+    }
+
+    .stat-value {
+      font-size: 1.35rem;
+    }
+
+    .stat-label {
+      font-size: .64rem;
+    }
+  }
+}
+
+// ── Status badges ─────────────────────────────────────────────────────────────
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .28rem .65rem;
+  border-radius: 20px;
+  font-size: .75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+
+  i { font-size: .68rem; }
+
+  &.status-active     { background: #e6f4ef; color: #276749; border-color: #9ae6b4; }
+  &.status-unverified { background: #fff8e1; color: #b7791f; border-color: #fce8a0; }
+  &.status-disabled   { background: #f5f5f5; color: #888;    border-color: #e0e0e0; }
+  &.status-blocked    { background: #fff0f0; color: #c53030; border-color: #fed7d7; }
+  &.status-deleted    { background: #f5f5f5; color: #555;    border-color: #ddd; }
+
+  &.status-success { background: #e6f4ef; color: #276749; border-color: #9ae6b4; }
+  &.status-warning { background: #fff8e1; color: #b7791f; border-color: #fce8a0; }
+  &.status-danger  { background: #fff0f0; color: #c53030; border-color: #fed7d7; }
+  &.status-info    { background: #e8f4fd; color: #1a6fa8; border-color: #bee3f8; }
+}
+
+// ── Role badges ───────────────────────────────────────────────────────────────
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  padding: .18rem .5rem;
+  border-radius: 10px;
+  font-size: .7rem;
+  font-weight: 600;
+
+  // Rôles Amisache : user / admin / engineer / manager / clergy (cf. AMISACHE.md §5)
+  &.role-admin    { background: rgba(22,35,92,.12);   color: var(--color-primary); }
+  &.role-clergy   { background: rgba(94,159,214,.16); color: #274F7D; }
+  &.role-manager  { background: rgba(212,175,55,.20); color: #856A16; }
+  &.role-engineer { background: rgba(22,35,92,.08);   color: #3E77B0; }
+  &.role-user     { background: #EAF2FB; color: #4a5568; }
+  // Rôles hérités d'autres forks — gardés inertes le temps d'une éventuelle migration
+  &.role-agent    { background: #EAF2FB; color: #4a5568; }
+  &.role-investor { background: #EAF2FB; color: #4a5568; }
+}
+
+// ── Filter bar ────────────────────────────────────────────────────────────────
+.filter-bar {
+  background: #fff;
+  border: 1px solid #e8edf5;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow-card);
+
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    flex-wrap: wrap;
+
+    .search-input-group {
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .form-select { width: auto; flex-shrink: 0; }
+
+    .btn { flex-shrink: 0; white-space: nowrap; }
+  }
+
+  .input-group-text {
+    background: #f8fafc;
+    border-color: #e8edf5;
+    color: #9aa5b4;
+  }
+
+  .form-control,
+  .form-select {
+    border-color: #e8edf5;
+    background: #f8fafc;
+    font-size: .85rem;
+
+    &:focus { background: #fff; }
+  }
+
+  .form-label {
+    font-size: .74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #718096;
+    margin-bottom: .3rem;
+  }
+}
+
+// Tag de filtre actif — affiché sous la filter-bar quand un filtre avancé est appliqué
+.filter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  background: rgba(22,35,92,.08);
+  color: var(--color-primary);
+  border-radius: 20px;
+  padding: .22rem .6rem;
+  font-size: .77rem;
+  font-weight: 500;
+
+  .remove-tag { cursor: pointer; opacity: .6; &:hover { opacity: 1; } }
+}
+
+// ── Data table ────────────────────────────────────────────────────────────────
+.data-table-wrapper {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e8edf5;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+// Défilement horizontal du tableau seul — le wrapper reste en overflow:hidden
+// (coins arrondis) et la pagination dessous ne doit pas défiler. Sans ce
+// conteneur, une table plus large que l'écran est rognée sans scrollbar.
+.data-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+
+  &:hover { color: var(--color-primary); }
+}
+
+// ── Tableau → cartes empilées sur mobile (< 768px) ───────────────────────────
+// Activé par la classe `data-table--cards` sur le <table>. Chaque <td> d'une
+// ligne de données porte un `data-label="…"` qui devient l'intitulé du champ.
+// Les colonnes masquées en desktop (`d-none d-md/lg-table-cell`) sont au
+// contraire TOUTES affichées ici — sur mobile l'info doit rester accessible.
+// Voir CLAUDE.md § Listes — rendu mobile.
+@media (max-width: 767.98px) {
+  // Le conteneur cesse d'être un panneau — il laisse voir le fond de page
+  // (#f0f2f7) entre les cartes, sans quoi les lignes blanches sur fond blanc
+  // ne se distinguent pas les unes des autres.
+  .data-table-wrapper {
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+    overflow: visible;
+  }
+
+  table.data-table--cards {
+    display: block;
+    background: transparent;
+
+    > thead { display: none; }
+    > tbody { display: block; }
+
+    // Chaque ligne = une vraie carte détachée
+    > tbody > tr {
+      display: block;
+      margin-bottom: .75rem;
+      padding: .9rem 1rem;
+      background: #fff;
+      border: 1px solid #e8edf5;
+      border-radius: 10px;
+      box-shadow: 0 1px 2px rgba(15, 58, 58, .06), 0 2px 8px rgba(15, 58, 58, .08);
+    }
+
+    > tbody > tr:hover > td { background: transparent; }
+
+    // Cellule de données — grille « intitulé | valeur » occupant toute la largeur
+    > tbody > tr > td {
+      display: grid !important;                       // bat le `.d-none` des colonnes desktop-only
+      grid-template-columns: minmax(5.5rem, 40%) 1fr;
+      gap: .1rem .9rem;
+      align-items: baseline;
+      max-width: none !important;
+      padding: .3rem 0;
+      border: 0;
+      white-space: normal !important;                 // annule `.text-truncate` en mode carte
+      font-size: .875rem;
+
+      &::before {
+        content: attr(data-label);
+        font-size: .7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+        color: #9aa5b4;
+      }
+    }
+
+    // Cellule identité (nom / entreprise / destinataire…) — en-tête de carte
+    > tbody > tr > td.cell-title {
+      display: block !important;
+      margin-bottom: .45rem;
+      padding-bottom: .55rem;
+      border-bottom: 1px solid #eef1f6;
+      font-size: .95rem;
+      font-weight: 600;
+
+      &::before { content: none; }
+      a { font-size: .95rem !important; font-weight: 600; }
+    }
+
+    // Numéro de ligne — masqué en mode carte (repère de tableau peu utile ici)
+    > tbody > tr > td.cell-index { display: none !important; }
+
+    // Cellule Actions — pleine largeur, boutons à droite, filet de séparation
+    > tbody > tr > td.cell-actions {
+      display: block !important;
+      margin-top: .55rem;
+      padding-top: .6rem;
+      border-top: 1px dashed #eef1f6;
+      text-align: right;
+
+      &::before { content: none; }
+      > * { justify-content: flex-end; }
+    }
+
+    // Lignes d'état (skeleton / erreur / vide) — bloc simple pleine largeur
+    > tbody > tr > td:not([data-label]):not(.cell-actions):not(.cell-index) {
+      display: block !important;
+      &::before { content: none; }
+    }
+  }
+}
+
+// Point rouge sur un bouton "Filtres" quand des filtres avancés sont actifs
+.filter-active-dot {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #dc2626;
+  border: 1.5px solid #fff;
+}
+
+.offcanvas-footer {
+  flex-shrink: 0;
+}
+
+// ── Boutons icône ──────────────────────────────────────────────────────────────
+.btn-icon {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .75rem;
+}
+
+// ── Avatar (fallback initiales, hors UserAvatarComponent) ─────────────────────
+.avatar-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.avatar-initials {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: .03em;
+}
+
+// ── Skeleton loader ───────────────────────────────────────────────────────────
+.skeleton-line {
+  height: 13px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #f0f2f7 25%, #e8edf5 50%, #f0f2f7 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+
+  .empty-icon  { font-size: 2.5rem; color: #cbd5e0; margin-bottom: 1rem; display: block; }
+  .empty-title { font-size: 1rem; font-weight: 600; color: #4a5568; margin-bottom: .35rem; }
+  .empty-text  { font-size: .85rem; color: #9aa5b4; margin: 0; }
+}
+
+// ── Détail — grille de champs + carte profil ──────────────────────────────────
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem 1.5rem;
+
+  @media (max-width: 576px) { grid-template-columns: 1fr; }
+}
+
+.detail-field {
+  label {
+    display: block;
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #9aa5b4;
+    margin-bottom: .2rem;
+  }
+
+  span {
+    font-size: .88rem;
+    color: #2d3748;
+    font-weight: 500;
+  }
+}
+
+.quick-info { display: flex; flex-direction: column; gap: .6rem; }
+
+.quick-info-item {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  font-size: .84rem;
+  color: #4a5568;
+
+  i { width: 16px; text-align: center; flex-shrink: 0; }
+}
+
+// ── Footer app ────────────────────────────────────────────────────────────────
+.app-footer {
+  background: #fff;
+  border-top: 1px solid #e8edf5;
+  padding: .875rem 1.5rem;
+  font-size: .78rem;
+  color: #9aa5b4;
+  margin-top: auto;
+}
+
+// ── Champ scalaire — save/undo (FieldSaveMixin) ────────────────────────────────
+.textarea-field-wrap {
+  position: relative;
+
+  textarea { padding-bottom: 2.5rem; }
+
+  .textarea-field-actions {
+    position: absolute;
+    bottom: .5rem;
+    right: .5rem;
+    display: flex;
+    align-items: center;
+    gap: .25rem;
+    z-index: 1;
+  }
+}

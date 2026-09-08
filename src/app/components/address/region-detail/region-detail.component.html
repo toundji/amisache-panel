@@ -1,0 +1,130 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/geo/regions"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Détail région</h1>
+        <p class="page-subtitle mb-0" *ngIf="region()">{{ region()!.name }}</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <button class="btn btn-outline-danger btn-sm" [disabled]="deleting()" (click)="deleteRegion()">
+        <i class="fas fa-trash me-1"></i>Supprimer
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mb-3">
+      <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="row g-3">
+      <div class="col-lg-4">
+        <div class="card p-4 text-center"><div class="skeleton-line mx-auto" style="width:100px;height:20px;"></div></div>
+      </div>
+      <div class="col-lg-8">
+        <div class="card p-4">
+          @for (i of [1,2]; track i) { <div class="skeleton-line mb-3" style="width:100%;"></div> }
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (!loading() && region(); as r) {
+    <div class="row g-3">
+
+      <!-- Colonne gauche : rattachement -->
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header">Rattachement</div>
+          <div class="card-body">
+            <div class="quick-info">
+              <div class="quick-info-item">
+                <i class="fas fa-flag text-primary-app"></i>
+                <span>Pays {{ countryLabel(r.countryId) }}</span>
+              </div>
+              @if (r.code) {
+                <div class="quick-info-item">
+                  <i class="fas fa-hashtag text-primary-app"></i>
+                  <span>Code interne {{ r.code }}</span>
+                </div>
+              }
+              @if (r.createdAt) {
+                <div class="quick-info-item">
+                  <i class="fas fa-calendar text-primary-app"></i>
+                  <span>Créée le {{ r.createdAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+              }
+            </div>
+            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">Le pays de rattachement est immuable.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne droite -->
+      <div class="col-lg-8">
+        <form [formGroup]="form">
+
+          <!-- Nom -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Nom</span>
+              @if (isFieldModified('name') && !isFieldSaving('name')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('name')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('name')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('name')) {
+                <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
+              }
+              @if (isFieldJustSaved('name')) {
+                <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
+              }
+            </div>
+            <div class="card-body">
+              <input type="text" class="form-control" formControlName="name" maxlength="120"
+                [class.border-warning]="isFieldModified('name') && !isFieldJustSaved('name') && !isFieldSaving('name')"
+                [class.border-success]="isFieldJustSaved('name')">
+            </div>
+          </div>
+
+          <!-- Niveau sauté -->
+          <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Niveau administratif sauté</span>
+              @if (isFieldModified('parentSub') && !isFieldSaving('parentSub')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('parentSub')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('parentSub')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('parentSub')) {
+                <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
+              }
+              @if (isFieldJustSaved('parentSub')) {
+                <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
+              }
+            </div>
+            <div class="card-body">
+              <input type="text" class="form-control" formControlName="parentSub" maxlength="120"
+                placeholder="Aucun"
+                [class.border-warning]="isFieldModified('parentSub') && !isFieldJustSaved('parentSub') && !isFieldSaving('parentSub')"
+                [class.border-success]="isFieldJustSaved('parentSub')">
+              <div class="form-text">Libellé du niveau administratif réel sauté entre le pays et cette région, s'il existe.</div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

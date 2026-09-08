@@ -1,0 +1,213 @@
+.chat-thread-card {
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
+  min-height: 420px;
+}
+
+.chat-thread-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-bubble-row {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: .5rem;
+}
+
+.chat-bubble-row-mine {
+  justify-content: flex-end;
+}
+
+.chat-bubble {
+  max-width: 75%;
+  padding: .5rem .75rem;
+  border-radius: 12px;
+  background: var(--bs-tertiary-bg, #f1f3f5);
+  font-size: .875rem;
+}
+
+.chat-bubble-mine {
+  background: var(--gradient-primary, #16235C);
+  color: #fff;
+}
+
+.chat-bubble-sender {
+  font-size: .7rem;
+  opacity: .7;
+  margin-bottom: 2px;
+}
+
+.chat-bubble-delete-btn {
+  background: none;
+  border: none;
+  padding: 0 2px;
+  font-size: .7rem;
+  opacity: .6;
+  color: inherit;
+
+  &:hover {
+    opacity: 1;
+    color: #dc2626;
+  }
+}
+
+.chat-bubble-deleted {
+  font-style: italic;
+  opacity: .7;
+}
+
+.chat-bubble-body {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-bubble-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+// Message purement média (pas de texte) : le lecteur/l'image porte déjà
+// son propre cadre, la bulle + fond + padding par-dessus ne fait
+// qu'ajouter de l'espace vide inutile — on les retire dans ce cas.
+.chat-bubble-media-only {
+  background: transparent;
+  padding: 0;
+  color: inherit;
+
+  .chat-bubble-sender {
+    padding: 0 2px;
+  }
+
+  .chat-bubble-attachments {
+    margin-top: 2px;
+  }
+
+  .chat-bubble-meta {
+    padding: 0 2px;
+  }
+}
+
+.chat-attachment-link {
+  font-size: .8rem;
+  color: inherit;
+  text-decoration: underline;
+}
+
+.chat-bubble-meta {
+  font-size: .7rem;
+  opacity: .7;
+  margin-top: 2px;
+  text-align: right;
+}
+
+.chat-composer textarea {
+  resize: none;
+}
+
+.chat-composer-textarea {
+  max-height: 160px;
+  overflow-y: auto;
+  transition: height .1s ease-out;
+}
+
+.chat-attachment-image {
+  max-width: 220px;
+  max-height: 220px;
+  border-radius: 8px;
+  display: block;
+}
+
+.chat-attachment-audio {
+  display: block;
+  width: 240px;
+  max-width: 100%;
+}
+
+.chat-attachment-video {
+  max-width: 260px;
+  max-height: 220px;
+  border-radius: 8px;
+}
+
+.chat-file-chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bs-tertiary-bg, #f1f3f5);
+  border-radius: 16px;
+  padding: 2px 8px;
+  font-size: .75rem;
+}
+
+.chat-file-preview {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.chat-file-preview-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, .6);
+  color: #fff;
+  font-size: .6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.chat-video-preview-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.chat-video-preview {
+  width: 100%;
+  max-width: 320px;
+  height: 220px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #000;
+}
+
+.chat-recording-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .8rem;
+  color: #dc2626;
+}
+
+.chat-recording-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #dc2626;
+  animation: chat-recording-pulse 1s infinite;
+}
+
+@keyframes chat-recording-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .3; }
+}

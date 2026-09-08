@@ -1,0 +1,53 @@
+<div class="pagination-bar" *ngIf="pagination.totalItems() > 0">
+  <div class="pagination-info">
+    <span class="pagination-count">
+      {{ pagination.startItem() }}–{{ pagination.endItem() }} sur {{ pagination.totalItems() }}
+    </span>
+
+    <div class="d-flex align-items-center gap-1 ms-3" *ngIf="showItemsPerPage">
+      <span class="pagination-per-page-label">Par page</span>
+      <select class="form-select form-select-sm pagination-per-page-select" [value]="pagination.itemsPerPage()"
+        (change)="onPerPageChange($event)">
+        @for (n of perPageOptions; track n) {
+          <option [value]="n">{{ n }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  <nav aria-label="Pagination">
+    <ul class="pagination pagination-sm mb-0">
+      <li class="page-item" [class.disabled]="pagination.currentPage() === 1">
+        <button class="page-link" (click)="pagination.prev()" aria-label="Précédent">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+      </li>
+
+      @if (pagination.visiblePages()[0] > 1) {
+        <li class="page-item">
+          <button class="page-link" (click)="pagination.goTo(1)">1</button>
+        </li>
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+      }
+
+      @for (p of pagination.visiblePages(); track p) {
+        <li class="page-item" [class.active]="p === pagination.currentPage()">
+          <button class="page-link" (click)="pagination.goTo(p)">{{ p }}</button>
+        </li>
+      }
+
+      @if (pagination.visiblePages()[pagination.visiblePages().length - 1] < pagination.totalPages()) {
+        <li class="page-item disabled"><span class="page-link">…</span></li>
+        <li class="page-item">
+          <button class="page-link" (click)="pagination.goTo(pagination.totalPages())">{{ pagination.totalPages() }}</button>
+        </li>
+      }
+
+      <li class="page-item" [class.disabled]="pagination.currentPage() === pagination.totalPages()">
+        <button class="page-link" (click)="pagination.next()" aria-label="Suivant">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+      </li>
+    </ul>
+  </nav>
+</div>

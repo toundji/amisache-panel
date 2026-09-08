@@ -1,0 +1,116 @@
+<div class="login-page">
+
+  <!-- Panneau branding -->
+  <div class="login-branding">
+    <div class="branding-inner">
+      <div class="branding-logo"><img src="assets/logo-full.png" alt="Amisache" /></div>
+
+      <h1 class="branding-title">
+        Espace Administration<br>
+        <span>La plateforme des paroisses</span>
+      </h1>
+
+      <div class="branding-features">
+        <div class="feature-item">
+          <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+          <div>
+            <p class="f-title">Accès sécurisé</p>
+            <p class="f-desc">Authentification protégée par jeton</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon"><i class="fas fa-laptop-mobile"></i></div>
+          <div>
+            <p class="f-title">Sessions multi-équipements</p>
+            <p class="f-desc">Suivi et révocation par appareil</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon"><i class="fas fa-users-gear"></i></div>
+          <div>
+            <p class="f-title">Gestion centralisée</p>
+            <p class="f-desc">Paroisses, fidèles et clergé</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panneau formulaire -->
+  <div class="login-form-panel">
+    <div class="login-form-inner">
+
+      <div class="form-heading">
+        <h2>Connexion</h2>
+        <p>Connectez-vous pour continuer</p>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+
+        <div class="mb-3">
+          <label for="username" class="form-label">
+            <i class="fas fa-envelope me-1"></i>Adresse email
+          </label>
+          <input type="email" id="username" class="form-control" formControlName="username"
+            [class.is-invalid]="invalid('username')" placeholder="vous@exemple.com" autocomplete="email">
+          <app-field-errors [formGroup]="loginForm" controlName="username" fieldLabel="L'email" [serverErrors]="error?.validations"></app-field-errors>
+        </div>
+
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-1">
+            <label for="password" class="form-label mb-0">
+              <i class="fas fa-lock me-1"></i>Mot de passe
+            </label>
+          </div>
+          <div class="input-group">
+            <input [type]="showPassword() ? 'text' : 'password'" id="password" class="form-control"
+              formControlName="password" [class.is-invalid]="invalid('password')" placeholder="••••••••"
+              autocomplete="current-password">
+            <button type="button" class="btn btn-outline-secondary" (click)="togglePasswordVisibility()"
+              [attr.aria-label]="showPassword() ? 'Masquer' : 'Afficher'">
+              <i class="fas" [class.fa-eye]="!showPassword()" [class.fa-eye-slash]="showPassword()"></i>
+            </button>
+          </div>
+          <app-field-errors [formGroup]="loginForm" controlName="password" fieldLabel="Le mot de passe" [serverErrors]="error?.validations"></app-field-errors>
+        </div>
+
+        <div class="form-check mb-3">
+          <input type="checkbox" id="rememberMe" formControlName="rememberMe" class="form-check-input">
+          <label for="rememberMe" class="form-check-label">Se souvenir de moi</label>
+        </div>
+
+        @if (error?.msg) {
+          <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3">
+            <i class="fas fa-exclamation-triangle flex-shrink-0"></i>
+            <span class="flex-grow-1">{{ error?.msg }}</span>
+            <button type="button" class="btn-close" (click)="clearError()"></button>
+          </div>
+        }
+
+        <button type="submit" class="btn btn-submit w-100" [disabled]="submitting()">
+          @if (submitting()) {
+            <span class="spinner-border spinner-border-sm me-2"></span>
+          } @else {
+            <i class="fas fa-sign-in-alt me-2"></i>
+          }
+          Se connecter
+        </button>
+
+      </form>
+
+      <div class="login-sep"><span>ou</span></div>
+
+      <button type="button" class="btn btn-google w-100" (click)="loginWithGoogle()"
+        [disabled]="googleSubmitting() || submitting()">
+        @if (googleSubmitting()) {
+          <span class="spinner-border spinner-border-sm me-2"></span>
+        } @else {
+          <i class="fab fa-google me-2"></i>
+        }
+        Continuer avec Google
+      </button>
+
+    </div>
+  </div>
+
+</div>

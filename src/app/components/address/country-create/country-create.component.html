@@ -1,0 +1,71 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/geo/countries"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Nouveau pays</h1>
+        <p class="page-subtitle mb-0">Le code ISO ne pourra plus être modifié après création</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Code ISO (alpha-2)</label>
+                <input type="text" class="form-control text-uppercase" formControlName="isoCode" maxlength="2"
+                  [class.is-invalid]="invalid('isoCode')" placeholder="BJ">
+                <app-field-errors [formGroup]="form" controlName="isoCode" fieldLabel="Le code ISO" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">Indicatif téléphonique</label>
+                <input type="text" class="form-control" formControlName="callingCode"
+                  [class.is-invalid]="invalid('callingCode')" placeholder="+229">
+                <app-field-errors [formGroup]="form" controlName="callingCode" fieldLabel="L'indicatif" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+            </div>
+
+            <div class="mb-3 mt-3">
+              <label class="form-label">Niveaux modélisés (une valeur par ligne)</label>
+              <textarea class="form-control" rows="4" formControlName="subdivisions"
+                [class.is-invalid]="invalid('subdivisions')"
+                placeholder="Département&#10;Commune&#10;Village/Quartier"></textarea>
+              <div class="form-text">Libellés affichés pour Région › Zone › Village, dans cet ordre.</div>
+              <app-field-errors [formGroup]="form" controlName="subdivisions" fieldLabel="Les niveaux modélisés" [serverErrors]="error?.validations"></app-field-errors>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Découpage administratif réel complet (une valeur par ligne)</label>
+              <textarea class="form-control" rows="4" formControlName="allSub"
+                [class.is-invalid]="invalid('allSub')"
+                placeholder="Département&#10;Commune&#10;Arrondissement&#10;Village/Quartier"></textarea>
+              <div class="form-text">Hiérarchie réelle complète, niveaux sautés inclus.</div>
+              <app-field-errors [formGroup]="form" controlName="allSub" fieldLabel="Le découpage réel" [serverErrors]="error?.validations"></app-field-errors>
+            </div>
+
+            @if (error?.msg) {
+              <div class="alert alert-danger mt-3 mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error?.msg }}
+              </div>
+            }
+
+            <div class="d-flex gap-2 mt-4">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+                @if (submitting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                Créer le pays
+              </button>
+              <a routerLink="/geo/countries" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,55 @@
+<nav class="app-navbar navbar fixed-top">
+  <div class="navbar-inner">
+
+    <div class="navbar-left">
+      <button class="btn-nav-icon sidebar-toggle d-none d-md-block" (click)="toggleSidebar()" aria-label="Menu">
+        <i class="fas" [class.fa-bars]="!menuOpen" [class.fa-times]="menuOpen"></i>
+      </button>
+      <button *ngIf="navHistory.canGoBack() && !navHistory.isHome()" class="btn-nav-icon d-md-none"
+        (click)="navHistory.back('/')" aria-label="Retour">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div class="navbar-brand">
+        <span class="navbar-brand-mark">
+          <img src="assets/logo-icon.png" alt="Amisache" />
+        </span>
+        <span class="navbar-brand-name d-none d-md-inline">Amisache</span>
+      </div>
+    </div>
+
+    <div class="navbar-right">
+      <button class="btn-nav-icon d-none d-md-flex" (click)="toggleFullscreen()" title="Plein écran">
+        <i class="fas fa-expand"></i>
+      </button>
+
+      <app-notification-bell></app-notification-bell>
+
+      <div class="nav-item dropdown">
+        <button class="profile-btn" data-bs-toggle="dropdown">
+          <div class="profile-avatar-sm">{{ initials }}</div>
+          <div class="d-none d-md-flex flex-column text-start ms-1">
+            <span class="profile-name-sm">{{ authService.user()?.firstName || authService.user()?.email }}</span>
+            <span class="profile-role-sm">{{ authService.user()?.roles?.[0] }}</span>
+          </div>
+          <i class="fas fa-chevron-down caret d-none d-md-inline ms-2"></i>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end" style="min-width:210px;">
+          <div class="px-3 py-2 border-bottom">
+            <p class="fw-semibold mb-0 small">{{ authService.user()?.firstName }} {{ authService.user()?.lastName }}</p>
+            <p class="text-muted mb-0" style="font-size:.75rem;">{{ authService.user()?.email }}</p>
+          </div>
+          <a class="dropdown-item" routerLink="/profile"><i class="fas fa-user-circle me-2"></i>Mon profil</a>
+          <a class="dropdown-item" routerLink="/sessions"><i class="fas fa-shield-alt me-2"></i>Mes sessions</a>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item text-danger w-100 text-start" (click)="logout()">
+            <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
+          </button>
+        </div>
+      </div>
+
+      <button class="btn-nav-icon sidebar-toggle d-block d-md-none" (click)="toggleSidebar()" aria-label="Menu">
+        <i class="fas" [class.fa-bars]="!menuOpen" [class.fa-times]="menuOpen"></i>
+      </button>
+    </div>
+  </div>
+</nav>

@@ -1,0 +1,222 @@
+<div class="container-fluid px-0">
+
+  <!-- En-tête -->
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/settings"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">{{ setting()?.key ?? 'Détail setting' }}</h1>
+        <p class="page-subtitle mb-0" *ngIf="setting()">{{ setting()!.category || 'Sans catégorie' }}</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <button class="btn btn-outline-danger btn-sm" [disabled]="deleting()" (click)="deleteSetting()">
+        <i class="fas fa-trash me-1"></i>Supprimer
+      </button>
+    </div>
+  </div>
+
+  <!-- Erreur — affichée même si un stub reste visible en dessous (échec du rafraîchissement) -->
+  @if (error()) {
+    <div class="alert alert-danger mb-3">
+      <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+    </div>
+  }
+
+  <!-- Skeleton — seulement si aucun stub n'est disponible -->
+  @if (loading()) {
+    <div class="row g-3">
+      <div class="col-lg-4">
+        <div class="card p-4 text-center">
+          <div class="skeleton-line mx-auto" style="width:100px;height:20px;border-radius:20px;"></div>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="card p-4">
+          @for (i of [1,2,3]; track i) {
+            <div class="skeleton-line mb-3" style="width:100%;"></div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Contenu -->
+  @if (!loading() && setting(); as s) {
+    <div class="row g-3">
+
+      <!-- Colonne gauche : visibilité -->
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header">Visibilité</div>
+          <div class="card-body text-center">
+            <span class="status-badge" [class]="s.isPublic ? 'status-success' : 'status-disabled'">
+              {{ s.isPublic ? 'Publique' : 'Privée' }}
+            </span>
+            @if (!s.isEditable) {
+              <span class="status-badge status-warning ms-1">Constante</span>
+            }
+
+            <p class="text-muted mt-3 mb-3" style="font-size:.85rem;">
+              @if (s.isPublic) {
+                Cette valeur est exposée sans authentification sur GET /settings/public.
+              } @else {
+                Cette valeur n'est lisible que par un admin, via l'API authentifiée.
+              }
+              @if (!s.isEditable) {
+                Constante protégée — sa valeur ne peut plus être modifiée via le panel.
+              }
+            </p>
+
+            <button class="btn btn-outline-secondary btn-sm w-100" [disabled]="isTogglingPublic()" (click)="togglePublic()">
+              @if (isTogglingPublic()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              @if (s.isPublic) {
+                <span><i class="fas fa-lock me-1"></i>Rendre privée</span>
+              } @else {
+                <span><i class="fas fa-globe me-1"></i>Rendre publique</span>
+              }
+            </button>
+
+            @if (s.createdAt) {
+              <div class="quick-info text-start mt-3">
+                <div class="quick-info-item">
+                  <i class="fas fa-calendar text-primary-app"></i>
+                  <span>Créé le {{ s.createdAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne droite -->
+      <div class="col-lg-8">
+        <form [formGroup]="form">
+
+          <!-- Valeur + type -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Valeur</span>
+              @if (isFieldModified('value') && !isFieldSaving('value')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('value')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('value')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('value')) {
+                <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
+              }
+              @if (isFieldJustSaved('value')) {
+                <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
+              }
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-8">
+                  <input type="text" class="form-control" formControlName="value"
+                    [class.border-warning]="isFieldModified('value') && !isFieldJustSaved('value') && !isFieldSaving('value')"
+                    [class.border-success]="isFieldJustSaved('value')">
+                  @if (!s.isEditable) {
+                    <div class="form-text"><i class="fas fa-lock me-1"></i>Constante non éditable.</div>
+                  }
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Type</span>
+                    @if (isFieldModified('type') && !isFieldSaving('type')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('type')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('type')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('type')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('type')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <select class="form-select" formControlName="type"
+                    [class.border-warning]="isFieldModified('type') && !isFieldJustSaved('type') && !isFieldSaving('type')"
+                    [class.border-success]="isFieldJustSaved('type')">
+                    @for (t of typeList; track t) {
+                      <option [value]="t">{{ typeLabels[t] }}</option>
+                    }
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Libellé + catégorie -->
+          <div class="card mb-3">
+            <div class="card-header">Classement</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Libellé</span>
+                    @if (isFieldModified('label') && !isFieldSaving('label')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('label')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('label')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('label')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('label')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="text" class="form-control" formControlName="label"
+                    [class.border-warning]="isFieldModified('label') && !isFieldJustSaved('label') && !isFieldSaving('label')"
+                    [class.border-success]="isFieldJustSaved('label')">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Catégorie</span>
+                    @if (isFieldModified('category') && !isFieldSaving('category')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('category')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('category')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('category')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('category')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="text" class="form-control" formControlName="category"
+                    [class.border-warning]="isFieldModified('category') && !isFieldJustSaved('category') && !isFieldSaving('category')"
+                    [class.border-success]="isFieldJustSaved('category')">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Description</span>
+              @if (isFieldModified('description') && !isFieldSaving('description')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('description')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('description')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('description')) {
+                <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
+              }
+              @if (isFieldJustSaved('description')) {
+                <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
+              }
+            </div>
+            <div class="card-body">
+              <div class="textarea-field-wrap">
+                <textarea class="form-control" rows="4" formControlName="description"
+                  [class.border-warning]="isFieldModified('description') && !isFieldJustSaved('description') && !isFieldSaving('description')"
+                  [class.border-success]="isFieldJustSaved('description')"></textarea>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

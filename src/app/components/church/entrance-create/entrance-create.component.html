@@ -1,0 +1,73 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/entrances"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Nouvelle entrée</h1>
+        <p class="page-subtitle mb-0">L'entité de rattachement ne pourra plus être modifiée après création</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Nom</label>
+                <input type="text" class="form-control" formControlName="name" maxlength="120"
+                  [class.is-invalid]="invalid('name')" placeholder="Portail principal">
+                <app-field-errors [formGroup]="form" controlName="name" fieldLabel="Le nom" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Type</label>
+                <select class="form-select" formControlName="type" [class.is-invalid]="invalid('type')">
+                  <option value="">Choisir...</option>
+                  @for (t of typeList; track t) { <option [value]="t">{{ typeLabels[t] }}</option> }
+                </select>
+                <app-field-errors [formGroup]="form" controlName="type" fieldLabel="Le type" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Entité</label>
+                <select class="form-select" formControlName="churchId" [class.is-invalid]="invalid('churchId')">
+                  <option value="">Choisir...</option>
+                  @for (c of churches() ?? []; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                </select>
+                <app-field-errors [formGroup]="form" controlName="churchId" fieldLabel="L'entité" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Latitude</label>
+                <input type="number" step="any" class="form-control" formControlName="lat" [class.is-invalid]="invalid('lat')" placeholder="6.37">
+                <app-field-errors [formGroup]="form" controlName="lat" fieldLabel="La latitude" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Longitude</label>
+                <input type="number" step="any" class="form-control" formControlName="lng" [class.is-invalid]="invalid('lng')" placeholder="2.42">
+                <app-field-errors [formGroup]="form" controlName="lng" fieldLabel="La longitude" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+            </div>
+
+            @if (error?.msg) {
+              <div class="alert alert-danger mt-3 mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error?.msg }}
+              </div>
+            }
+
+            <div class="d-flex gap-2 mt-4">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+                @if (submitting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                Créer l'entrée
+              </button>
+              <a routerLink="/entrances" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

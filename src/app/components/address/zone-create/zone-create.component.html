@@ -1,0 +1,64 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/geo/zones"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Nouvelle zone</h1>
+        <p class="page-subtitle mb-0">La région de rattachement ne pourra plus être modifiée après création</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+            <div class="row g-3">
+              <div class="col-md-7">
+                <label class="form-label">Nom</label>
+                <input type="text" class="form-control" formControlName="name" maxlength="120"
+                  [class.is-invalid]="invalid('name')" placeholder="Cotonou">
+                <app-field-errors [formGroup]="form" controlName="name" fieldLabel="Le nom" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+              <div class="col-md-5">
+                <label class="form-label">Région</label>
+                <select class="form-select" formControlName="regionId" [class.is-invalid]="invalid('regionId')">
+                  <option value="">Choisir une région...</option>
+                  @for (r of regions() ?? []; track r.id) {
+                    <option [value]="r.id">{{ r.name }}</option>
+                  }
+                </select>
+                <app-field-errors [formGroup]="form" controlName="regionId" fieldLabel="La région" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+            </div>
+
+            <div class="mb-3 mt-3">
+              <label class="form-label">Niveau administratif sauté <span class="text-muted">(optionnel)</span></label>
+              <input type="text" class="form-control" formControlName="parentSub" maxlength="120"
+                placeholder="Ex. un niveau réel entre la région et cette zone, s'il existe">
+              <app-field-errors [formGroup]="form" controlName="parentSub" fieldLabel="Le niveau sauté" [serverErrors]="error?.validations"></app-field-errors>
+            </div>
+
+            @if (error?.msg) {
+              <div class="alert alert-danger mt-3 mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error?.msg }}
+              </div>
+            }
+
+            <div class="d-flex gap-2 mt-4">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+                @if (submitting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                Créer la zone
+              </button>
+              <a routerLink="/geo/zones" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,56 @@
+// Pagination — styles propres uniquement
+// .pagination, .page-link, .page-item → Bootstrap + _bootstrap-overrides.scss
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .75rem;
+  padding: .75rem 1.25rem;
+  background: #fff;
+  border-top: 1px solid #f0f2f7;
+
+  @media (max-width: 576px) {
+    justify-content: center;
+    .pagination-info { display: none; }
+  }
+
+  // En mode carte le wrapper devient transparent — la barre de pagination
+  // doit alors se présenter comme sa propre carte.
+  @media (max-width: 767.98px) {
+    border: 1px solid #e8edf5;
+    border-radius: 10px;
+  }
+}
+
+// Sur écran étroit, la liste de pages dépasse la largeur — autoriser le retour
+// à la ligne plutôt qu'un débordement.
+.pagination {
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: .25rem;
+}
+
+.pagination-info {
+  display: flex;
+  align-items: center;
+}
+
+.pagination-count {
+  font-size: .82rem;
+  color: #718096;
+}
+
+.pagination-per-page-label {
+  font-size: .78rem;
+  color: #9aa5b4;
+  white-space: nowrap;
+}
+
+.pagination-per-page-select {
+  width: 65px;
+  font-size: .8rem;
+  padding: .2rem .4rem;
+  border-color: #e8edf5;
+}

@@ -1,0 +1,66 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-shield-alt me-2 text-primary-app"></i>Mes sessions</h1>
+      <p class="page-subtitle">Équipements actuellement connectés à votre compte</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      @if ((sessions()?.length ?? 0) > 1) {
+        <button class="btn btn-outline-danger btn-sm" (click)="logoutAll()">
+          <i class="fas fa-power-off me-2"></i>Tout déconnecter
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mb-3">
+      <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+    </div>
+  }
+
+  <div class="data-table-wrapper">
+    @if (isLoading()) {
+      <div class="p-3">
+        @for (i of [1,2,3]; track i) {
+          <div class="d-flex align-items-center gap-3 py-2">
+            <div class="skeleton-line rounded-circle" style="width:36px;height:36px;flex-shrink:0;"></div>
+            <div class="flex-fill">
+              <div class="skeleton-line mb-1" style="width:160px;"></div>
+              <div class="skeleton-line" style="width:220px;height:10px;"></div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else if (!error() && sessions()!.length === 0) {
+      <div class="empty-state">
+        <i class="fas fa-shield-alt empty-icon"></i>
+        <p class="empty-title">Aucune session active</p>
+      </div>
+    } @else if (!error()) {
+      <ul class="list-group list-group-flush">
+        @for (session of sessions()!; track session.id) {
+          <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+            <div class="d-flex align-items-center gap-3">
+              <i [class]="deviceIcon(session.deviceType)" class="fa-2x text-muted"></i>
+              <div>
+                <div class="fw-semibold">{{ session.deviceName }}</div>
+                <div class="text-muted text-xs">
+                  {{ session.os }} @if (session.browser) { · {{ session.browser }} } · {{ session.ip }}
+                </div>
+                <div class="text-muted text-xs">Dernière activité : {{ session.lastActiveAt | date: 'dd/MM/yyyy HH:mm' }}</div>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-outline-danger" (click)="revoke(session)">
+              <i class="fas fa-times me-1"></i>Déconnecter
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+</div>

@@ -1,0 +1,57 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// _variables.scss — Source unique de vérité.
+// Toute couleur, dimension ou ombre passe par ici. Jamais inline ailleurs.
+// Déclaré AVANT Bootstrap pour écraser ses defaults.
+//
+// Identité visuelle Amisache — voir documents/charte-graphique.md
+// ADN : Céleste · Sacré · Rassembleur. Idée directrice : « les cieux ».
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Palette Amisache ─────────────────────────────────────────────────────────
+// Rôle                HEX        Usage
+// Bleu firmament      #16235C    Texte, ancrage sombre, « haut du ciel »
+// Bleu ciel           #5E9FD6    Couleur d'identité, bannières, en-têtes
+// Or de gloire        #D4AF37    Lumière divine, touches, accents (jamais texte fin)
+// Blanc nuage         #F7FAFE    Fond principal, l'espace, la nuée
+//
+// Nuances bleu : #EAF2FB #C9DFF4 #93BEE6 #5E9FD6 #3E77B0 #274F7D #16235C
+// Nuances or   : #F6EFD6 #EBDCA9 #E0C87B #D4AF37 #B08E22 #856A16 #5A470D
+
+// ── Override Bootstrap theme colors ──────────────────────────────────────────
+$primary:   #16235C;
+$secondary: #64748b; // neutre — le bleu ciel identitaire vit sur $info / --color-secondary
+$success:   #2f9e6e;
+$warning:   #D4AF37;
+$danger:    #dc2626;
+$info:      #5E9FD6;
+$light:     #F7FAFE;
+$dark:      #16235C;
+
+// ── Override Bootstrap typography ────────────────────────────────────────────
+$font-family-base:  'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+$font-family-heading: 'Cormorant', Georgia, 'Times New Roman', serif;
+$font-size-base:    0.9rem;
+
+// ── Override Bootstrap radius ─────────────────────────────────────────────────
+$border-radius:    6px;
+$border-radius-lg: 10px;
+$border-radius-xl: 16px;
+
+// ── Couleur d'accent secondaire (hors palette Bootstrap) ──────────────────────
+$color-firmament: #16235C;
+$color-sky:       #5E9FD6;
+$color-gold:      #D4AF37;
+
+// ── Dégradés ─────────────────────────────────────────────────────────────────
+// Le ciel qui s'ouvre : firmament profond → bleu ciel lumineux.
+$gradient-primary: linear-gradient(135deg, #16235C 0%, #16235C 34%, #D4AF37 100%); // bleu firmament dominant (~67/33) → or de gloire
+$gradient-navbar:  linear-gradient(90deg,  #16235C 0%, #16235C 34%, #D4AF37 56%, #16235C 82%, #16235C 100%); // or en lueur au centre, bleu aux extrémités (contrôles lisibles)
+
+// ── Dimensions layout ─────────────────────────────────────────────────────────
+$sidebar-width:           280px;
+$sidebar-collapsed-width: 68px;
+$navbar-height:           64px;
+
+// ── Ombres ────────────────────────────────────────────────────────────────────
+$shadow-card: 0 2px 12px rgba(22, 35, 92, .07);
+$shadow-md:   0 4px 20px rgba(22, 35, 92, .12);

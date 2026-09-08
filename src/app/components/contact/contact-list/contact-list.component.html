@@ -1,0 +1,191 @@
+<div class="container-fluid px-0">
+
+  <!-- En-tête -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-envelope me-2 text-primary-app"></i>Messages de contact</h1>
+      <p class="page-subtitle">{{ pagination.totalItems() }} message(s)</p>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+      <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+    </button>
+  </div>
+
+  <!-- Barre de filtres -->
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="search-input-group">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" class="form-control" placeholder="Nom, email, sujet..."
+            [ngModel]="filters().search" (ngModelChange)="updateFilter('search', $event)">
+        </div>
+      </div>
+
+      <button class="btn btn-outline-secondary btn-sm position-relative" type="button" data-bs-toggle="offcanvas"
+        data-bs-target="#contactFiltersOffcanvas">
+        <i class="fas fa-sliders-h"></i>
+        <span class="ms-1">Filtres</span>
+        @if (hasAdvancedFilters()) {
+          <span class="filter-active-dot"></span>
+        }
+      </button>
+
+      @if (hasAdvancedFilters() || filters().search) {
+        <button class="btn btn-sm btn-link text-muted text-decoration-none" (click)="resetFilters()">
+          <i class="fas fa-times me-1"></i>Reset
+        </button>
+      }
+    </div>
+
+    @if (hasAdvancedFilters()) {
+      <div class="d-flex flex-wrap gap-1 mt-2">
+        @if (filters().status) {
+          <span class="filter-tag">
+            {{ filters().status }}
+            <i class="fas fa-times remove-tag ms-1" (click)="updateFilter('status', '')"></i>
+          </span>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Tableau -->
+  <div class="data-table-wrapper">
+    <div class="data-table-scroll">
+    <table class="table table-hover mb-0 data-table--cards">
+      <thead>
+        <tr>
+          <th style="width:48px;">#</th>
+          <th>Expéditeur</th>
+          <th class="d-none d-md-table-cell">Sujet</th>
+          <th class="sortable" (click)="toggleSort('status')">
+            Statut
+            <i class="fas ms-1" [class.fa-sort]="filters().sortBy !== 'status'"
+              [class.fa-sort-up]="filters().sortBy === 'status' && filters().sortOrder === 'asc'"
+              [class.fa-sort-down]="filters().sortBy === 'status' && filters().sortOrder === 'desc'"></i>
+          </th>
+          <th class="d-none d-lg-table-cell sortable" (click)="toggleSort('createdAt')">
+            Reçu le
+            <i class="fas ms-1" [class.fa-sort]="filters().sortBy !== 'createdAt'"
+              [class.fa-sort-up]="filters().sortBy === 'createdAt' && filters().sortOrder === 'asc'"
+              [class.fa-sort-down]="filters().sortBy === 'createdAt' && filters().sortOrder === 'desc'"></i>
+          </th>
+          <th style="width:90px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- Skeleton — premier chargement -->
+        @if (isLoading()) {
+          @for (i of [1,2,3,4,5]; track i) {
+            <tr>
+              <td><div class="skeleton-line" style="width:20px;"></div></td>
+              <td><div class="skeleton-line" style="width:140px;"></div></td>
+              <td class="d-none d-md-table-cell"><div class="skeleton-line" style="width:160px;"></div></td>
+              <td><div class="skeleton-line" style="width:80px;height:22px;border-radius:20px;"></div></td>
+              <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:80px;"></div></td>
+              <td><div class="skeleton-line" style="width:60px;"></div></td>
+            </tr>
+          }
+        }
+
+        <!-- Erreur -->
+        @if (!isLoading() && error()) {
+          <tr>
+            <td colspan="6">
+              <div class="alert alert-danger mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+              </div>
+            </td>
+          </tr>
+        }
+
+        <!-- État vide -->
+        @if (!isLoading() && !error() && messages()!.length === 0) {
+          <tr>
+            <td colspan="6">
+              <div class="empty-state">
+                <i class="fas fa-envelope-open empty-icon"></i>
+                <p class="empty-title">Aucun message trouvé</p>
+                <p class="empty-text">Modifiez vos filtres pour élargir la recherche</p>
+              </div>
+            </td>
+          </tr>
+        }
+
+        <!-- Données -->
+        @if (!isLoading() && !error()) {
+          @for (message of messages()!; track message.id; let i = $index) {
+            <tr>
+              <td class="cell-index" style="font-size:.85rem;color:#9aa5b4;">{{ pagination.startItem() + i }}</td>
+              <td class="cell-title" data-label="Expéditeur">
+                <a [routerLink]="['/contact', message.id]" class="fw-semibold text-decoration-none" style="font-size:.875rem;" (click)="contactService.select(message)">
+                  {{ message.name }}
+                </a>
+                <div class="text-muted" style="font-size:.75rem;">{{ message.email }}</div>
+              </td>
+              <td class="d-none d-md-table-cell" data-label="Sujet" style="font-size:.85rem;">{{ message.subject || '—' }}</td>
+              <td data-label="Statut"><span class="status-badge" [class]="statusBadgeClass(message.status)">{{ message.status }}</span></td>
+              <td class="d-none d-lg-table-cell text-muted" data-label="Reçu le" style="font-size:.8rem;">{{ message.createdAt | date:'dd/MM/yyyy' }}</td>
+              <td class="cell-actions">
+                <div class="d-flex gap-1">
+                  <a [routerLink]="['/contact', message.id]" class="btn btn-icon btn-outline-secondary btn-sm" title="Voir" (click)="contactService.select(message)">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                  <button class="btn btn-icon btn-outline-danger btn-sm" title="Supprimer" (click)="deleteMessage(message)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+
+      </tbody>
+    </table>
+    </div>
+
+    <app-pagination></app-pagination>
+  </div>
+
+</div>
+
+<!-- Offcanvas filtres avancés -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="contactFiltersOffcanvas" appBackDismiss>
+  <div class="offcanvas-header border-bottom">
+    <h5 class="offcanvas-title">
+      <i class="fas fa-sliders-h me-2 text-primary-app"></i>Filtres avancés
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+
+    <div class="mb-4">
+      <label class="form-label">Statut</label>
+      <div class="d-flex flex-column gap-2">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="contactStatusFilter" id="contactStatusAll"
+            [checked]="filters().status === ''" (change)="updateFilter('status', '')">
+          <label class="form-check-label" for="contactStatusAll">Tous</label>
+        </div>
+        @for (s of statusList; track s) {
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="contactStatusFilter" [id]="'contactStatus_' + s"
+              [checked]="filters().status === s" (change)="updateFilter('status', s)">
+            <label class="form-check-label" [for]="'contactStatus_' + s">
+              <span class="status-badge" [class]="statusBadgeClass(s)">{{ s }}</span>
+            </label>
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
+
+  <div class="offcanvas-footer border-top p-3">
+    <button class="btn btn-outline-secondary w-100" (click)="resetFilters()" data-bs-dismiss="offcanvas">
+      <i class="fas fa-undo me-1"></i>Réinitialiser les filtres
+    </button>
+  </div>
+</div>

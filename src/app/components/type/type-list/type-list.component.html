@@ -1,0 +1,204 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-tags me-2 text-primary-app"></i>Types</h1>
+      <p class="page-subtitle">{{ pagination.totalItems() }} type(s)</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <a routerLink="/types/new" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i>Nouveau type
+      </a>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="search-input-group">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" class="form-control" placeholder="Nom..."
+            [ngModel]="filters().search" (ngModelChange)="updateFilter('search', $event)">
+        </div>
+      </div>
+
+      <button class="btn btn-outline-secondary btn-sm position-relative" type="button" data-bs-toggle="offcanvas"
+        data-bs-target="#typeFiltersOffcanvas">
+        <i class="fas fa-sliders-h"></i>
+        <span class="ms-1">Filtres</span>
+        @if (hasAdvancedFilters()) {
+          <span class="filter-active-dot"></span>
+        }
+      </button>
+
+      @if (hasAdvancedFilters() || filters().search) {
+        <button class="btn btn-sm btn-link text-muted text-decoration-none" (click)="resetFilters()">
+          <i class="fas fa-times me-1"></i>Reset
+        </button>
+      }
+    </div>
+
+    @if (hasAdvancedFilters()) {
+      <div class="d-flex flex-wrap gap-1 mt-2">
+        @if (filters().scope) {
+          <span class="filter-tag">
+            {{ scopeLabel(filters().scope) }}
+            <i class="fas fa-times remove-tag ms-1" (click)="updateFilter('scope', '')"></i>
+          </span>
+        }
+        @if (filters().active) {
+          <span class="filter-tag">
+            {{ filters().active === 'true' ? 'Actifs' : 'Inactifs' }}
+            <i class="fas fa-times remove-tag ms-1" (click)="updateFilter('active', '')"></i>
+          </span>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="data-table-wrapper">
+    <div class="data-table-scroll">
+      <table class="table table-hover mb-0 data-table--cards">
+        <thead>
+          <tr>
+            <th style="width:48px;">#</th>
+            <th>Nom</th>
+            <th class="d-none d-md-table-cell">Scope</th>
+            <th>État</th>
+            <th style="width:120px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          @if (isLoading()) {
+            @for (i of [1,2,3,4,5]; track i) {
+              <tr>
+                <td><div class="skeleton-line" style="width:20px;"></div></td>
+                <td><div class="skeleton-line" style="width:180px;"></div></td>
+                <td class="d-none d-md-table-cell"><div class="skeleton-line" style="width:120px;"></div></td>
+                <td><div class="skeleton-line" style="width:70px;height:22px;border-radius:20px;"></div></td>
+                <td><div class="skeleton-line" style="width:90px;"></div></td>
+              </tr>
+            }
+          }
+
+          @if (!isLoading() && error()) {
+            <tr>
+              <td colspan="5"><div class="alert alert-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div></td>
+            </tr>
+          }
+
+          @if (!isLoading() && !error() && types()!.length === 0) {
+            <tr>
+              <td colspan="5">
+                <div class="empty-state">
+                  <i class="fas fa-tags empty-icon"></i>
+                  <p class="empty-title">Aucun type trouvé</p>
+                  <p class="empty-text">Modifiez vos filtres ou créez un nouveau type</p>
+                </div>
+              </td>
+            </tr>
+          }
+
+          @if (!isLoading() && !error()) {
+            @for (type of types()!; track type.id; let i = $index) {
+              <tr>
+                <td class="cell-index" style="font-size:.85rem;color:#9aa5b4;">{{ pagination.startItem() + i }}</td>
+                <td class="cell-title" data-label="Nom">
+                  <a [routerLink]="['/types', type.id]" class="fw-semibold text-decoration-none" style="font-size:.875rem;" (click)="typeService.select(type)">
+                    {{ type.name }}
+                  </a>
+                </td>
+                <td class="d-none d-md-table-cell" data-label="Scope" style="font-size:.85rem;">{{ scopeLabels[type.scope] }}</td>
+                <td data-label="État">
+                  <span class="status-badge" [class]="type.active ? 'status-success' : 'status-disabled'">
+                    {{ type.active ? 'Actif' : 'Inactif' }}
+                  </span>
+                </td>
+                <td class="cell-actions">
+                  <div class="d-flex gap-1">
+                    <button class="btn btn-icon btn-outline-secondary btn-sm" [disabled]="togglingId() === type.id"
+                      [title]="type.active ? 'Désactiver' : 'Activer'" (click)="toggleActive(type)">
+                      <i class="fas" [class.fa-toggle-on]="type.active" [class.fa-toggle-off]="!type.active"></i>
+                    </button>
+                    <a [routerLink]="['/types', type.id]" class="btn btn-icon btn-outline-secondary btn-sm" title="Modifier" (click)="typeService.select(type)">
+                      <i class="fas fa-pen"></i>
+                    </a>
+                    <button class="btn btn-icon btn-outline-danger btn-sm" title="Supprimer" (click)="deleteType(type)">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination></app-pagination>
+  </div>
+
+</div>
+
+<!-- Offcanvas filtres avancés -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="typeFiltersOffcanvas" appBackDismiss>
+  <div class="offcanvas-header border-bottom">
+    <h5 class="offcanvas-title"><i class="fas fa-sliders-h me-2 text-primary-app"></i>Filtres avancés</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+
+    <div class="mb-4">
+      <label class="form-label">Scope</label>
+      <div class="d-flex flex-column gap-2">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="typeScopeFilter" id="typeScopeAll"
+            [checked]="filters().scope === ''" (change)="updateFilter('scope', '')">
+          <label class="form-check-label" for="typeScopeAll">Tous</label>
+        </div>
+        @for (s of scopeList; track s) {
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="typeScopeFilter" [id]="'typeScope_' + s"
+              [checked]="filters().scope === s" (change)="updateFilter('scope', s)">
+            <label class="form-check-label" [for]="'typeScope_' + s">{{ scopeLabels[s] }}</label>
+          </div>
+        }
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="mb-4">
+      <label class="form-label">État</label>
+      <div class="d-flex flex-column gap-2">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="typeActiveFilter" id="typeActiveAll"
+            [checked]="filters().active === ''" (change)="updateFilter('active', '')">
+          <label class="form-check-label" for="typeActiveAll">Tous</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="typeActiveFilter" id="typeActiveTrue"
+            [checked]="filters().active === 'true'" (change)="updateFilter('active', 'true')">
+          <label class="form-check-label" for="typeActiveTrue">Actifs</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="typeActiveFilter" id="typeActiveFalse"
+            [checked]="filters().active === 'false'" (change)="updateFilter('active', 'false')">
+          <label class="form-check-label" for="typeActiveFalse">Inactifs</label>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="offcanvas-footer border-top p-3">
+    <button class="btn btn-outline-secondary w-100" (click)="resetFilters()" data-bs-dismiss="offcanvas">
+      <i class="fas fa-undo me-1"></i>Réinitialiser les filtres
+    </button>
+  </div>
+</div>

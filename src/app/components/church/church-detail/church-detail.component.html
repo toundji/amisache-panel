@@ -1,0 +1,250 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/churches"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Détail entité</h1>
+        <p class="page-subtitle mb-0" *ngIf="church()">{{ typeLabels[church()!.type] }} · {{ church()!.name }}</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <button class="btn btn-outline-danger btn-sm" [disabled]="deleting()" (click)="deleteChurch()">
+        <i class="fas fa-trash me-1"></i>Supprimer
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mb-3"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="row g-3">
+      <div class="col-lg-4"><div class="card p-4"><div class="skeleton-line" style="width:100%;height:120px;"></div></div></div>
+      <div class="col-lg-8"><div class="card p-4">@for (i of [1,2,3,4]; track i) { <div class="skeleton-line mb-3" style="width:100%;"></div> }</div></div>
+    </div>
+  }
+
+  @if (!loading() && church(); as c) {
+    <div class="row g-3">
+
+      <!-- Colonne gauche -->
+      <div class="col-lg-4">
+
+        <!-- Bannière -->
+        <div class="card mb-3">
+          <div class="card-header">Bannière</div>
+          <div class="card-body text-center">
+            @if (c.bannerPhoto) {
+              <img [src]="c.bannerPhoto" alt="Bannière" class="img-fluid rounded mb-2" style="max-height:140px;object-fit:cover;">
+            } @else {
+              <div class="text-muted py-4"><i class="fas fa-image fa-2x"></i><p class="mb-0 mt-2" style="font-size:.85rem;">Aucune bannière</p></div>
+            }
+            <label class="btn btn-outline-secondary btn-sm w-100 mt-2" [class.disabled]="bannerUploading()">
+              @if (bannerUploading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              <i class="fas fa-upload me-1"></i>{{ c.bannerPhoto ? 'Remplacer' : 'Ajouter' }}
+              <input type="file" hidden accept="image/png,image/jpeg" (change)="onBannerSelected($event)" [disabled]="bannerUploading()">
+            </label>
+          </div>
+        </div>
+
+        <!-- Statut -->
+        <div class="card mb-3">
+          <div class="card-header">Statut de validation</div>
+          <div class="card-body text-center">
+            <span class="status-badge"
+              [class.status-success]="c.status === 'APPROVED'"
+              [class.status-warning]="c.status === 'PENDING'"
+              [class.status-disabled]="c.status === 'SUSPENDED'">
+              {{ statusLabels[c.status] }}
+            </span>
+            <div class="d-flex flex-column gap-2 mt-3">
+              @for (s of statusList; track s) {
+                <button class="btn btn-outline-secondary btn-sm" [disabled]="statusSaving() || c.status === s" (click)="setStatus(s)">
+                  {{ statusLabels[s] }}
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Infos -->
+        <div class="card">
+          <div class="card-header">Informations</div>
+          <div class="card-body">
+            <div class="quick-info">
+              <div class="quick-info-item"><i class="fas fa-sitemap text-primary-app"></i><span>{{ typeLabels[c.type] }}</span></div>
+              <div class="quick-info-item"><i class="fas fa-link text-primary-app"></i><span>{{ c.slug }}</span></div>
+              @if (c.code) {
+                <div class="quick-info-item"><i class="fas fa-hashtag text-primary-app"></i><span>Code {{ c.code }}</span></div>
+              }
+              @if (c.createdAt) {
+                <div class="quick-info-item"><i class="fas fa-calendar text-primary-app"></i><span>Créée le {{ c.createdAt | date:'dd/MM/yyyy' }}</span></div>
+              }
+            </div>
+            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">Type et rattachement (parent / pays) sont immuables après création.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne droite -->
+      <div class="col-lg-8">
+        <form [formGroup]="form">
+
+          <!-- Nom -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Nom</span>
+              @if (isFieldModified('name') && !isFieldSaving('name')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('name')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('name')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('name')) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (isFieldJustSaved('name')) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+            </div>
+            <div class="card-body">
+              <input type="text" class="form-control" formControlName="name" maxlength="160"
+                [class.border-warning]="isFieldModified('name') && !isFieldJustSaved('name') && !isFieldSaving('name')"
+                [class.border-success]="isFieldJustSaved('name')">
+            </div>
+          </div>
+
+          <!-- Slug -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Slug</span>
+              @if (isFieldModified('slug') && !isFieldSaving('slug')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('slug')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('slug')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('slug')) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (isFieldJustSaved('slug')) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+            </div>
+            <div class="card-body">
+              <input type="text" class="form-control" formControlName="slug" maxlength="160"
+                [class.border-warning]="isFieldModified('slug') && !isFieldJustSaved('slug') && !isFieldSaving('slug')"
+                [class.border-success]="isFieldJustSaved('slug')">
+            </div>
+          </div>
+
+          <!-- Message du responsable -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Message du responsable</span>
+              @if (isFieldModified('leaderMessage') && !isFieldSaving('leaderMessage')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('leaderMessage')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('leaderMessage')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('leaderMessage')) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (isFieldJustSaved('leaderMessage')) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+            </div>
+            <div class="card-body">
+              <textarea class="form-control" rows="4" formControlName="leaderMessage"
+                [class.border-warning]="isFieldModified('leaderMessage') && !isFieldJustSaved('leaderMessage') && !isFieldSaving('leaderMessage')"
+                [class.border-success]="isFieldJustSaved('leaderMessage')"></textarea>
+            </div>
+          </div>
+
+          <!-- Personnalisation -->
+          <div class="card mb-3">
+            <div class="card-header">Personnalisation</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Couleur d'accent</span>
+                    @if (isFieldModified('accentColor') && !isFieldSaving('accentColor')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('accentColor')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('accentColor')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('accentColor')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('accentColor')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="color" class="form-control form-control-color" formControlName="accentColor">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Langue par défaut</span>
+                    @if (isFieldModified('defaultLanguage') && !isFieldSaving('defaultLanguage')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('defaultLanguage')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('defaultLanguage')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('defaultLanguage')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('defaultLanguage')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="text" class="form-control" formControlName="defaultLanguage" maxlength="10">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Adresse (sauvegarde groupée) -->
+          <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Adresse</span>
+              @if (isAddressModified() && !addressSaving()) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveAddress()"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetAddress()"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (addressSaving()) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (addressJustSaved()) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Zone</label>
+                  <select class="form-select" formControlName="zoneId" (change)="onZoneChange()">
+                    <option value="">Choisir une zone...</option>
+                    @for (z of zones() ?? []; track z.id) { <option [value]="z.id">{{ z.name }}</option> }
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Village / Quartier</label>
+                  <select class="form-select" formControlName="villageId" [disabled]="!form.get('zoneId')?.value">
+                    <option value="">Aucun</option>
+                    @for (v of villagesForZone(); track v.id) { <option [value]="v.id">{{ v.name }}</option> }
+                  </select>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Précision locale</label>
+                  <input type="text" class="form-control" formControlName="locality">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Repère</label>
+                  <input type="text" class="form-control" formControlName="landmark">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Latitude</label>
+                  <input type="number" step="any" class="form-control" formControlName="lat">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Longitude</label>
+                  <input type="number" step="any" class="form-control" formControlName="lng">
+                </div>
+              </div>
+              <div class="form-text mt-2">L'enregistrement remplace l'intégralité de l'adresse. L'emprise géographique (polygone) se gère à part.</div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

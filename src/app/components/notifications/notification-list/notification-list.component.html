@@ -1,0 +1,116 @@
+<div class="container-fluid px-0">
+
+  <!-- En-tête -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-bell me-2 text-primary-app"></i>Notifications</h1>
+      <p class="page-subtitle">{{ pagination.totalItems() }} notification(s)</p>
+    </div>
+    <div class="d-flex gap-2">
+      @if (hasUnread()) {
+        <button class="btn btn-outline-primary btn-sm" (click)="markAllAsRead()">
+          <i class="fas fa-check-double me-1"></i>Tout marquer comme lu
+        </button>
+      }
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+    </div>
+  </div>
+
+  <!-- Liste -->
+  <div class="data-table-wrapper">
+    <div class="data-table-scroll">
+    <table class="table table-hover mb-0 data-table--cards">
+      <thead>
+        <tr>
+          <th style="width:48px;">#</th>
+          <th style="width:24px;"></th>
+          <th>Notification</th>
+          <th class="d-none d-lg-table-cell" style="width:160px;">Reçue le</th>
+          <th style="width:90px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- Skeleton — premier chargement -->
+        @if (isLoading()) {
+          @for (i of [1,2,3,4,5]; track i) {
+            <tr>
+              <td><div class="skeleton-line" style="width:20px;"></div></td>
+              <td><div class="skeleton-line" style="width:10px;height:10px;border-radius:50%;"></div></td>
+              <td>
+                <div class="skeleton-line" style="width:220px;"></div>
+                <div class="skeleton-line mt-1" style="width:320px;"></div>
+              </td>
+              <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:100px;"></div></td>
+              <td><div class="skeleton-line" style="width:60px;"></div></td>
+            </tr>
+          }
+        }
+
+        <!-- Erreur -->
+        @if (!isLoading() && error()) {
+          <tr>
+            <td colspan="5">
+              <div class="alert alert-danger mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+              </div>
+            </td>
+          </tr>
+        }
+
+        <!-- État vide -->
+        @if (!isLoading() && !error() && notifications()!.length === 0) {
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <i class="fas fa-bell-slash empty-icon"></i>
+                <p class="empty-title">Aucune notification</p>
+                <p class="empty-text">Vous êtes à jour !</p>
+              </div>
+            </td>
+          </tr>
+        }
+
+        <!-- Données -->
+        @if (!isLoading() && !error()) {
+          @for (notification of notifications()!; track notification.id; let i = $index) {
+            <tr [class.fw-semibold]="!notification.isRead">
+              <td class="cell-index fw-normal" style="font-size:.85rem;color:#9aa5b4;">{{ pagination.startItem() + i }}</td>
+              <td>
+                @if (!notification.isRead) {
+                  <span class="status-badge status-active" style="width:10px;height:10px;padding:0;border-radius:50%;display:inline-block;" title="Non lue"></span>
+                }
+              </td>
+              <td class="cell-title" data-label="Notification">
+                <div style="font-size:.875rem;">{{ notification.title }}</div>
+                <div class="text-muted fw-normal" style="font-size:.8rem;">{{ notification.body }}</div>
+              </td>
+              <td class="d-none d-lg-table-cell text-muted fw-normal" data-label="Reçue le" style="font-size:.8rem;">
+                {{ notification.createdAt | date:'dd/MM/yyyy HH:mm' }}
+              </td>
+              <td class="cell-actions">
+                <div class="d-flex gap-1">
+                  @if (!notification.isRead) {
+                    <button class="btn btn-icon btn-outline-primary btn-sm" title="Marquer comme lu" (click)="markAsRead(notification)">
+                      <i class="fas fa-check"></i>
+                    </button>
+                  }
+                  <button class="btn btn-icon btn-outline-secondary btn-sm" title="Supprimer" (click)="dismiss(notification)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+
+      </tbody>
+    </table>
+    </div>
+
+    <app-pagination></app-pagination>
+  </div>
+
+</div>

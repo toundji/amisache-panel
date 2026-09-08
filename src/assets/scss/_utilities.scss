@@ -1,0 +1,15 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// _utilities.scss — Classes utilitaires custom. Uniquement ce que Bootstrap
+// n'a pas déjà — pas de doublon avec les classes utilitaires Bootstrap.
+// ─────────────────────────────────────────────────────────────────────────────
+
+.gradient-primary { background: var(--gradient-primary) !important; }
+.gradient-navbar  { background: var(--gradient-navbar)  !important; }
+
+.text-primary-app { color: var(--color-primary) !important; }
+.bg-primary-app   { background-color: var(--color-primary) !important; }
+
+.fw-semibold { font-weight: 600 !important; }
+.text-xs     { font-size: .75rem !important; }
+.text-sm     { font-size: .83rem !important; }
+.font-mono   { font-family: 'Courier New', monospace; }

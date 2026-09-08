@@ -1,0 +1,139 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/geo/villages"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Détail village / quartier</h1>
+        <p class="page-subtitle mb-0" *ngIf="village()">{{ village()!.name }} · {{ typeLabels[village()!.type] }}</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <button class="btn btn-outline-danger btn-sm" [disabled]="deleting()" (click)="deleteVillage()">
+        <i class="fas fa-trash me-1"></i>Supprimer
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mb-3"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="row g-3">
+      <div class="col-lg-4"><div class="card p-4 text-center"><div class="skeleton-line mx-auto" style="width:100px;height:20px;"></div></div></div>
+      <div class="col-lg-8"><div class="card p-4">@for (i of [1,2,3]; track i) { <div class="skeleton-line mb-3" style="width:100%;"></div> }</div></div>
+    </div>
+  }
+
+  @if (!loading() && village(); as v) {
+    <div class="row g-3">
+
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header">Rattachement</div>
+          <div class="card-body">
+            <div class="quick-info">
+              <div class="quick-info-item">
+                <i class="fas fa-draw-polygon text-primary-app"></i>
+                <span>Zone {{ zoneLabel(v.zoneId) }}</span>
+              </div>
+              @if (v.code) {
+                <div class="quick-info-item">
+                  <i class="fas fa-hashtag text-primary-app"></i>
+                  <span>Code interne {{ v.code }}</span>
+                </div>
+              }
+              @if (v.createdAt) {
+                <div class="quick-info-item">
+                  <i class="fas fa-calendar text-primary-app"></i>
+                  <span>Créé le {{ v.createdAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+              }
+            </div>
+            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">La zone de rattachement est immuable.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <form [formGroup]="form">
+
+          <!-- Nom -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Nom</span>
+              @if (isFieldModified('name') && !isFieldSaving('name')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('name')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('name')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('name')) {
+                <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
+              }
+              @if (isFieldJustSaved('name')) {
+                <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
+              }
+            </div>
+            <div class="card-body">
+              <input type="text" class="form-control" formControlName="name" maxlength="120"
+                [class.border-warning]="isFieldModified('name') && !isFieldJustSaved('name') && !isFieldSaving('name')"
+                [class.border-success]="isFieldJustSaved('name')">
+            </div>
+          </div>
+
+          <!-- Type + niveau sauté -->
+          <div class="card">
+            <div class="card-header">Attributs</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-5">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Type</span>
+                    @if (isFieldModified('type') && !isFieldSaving('type')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('type')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('type')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('type')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('type')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <select class="form-select" formControlName="type"
+                    [class.border-warning]="isFieldModified('type') && !isFieldJustSaved('type') && !isFieldSaving('type')"
+                    [class.border-success]="isFieldJustSaved('type')">
+                    @for (t of typeList; track t) {
+                      <option [value]="t">{{ typeLabels[t] }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="col-md-7">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Niveau administratif sauté</span>
+                    @if (isFieldModified('parentSub') && !isFieldSaving('parentSub')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('parentSub')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('parentSub')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('parentSub')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('parentSub')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="text" class="form-control" formControlName="parentSub" maxlength="120" placeholder="Aucun"
+                    [class.border-warning]="isFieldModified('parentSub') && !isFieldJustSaved('parentSub') && !isFieldSaving('parentSub')"
+                    [class.border-success]="isFieldJustSaved('parentSub')">
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

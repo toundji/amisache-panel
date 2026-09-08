@@ -1,0 +1,157 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/churches"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Nouvelle entité ecclésiale</h1>
+        <p class="page-subtitle mb-0">Une CONFÉRENCE est la racine (pays requis, sans parent) ; tout autre niveau requiert un parent</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-9">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+        <!-- Identité -->
+        <div class="card mb-3">
+          <div class="card-header">Identité</div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">Type</label>
+                <select class="form-select" formControlName="type" [class.is-invalid]="invalid('type')">
+                  <option value="">Choisir...</option>
+                  @for (t of typeList; track t) {
+                    <option [value]="t">{{ typeLabels[t] }}</option>
+                  }
+                </select>
+                <app-field-errors [formGroup]="form" controlName="type" fieldLabel="Le type" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">Nom</label>
+                <input type="text" class="form-control" formControlName="name" maxlength="160"
+                  [class.is-invalid]="invalid('name')" placeholder="Paroisse Saint-Michel">
+                <app-field-errors [formGroup]="form" controlName="name" fieldLabel="Le nom" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+
+              @if (isConference()) {
+                <div class="col-md-6">
+                  <label class="form-label">Pays <span class="text-muted">(niveau CONFÉRENCE)</span></label>
+                  <select class="form-select" formControlName="countryId" [class.is-invalid]="invalid('countryId')">
+                    <option value="">Choisir un pays...</option>
+                    @for (c of countries() ?? []; track c.id) {
+                      <option [value]="c.id">{{ c.isoCode }}</option>
+                    }
+                  </select>
+                  <app-field-errors [formGroup]="form" controlName="countryId" fieldLabel="Le pays" [serverErrors]="error?.validations"></app-field-errors>
+                </div>
+              } @else {
+                <div class="col-md-6">
+                  <label class="form-label">Entité parente</label>
+                  <select class="form-select" formControlName="parentId" [class.is-invalid]="invalid('parentId')">
+                    <option value="">Choisir une entité parente...</option>
+                    @for (p of parents() ?? []; track p.id) {
+                      <option [value]="p.id">{{ p.name }} — {{ typeLabels[p.type] }}</option>
+                    }
+                  </select>
+                  <app-field-errors [formGroup]="form" controlName="parentId" fieldLabel="Le parent" [serverErrors]="error?.validations"></app-field-errors>
+                </div>
+              }
+
+              <div class="col-md-6">
+                <label class="form-label">Slug <span class="text-muted">(optionnel — généré depuis le nom)</span></label>
+                <input type="text" class="form-control" formControlName="slug" maxlength="160" placeholder="paroisse-saint-michel">
+                <app-field-errors [formGroup]="form" controlName="slug" fieldLabel="Le slug" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personnalisation -->
+        <div class="card mb-3">
+          <div class="card-header">Personnalisation</div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">Message du responsable <span class="text-muted">(optionnel)</span></label>
+                <textarea class="form-control" rows="3" formControlName="leaderMessage"></textarea>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Couleur d'accent <span class="text-muted">(optionnel, #RRGGBB)</span></label>
+                <input type="text" class="form-control" formControlName="accentColor" placeholder="#16235C"
+                  [class.is-invalid]="invalid('accentColor')">
+                <app-field-errors [formGroup]="form" controlName="accentColor" fieldLabel="La couleur d'accent" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Langue par défaut</label>
+                <input type="text" class="form-control" formControlName="defaultLanguage" maxlength="10" placeholder="fr">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Adresse -->
+        <div class="card mb-3">
+          <div class="card-header">Adresse</div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Zone</label>
+                <select class="form-select" formControlName="zoneId" [class.is-invalid]="invalid('zoneId')" (change)="onZoneChange()">
+                  <option value="">Choisir une zone...</option>
+                  @for (z of zones() ?? []; track z.id) {
+                    <option [value]="z.id">{{ z.name }}</option>
+                  }
+                </select>
+                <app-field-errors [formGroup]="form" controlName="zoneId" fieldLabel="La zone" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Village / Quartier <span class="text-muted">(optionnel)</span></label>
+                <select class="form-select" formControlName="villageId" [disabled]="!form.get('zoneId')?.value">
+                  <option value="">Aucun</option>
+                  @for (v of villagesForZone(); track v.id) {
+                    <option [value]="v.id">{{ v.name }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Précision locale <span class="text-muted">(optionnel)</span></label>
+                <input type="text" class="form-control" formControlName="locality" placeholder="Quartier, rue...">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Repère <span class="text-muted">(optionnel)</span></label>
+                <input type="text" class="form-control" formControlName="landmark" placeholder="En face du marché">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Latitude <span class="text-muted">(optionnel)</span></label>
+                <input type="number" step="any" class="form-control" formControlName="lat" placeholder="6.37">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Longitude <span class="text-muted">(optionnel)</span></label>
+                <input type="number" step="any" class="form-control" formControlName="lng" placeholder="2.42">
+              </div>
+            </div>
+            <div class="form-text mt-2">Renseignez latitude ET longitude pour enregistrer la position GPS.</div>
+          </div>
+        </div>
+
+        @if (error?.msg) {
+          <div class="alert alert-danger mb-3">
+            <i class="fas fa-exclamation-triangle me-2"></i>{{ error?.msg }}
+          </div>
+        }
+
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+            @if (submitting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+            Créer l'entité
+          </button>
+          <a routerLink="/churches" class="btn btn-outline-secondary">Annuler</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>

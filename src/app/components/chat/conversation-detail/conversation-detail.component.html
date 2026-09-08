@@ -1,0 +1,284 @@
+<div class="container-fluid px-0">
+
+  <!-- En-tête -->
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/chat"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Conversation</h1>
+        <p class="page-subtitle mb-0" *ngIf="conversation() as c">
+          {{ c.subjectType && c.subjectId ? (c.subjectType + ' #' + c.subjectId.slice(0, 8)) : 'Fil libre' }}
+        </p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+    </div>
+  </div>
+
+  <!-- Erreur — affichée même si un stub reste visible en dessous -->
+  @if (error()) {
+    <div class="alert alert-danger mb-3">
+      <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+    </div>
+  }
+
+  <!-- Skeleton — seulement si aucun stub n'est disponible -->
+  @if (loading()) {
+    <div class="row g-3">
+      <div class="col-lg-4">
+        <div class="card p-4 text-center">
+          <div class="skeleton-line mx-auto" style="width:100px;height:20px;border-radius:20px;"></div>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="card p-4">
+          @for (i of [1,2,3]; track i) {
+            <div class="skeleton-line mb-3" style="width:100%;"></div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Contenu -->
+  @if (!loading() && conversation(); as c) {
+    <div class="row g-3">
+
+      <!-- Colonne gauche : infos + handoff -->
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header">Informations</div>
+          <div class="card-body">
+            <span class="status-badge"
+              [class.status-success]="c.status === 'OPEN'"
+              [class.status-warning]="c.status === 'PENDING'"
+              [class.status-info]="c.status === 'RESOLVED'"
+              [class.status-disabled]="c.status === 'CLOSED'">
+              {{ statusLabels[c.status] }}
+            </span>
+            <span class="status-badge ms-1">
+              <i class="fas" [class.fa-robot]="c.mode === 'BOT'" [class.fa-headset]="c.mode === 'AGENT'"></i>
+              {{ c.mode === 'BOT' ? 'Bot' : 'Agent' }}
+            </span>
+
+            <div class="quick-info text-start mt-3">
+              @if (c.createdAt) {
+                <div class="quick-info-item">
+                  <i class="fas fa-calendar text-primary-app"></i>
+                  <span>Ouverte le {{ c.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+              }
+              @if (c.closedAt) {
+                <div class="quick-info-item">
+                  <i class="fas fa-calendar-check text-primary-app"></i>
+                  <span>Fermée le {{ c.closedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
+        <!-- Handoff BOT -> AGENT -->
+        @if (c.mode === 'BOT') {
+          <div class="card mt-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Prendre en charge</span>
+              <button type="button" class="btn btn-outline-primary btn-sm" (click)="toggleHandoffPanel()">
+                <i class="fas" [class.fa-chevron-down]="!showHandoffPanel()" [class.fa-chevron-up]="showHandoffPanel()"></i>
+              </button>
+            </div>
+            @if (showHandoffPanel()) {
+              <div class="card-body">
+                @if (participants() === undefined) {
+                  <div class="skeleton-line" style="width:100%;"></div>
+                } @else {
+                  <form [formGroup]="handoffForm" (ngSubmit)="submitHandoff()" novalidate>
+                    <div class="mb-3">
+                      <label class="form-label">Participant bot à remplacer</label>
+                      <select class="form-select form-select-sm" formControlName="fromActorId">
+                        <option value="" disabled>Choisir...</option>
+                        @for (p of participants()!; track p.id) {
+                          <option [value]="p.actorId">{{ p.actorType }} — {{ roleLabels[p.role] }} ({{ p.actorId.slice(0, 8) }})</option>
+                        }
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Votre rôle après transfert</label>
+                      <select class="form-select form-select-sm" formControlName="toRole">
+                        @for (r of roleList; track r) {
+                          <option [value]="r">{{ roleLabels[r] }}</option>
+                        }
+                      </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-sm w-100" [disabled]="handingOff()">
+                      @if (handingOff()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                      Prendre en charge la conversation
+                    </button>
+                  </form>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Colonne droite : fil de messages -->
+      <div class="col-lg-8">
+        <div class="card chat-thread-card">
+
+          <div class="card-body chat-thread-body">
+            @if (canLoadOlder()) {
+              <div class="text-center mb-3">
+                <button class="btn btn-outline-secondary btn-sm" [disabled]="loadingOlder()" (click)="loadOlder()">
+                  @if (loadingOlder()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                  Messages précédents
+                </button>
+              </div>
+            }
+
+            @if (isLoadingMessages()) {
+              @for (i of [1,2,3]; track i) {
+                <div class="skeleton-line mb-2" style="width:60%;height:40px;border-radius:12px;"></div>
+              }
+            }
+
+            @if (!isLoadingMessages() && messages()!.length === 0) {
+              <div class="empty-state">
+                <i class="fas fa-comment-dots empty-icon"></i>
+                <p class="empty-title">Aucun message</p>
+                <p class="empty-text">Envoyez le premier message pour démarrer l'échange</p>
+              </div>
+            }
+
+            @if (!isLoadingMessages()) {
+              @for (message of messages()!; track message.id) {
+                <div class="chat-bubble-row" [class.chat-bubble-row-mine]="isMine(message)">
+                  <div class="chat-bubble" [class.chat-bubble-mine]="isMine(message)"
+                    [class.chat-bubble-media-only]="!message.body && message.attachments?.length && !message.contentDeletedAt">
+                    <div class="chat-bubble-sender d-flex align-items-center justify-content-between gap-2">
+                      <span>{{ senderLabel(message) }}</span>
+                      @if (isMine(message) && !message.contentDeletedAt) {
+                        <button type="button" class="chat-bubble-delete-btn" (click)="deleteMessage(message)" title="Supprimer">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      }
+                    </div>
+                    @if (message.contentDeletedAt) {
+                      <div class="chat-bubble-body chat-bubble-deleted">
+                        <i class="fas fa-ban me-1"></i>Message supprimé
+                      </div>
+                    } @else {
+                      @if (message.body) {
+                        <div class="chat-bubble-body">{{ message.body }}</div>
+                      }
+                      @if (message.attachments?.length) {
+                        <div class="chat-bubble-attachments">
+                          @for (a of message.attachments; track a.id) {
+                            @if (a.kind === 'IMAGE') {
+                              <a [href]="a.url" target="_blank" rel="noopener">
+                                <img [src]="a.url" class="chat-attachment-image" alt="Pièce jointe" />
+                              </a>
+                            } @else if (a.kind === 'AUDIO') {
+                              <audio [src]="a.url" controls class="chat-attachment-audio"></audio>
+                            } @else if (a.kind === 'VIDEO') {
+                              <video [src]="a.url" controls class="chat-attachment-video"></video>
+                            } @else {
+                              <a [href]="a.url" target="_blank" rel="noopener" class="chat-attachment-link">
+                                <i class="fas fa-file"></i> Document
+                              </a>
+                            }
+                          }
+                        </div>
+                      }
+                    }
+                    <div class="chat-bubble-meta">
+                      {{ message.createdAt | date:'dd/MM HH:mm' }}
+                      @if (isMine(message) && message.readAt) {
+                        <i class="fas fa-check-double ms-1" title="Lu"></i>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            }
+          </div>
+
+          <div class="card-footer chat-composer">
+
+            @if (isRecording()) {
+              <!-- Modèle Telegram : pendant l'enregistrement, uniquement annuler ou envoyer -->
+              @if (recordingKind() === 'video') {
+                <div class="chat-video-preview-wrap mb-2">
+                  <video #videoPreview class="chat-video-preview" autoplay muted playsinline></video>
+                </div>
+              }
+              <div class="chat-recording-bar d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-outline-danger" (click)="cancelRecording()" title="Annuler">
+                  <i class="fas fa-trash"></i>
+                </button>
+                <span class="chat-recording-indicator flex-grow-1">
+                  <span class="chat-recording-dot"></span>
+                  Enregistrement... {{ recordingSeconds() }}s
+                </span>
+                <button type="button" class="btn btn-primary" (click)="stopAndSendRecording()" title="Envoyer">
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </div>
+            } @else {
+              <!-- Prévisualisation des fichiers sélectionnés (pièces jointes classiques, pas le vocal) -->
+              @if (selectedFiles().length) {
+                <div class="chat-composer-previews d-flex flex-wrap gap-2 mb-2">
+                  @for (sf of selectedFiles(); track sf.file.name + $index) {
+                    @if (sf.previewUrl) {
+                      <div class="chat-file-preview">
+                        <img [src]="sf.previewUrl" alt="Aperçu" />
+                        <button type="button" class="chat-file-preview-remove" (click)="removeSelectedFile($index)" aria-label="Retirer">
+                          <i class="fas fa-times"></i>
+                        </button>
+                      </div>
+                    } @else {
+                      <span class="chat-file-chip">
+                        <i class="fas me-1" [class]="fileIcon(sf.file)"></i>{{ sf.file.name }}
+                        <button type="button" class="btn-close btn-close-sm ms-2" (click)="removeSelectedFile($index)" aria-label="Retirer"></button>
+                      </span>
+                    }
+                  }
+                </div>
+              }
+
+              <form [formGroup]="composer" (ngSubmit)="sendMessage()" class="d-flex gap-2 align-items-end" novalidate>
+                <input type="file" #fileInput hidden multiple
+                  accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
+                  (change)="onFilesSelected($event)" />
+                <button type="button" class="btn btn-outline-secondary"
+                  (click)="fileInput.click()" title="Joindre un fichier">
+                  <i class="fas fa-paperclip"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary"
+                  (click)="startRecording('video')" title="Message vidéo">
+                  <i class="fas fa-video"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary"
+                  (click)="startRecording('audio')" title="Message vocal">
+                  <i class="fas fa-microphone"></i>
+                </button>
+                <textarea #bodyTextarea class="form-control chat-composer-textarea" rows="1" formControlName="body"
+                  placeholder="Votre message... (Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne)"
+                  (input)="autoResizeTextarea(bodyTextarea)"
+                  (keydown)="onComposerKeydown($event)"></textarea>
+                <button type="submit" class="btn btn-primary" [disabled]="sending() || !canSend()">
+                  @if (sending()) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="fas fa-paper-plane"></i> }
+                </button>
+              </form>
+            }
+          </div>
+
+        </div>
+      </div>
+    </div>
+  }
+
+</div>

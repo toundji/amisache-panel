@@ -1,0 +1,125 @@
+<div class="container-fluid px-0">
+
+  <!-- En-tête -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-flag me-2 text-primary-app"></i>Pays</h1>
+      <p class="page-subtitle">{{ pagination.totalItems() }} pays</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <a routerLink="/geo/countries/new" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i>Nouveau pays
+      </a>
+    </div>
+  </div>
+
+  <!-- Barre de filtres -->
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="search-input-group">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" class="form-control" placeholder="Code ISO, indicatif..."
+            [ngModel]="search()" (ngModelChange)="updateSearch($event)">
+        </div>
+      </div>
+      @if (search()) {
+        <button class="btn btn-sm btn-link text-muted text-decoration-none" (click)="updateSearch('')">
+          <i class="fas fa-times me-1"></i>Reset
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Tableau -->
+  <div class="data-table-wrapper">
+    <div class="data-table-scroll">
+      <table class="table table-hover mb-0 data-table--cards">
+        <thead>
+          <tr>
+            <th style="width:48px;">#</th>
+            <th>Code ISO</th>
+            <th class="d-none d-md-table-cell">Indicatif</th>
+            <th class="d-none d-lg-table-cell">Niveaux modélisés</th>
+            <th class="d-none d-lg-table-cell">Créé le</th>
+            <th style="width:90px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- Skeleton — premier chargement -->
+          @if (isLoading()) {
+            @for (i of [1,2,3,4,5]; track i) {
+              <tr>
+                <td><div class="skeleton-line" style="width:20px;"></div></td>
+                <td><div class="skeleton-line" style="width:60px;"></div></td>
+                <td class="d-none d-md-table-cell"><div class="skeleton-line" style="width:60px;"></div></td>
+                <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:200px;"></div></td>
+                <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:90px;"></div></td>
+                <td><div class="skeleton-line" style="width:60px;"></div></td>
+              </tr>
+            }
+          }
+
+          <!-- Erreur -->
+          @if (!isLoading() && error()) {
+            <tr>
+              <td colspan="6">
+                <div class="alert alert-danger mb-0">
+                  <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+                </div>
+              </td>
+            </tr>
+          }
+
+          <!-- État vide -->
+          @if (!isLoading() && !error() && filteredCountries().length === 0) {
+            <tr>
+              <td colspan="6">
+                <div class="empty-state">
+                  <i class="fas fa-flag empty-icon"></i>
+                  <p class="empty-title">Aucun pays trouvé</p>
+                  <p class="empty-text">Modifiez votre recherche ou créez un nouveau pays</p>
+                </div>
+              </td>
+            </tr>
+          }
+
+          <!-- Données -->
+          @if (!isLoading() && !error()) {
+            @for (country of pagedCountries(); track country.id; let i = $index) {
+              <tr>
+                <td class="cell-index" style="font-size:.85rem;color:#9aa5b4;">{{ pagination.startItem() + i }}</td>
+                <td class="cell-title" data-label="Code ISO">
+                  <a [routerLink]="['/geo/countries', country.id]" class="fw-semibold text-decoration-none" style="font-size:.875rem;" (click)="countryService.select(country)">
+                    {{ country.isoCode }}
+                  </a>
+                </td>
+                <td class="d-none d-md-table-cell" data-label="Indicatif" style="font-size:.85rem;">{{ country.callingCode }}</td>
+                <td class="d-none d-lg-table-cell text-muted" data-label="Niveaux modélisés" style="font-size:.85rem;">{{ levels(country) }}</td>
+                <td class="d-none d-lg-table-cell text-muted" data-label="Créé le" style="font-size:.85rem;">{{ country.createdAt ? (country.createdAt | date:'dd/MM/yyyy') : '—' }}</td>
+                <td class="cell-actions">
+                  <div class="d-flex gap-1">
+                    <a [routerLink]="['/geo/countries', country.id]" class="btn btn-icon btn-outline-secondary btn-sm" title="Modifier" (click)="countryService.select(country)">
+                      <i class="fas fa-pen"></i>
+                    </a>
+                    <button class="btn btn-icon btn-outline-danger btn-sm" title="Supprimer" (click)="deleteCountry(country)">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination></app-pagination>
+  </div>
+
+</div>

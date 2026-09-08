@@ -1,0 +1,111 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-th-large me-2 text-primary-app"></i>Tableau de bord</h1>
+      <p class="page-subtitle">Vue d'ensemble des utilisateurs et de vos sessions</p>
+    </div>
+    <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+      <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mb-3">
+      <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="row g-3 mb-4">
+      @for (i of [1,2,3,4]; track i) {
+        <div class="col-6 col-lg-3">
+          <div class="stat-card">
+            <div class="skeleton-line rounded-circle" style="width:50px;height:50px;flex-shrink:0;"></div>
+            <div class="flex-fill">
+              <div class="skeleton-line mb-2" style="width:60px;height:20px;"></div>
+              <div class="skeleton-line" style="width:80px;"></div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-icon icon-primary"><i class="fas fa-users"></i></div>
+          <div>
+            <div class="stat-value">{{ stats().total }}</div>
+            <div class="stat-label">Utilisateurs</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-icon icon-success"><i class="fas fa-user-check"></i></div>
+          <div>
+            <div class="stat-value">{{ stats().active }}</div>
+            <div class="stat-label">Actifs</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-icon icon-warning"><i class="fas fa-user-clock"></i></div>
+          <div>
+            <div class="stat-value">{{ stats().unverified }}</div>
+            <div class="stat-label">Non vérifiés</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-lg-3">
+        <div class="stat-card">
+          <div class="stat-icon icon-danger"><i class="fas fa-user-slash"></i></div>
+          <div>
+            <div class="stat-value">{{ stats().blocked }}</div>
+            <div class="stat-label">Bloqués</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-7">
+        <div class="card">
+          <div class="card-header">Accès rapides</div>
+          <div class="card-body d-flex flex-wrap gap-2">
+            <a routerLink="/users" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-users me-2"></i>Gérer les utilisateurs
+            </a>
+            <a routerLink="/profile" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-user me-2"></i>Mon profil
+            </a>
+            <a routerLink="/sessions" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-shield-alt me-2"></i>Mes sessions
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="card">
+          <div class="card-header">Mes équipements connectés</div>
+          <ul class="list-group list-group-flush">
+            @for (session of recentSessions(); track session.id) {
+              <li class="list-group-item quick-info-item">
+                <i class="fas fa-laptop text-primary-app"></i>
+                <div>
+                  {{ session.deviceName }}
+                  <div class="text-muted text-xs">{{ session.os }} · {{ session.ip }}</div>
+                </div>
+              </li>
+            } @empty {
+              <li class="list-group-item text-muted text-sm">Aucune session active</li>
+            }
+          </ul>
+        </div>
+      </div>
+    </div>
+  }
+</div>

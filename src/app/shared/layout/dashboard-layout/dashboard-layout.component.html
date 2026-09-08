@@ -1,0 +1,23 @@
+<div class="dashboard-wrapper">
+
+  <app-topbar [menuOpen]="isMobile ? isMobileSidebarOpen : !isSidebarCollapsed"
+    (sidebarToggled)="onSidebarToggled()"></app-topbar>
+
+  <app-sidebar [isCollapsed]="isSidebarCollapsed" [isMobileOpen]="isMobileSidebarOpen"
+    (mobileSidebarClosed)="closeMobileSidebar()" (navigated)="closeMobileSidebarForNav()">
+  </app-sidebar>
+
+  <main class="main-content" [class.sidebar-collapsed]="isSidebarCollapsed">
+    <div class="content-wrapper">
+      <router-outlet></router-outlet>
+    </div>
+    <footer class="app-footer">
+      <div class="d-flex justify-content-between flex-wrap gap-2">
+        <span>© {{ currentYear }} Amisache — Tous droits réservés.</span>
+      </div>
+    </footer>
+  </main>
+
+  <div class="sidebar-overlay" [class.show]="isMobileSidebarOpen" (click)="closeMobileSidebar()"></div>
+
+</div>

@@ -1,0 +1,193 @@
+<div class="container-fluid px-0">
+
+  <!-- En-tête -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-sliders-h me-2 text-primary-app"></i>Paramètres</h1>
+      <p class="page-subtitle">{{ pagination.totalItems() }} setting(s)</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <a routerLink="/settings/new" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i>Nouveau setting
+      </a>
+    </div>
+  </div>
+
+  <!-- Barre de filtres -->
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="search-input-group">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" class="form-control" placeholder="Clé, libellé..."
+            [ngModel]="filters().search" (ngModelChange)="updateFilter('search', $event)">
+        </div>
+      </div>
+
+      <button class="btn btn-outline-secondary btn-sm position-relative" type="button" data-bs-toggle="offcanvas"
+        data-bs-target="#settingsFiltersOffcanvas">
+        <i class="fas fa-sliders-h"></i>
+        <span class="ms-1">Filtres</span>
+        @if (hasAdvancedFilters()) {
+          <span class="filter-active-dot"></span>
+        }
+      </button>
+
+      @if (hasAdvancedFilters() || filters().search) {
+        <button class="btn btn-sm btn-link text-muted text-decoration-none" (click)="resetFilters()">
+          <i class="fas fa-times me-1"></i>Reset
+        </button>
+      }
+    </div>
+
+    @if (hasAdvancedFilters()) {
+      <div class="d-flex flex-wrap gap-1 mt-2">
+        @if (filters().category) {
+          <span class="filter-tag">
+            {{ filters().category }}
+            <i class="fas fa-times remove-tag ms-1" (click)="updateFilter('category', '')"></i>
+          </span>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- Tableau -->
+  <div class="data-table-wrapper">
+    <div class="data-table-scroll">
+    <table class="table table-hover mb-0 data-table--cards">
+      <thead>
+        <tr>
+          <th style="width:48px;">#</th>
+          <th>Clé</th>
+          <th class="d-none d-md-table-cell">Valeur</th>
+          <th class="d-none d-lg-table-cell">Type</th>
+          <th class="d-none d-lg-table-cell">Catégorie</th>
+          <th>Visibilité</th>
+          <th style="width:90px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- Skeleton — premier chargement -->
+        @if (isLoading()) {
+          @for (i of [1,2,3,4,5]; track i) {
+            <tr>
+              <td><div class="skeleton-line" style="width:20px;"></div></td>
+              <td><div class="skeleton-line" style="width:220px;"></div></td>
+              <td class="d-none d-md-table-cell"><div class="skeleton-line" style="width:120px;"></div></td>
+              <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:60px;"></div></td>
+              <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:80px;"></div></td>
+              <td><div class="skeleton-line" style="width:90px;height:22px;border-radius:20px;"></div></td>
+              <td><div class="skeleton-line" style="width:60px;"></div></td>
+            </tr>
+          }
+        }
+
+        <!-- Erreur -->
+        @if (!isLoading() && error()) {
+          <tr>
+            <td colspan="7">
+              <div class="alert alert-danger mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+              </div>
+            </td>
+          </tr>
+        }
+
+        <!-- État vide -->
+        @if (!isLoading() && !error() && pagedSettings().length === 0) {
+          <tr>
+            <td colspan="7">
+              <div class="empty-state">
+                <i class="fas fa-sliders-h empty-icon"></i>
+                <p class="empty-title">Aucun setting trouvé</p>
+                <p class="empty-text">Modifiez vos filtres ou créez un nouveau setting</p>
+              </div>
+            </td>
+          </tr>
+        }
+
+        <!-- Données -->
+        @if (!isLoading() && !error()) {
+          @for (setting of pagedSettings(); track setting.id; let i = $index) {
+            <tr>
+              <td class="cell-index" style="font-size:.85rem;color:#9aa5b4;">{{ pagination.startItem() + i }}</td>
+              <td class="cell-title" data-label="Clé">
+                <a [routerLink]="['/settings', setting.id]" class="fw-semibold text-decoration-none" style="font-size:.875rem;" (click)="settingService.select(setting)">
+                  {{ setting.key }}
+                </a>
+              </td>
+              <td class="d-none d-md-table-cell text-muted text-truncate" data-label="Valeur" style="font-size:.85rem;max-width:220px;">{{ setting.value ?? '—' }}</td>
+              <td class="d-none d-lg-table-cell" data-label="Type" style="font-size:.85rem;">{{ typeLabels[setting.type] }}</td>
+              <td class="d-none d-lg-table-cell text-muted" data-label="Catégorie" style="font-size:.85rem;">{{ setting.category ?? '—' }}</td>
+              <td data-label="Visibilité">
+                <span class="status-badge" [class]="setting.isPublic ? 'status-success' : 'status-disabled'">
+                  {{ setting.isPublic ? 'Publique' : 'Privée' }}
+                </span>
+                @if (!setting.isEditable) {
+                  <span class="status-badge status-warning ms-1">Constante</span>
+                }
+              </td>
+              <td class="cell-actions">
+                <div class="d-flex gap-1">
+                  <a [routerLink]="['/settings', setting.id]" class="btn btn-icon btn-outline-secondary btn-sm" title="Modifier" (click)="settingService.select(setting)">
+                    <i class="fas fa-pen"></i>
+                  </a>
+                  <button class="btn btn-icon btn-outline-danger btn-sm" title="Supprimer" (click)="deleteSetting(setting)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        }
+
+      </tbody>
+    </table>
+    </div>
+
+    <app-pagination></app-pagination>
+  </div>
+
+</div>
+
+<!-- Offcanvas filtres avancés -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="settingsFiltersOffcanvas" appBackDismiss>
+  <div class="offcanvas-header border-bottom">
+    <h5 class="offcanvas-title">
+      <i class="fas fa-sliders-h me-2 text-primary-app"></i>Filtres avancés
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body">
+
+    <div class="mb-4">
+      <label class="form-label">Catégorie</label>
+      <div class="d-flex flex-column gap-2">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="settingCategoryFilter" id="settingCategoryAll"
+            [checked]="filters().category === ''" (change)="updateFilter('category', '')">
+          <label class="form-check-label" for="settingCategoryAll">Toutes</label>
+        </div>
+        @for (c of categoryList(); track c) {
+          <div class="form-check">
+            <input class="form-check-input" type="radio" name="settingCategoryFilter" [id]="'settingCategory_' + c"
+              [checked]="filters().category === c" (change)="updateFilter('category', c)">
+            <label class="form-check-label" [for]="'settingCategory_' + c">{{ c }}</label>
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
+
+  <div class="offcanvas-footer border-top p-3">
+    <button class="btn btn-outline-secondary w-100" (click)="resetFilters()" data-bs-dismiss="offcanvas">
+      <i class="fas fa-undo me-1"></i>Réinitialiser les filtres
+    </button>
+  </div>
+</div>

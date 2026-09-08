@@ -1,0 +1,130 @@
+<div class="container-fluid px-0">
+
+  <!-- En-tête -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-map me-2 text-primary-app"></i>Régions</h1>
+      <p class="page-subtitle">{{ pagination.totalItems() }} région(s)</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <a routerLink="/geo/regions/new" class="btn btn-primary btn-sm">
+        <i class="fas fa-plus me-1"></i>Nouvelle région
+      </a>
+    </div>
+  </div>
+
+  <!-- Barre de filtres -->
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="search-input-group">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" class="form-control" placeholder="Nom, niveau sauté..."
+            [ngModel]="filters().search" (ngModelChange)="updateFilter('search', $event)">
+        </div>
+      </div>
+
+      <select class="form-select form-select-sm" style="max-width:220px;"
+        [ngModel]="filters().countryId" (ngModelChange)="updateFilter('countryId', $event)">
+        <option value="">Tous les pays</option>
+        @for (c of countries() ?? []; track c.id) {
+          <option [value]="c.id">{{ c.isoCode }}</option>
+        }
+      </select>
+
+      @if (hasFilter()) {
+        <button class="btn btn-sm btn-link text-muted text-decoration-none" (click)="resetFilters()">
+          <i class="fas fa-times me-1"></i>Reset
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Tableau -->
+  <div class="data-table-wrapper">
+    <div class="data-table-scroll">
+      <table class="table table-hover mb-0 data-table--cards">
+        <thead>
+          <tr>
+            <th style="width:48px;">#</th>
+            <th>Nom</th>
+            <th class="d-none d-md-table-cell">Pays</th>
+            <th class="d-none d-lg-table-cell">Niveau sauté</th>
+            <th class="d-none d-lg-table-cell">Créée le</th>
+            <th style="width:90px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          @if (isLoading()) {
+            @for (i of [1,2,3,4,5]; track i) {
+              <tr>
+                <td><div class="skeleton-line" style="width:20px;"></div></td>
+                <td><div class="skeleton-line" style="width:160px;"></div></td>
+                <td class="d-none d-md-table-cell"><div class="skeleton-line" style="width:50px;"></div></td>
+                <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:110px;"></div></td>
+                <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:90px;"></div></td>
+                <td><div class="skeleton-line" style="width:60px;"></div></td>
+              </tr>
+            }
+          }
+
+          @if (!isLoading() && error()) {
+            <tr>
+              <td colspan="6">
+                <div class="alert alert-danger mb-0">
+                  <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+                </div>
+              </td>
+            </tr>
+          }
+
+          @if (!isLoading() && !error() && filteredRegions().length === 0) {
+            <tr>
+              <td colspan="6">
+                <div class="empty-state">
+                  <i class="fas fa-map empty-icon"></i>
+                  <p class="empty-title">Aucune région trouvée</p>
+                  <p class="empty-text">Modifiez vos filtres ou créez une nouvelle région</p>
+                </div>
+              </td>
+            </tr>
+          }
+
+          @if (!isLoading() && !error()) {
+            @for (region of pagedRegions(); track region.id; let i = $index) {
+              <tr>
+                <td class="cell-index" style="font-size:.85rem;color:#9aa5b4;">{{ pagination.startItem() + i }}</td>
+                <td class="cell-title" data-label="Nom">
+                  <a [routerLink]="['/geo/regions', region.id]" class="fw-semibold text-decoration-none" style="font-size:.875rem;" (click)="regionService.select(region)">
+                    {{ region.name }}
+                  </a>
+                </td>
+                <td class="d-none d-md-table-cell" data-label="Pays" style="font-size:.85rem;">{{ countryLabel(region.countryId) }}</td>
+                <td class="d-none d-lg-table-cell text-muted" data-label="Niveau sauté" style="font-size:.85rem;">{{ region.parentSub || '—' }}</td>
+                <td class="d-none d-lg-table-cell text-muted" data-label="Créée le" style="font-size:.85rem;">{{ region.createdAt ? (region.createdAt | date:'dd/MM/yyyy') : '—' }}</td>
+                <td class="cell-actions">
+                  <div class="d-flex gap-1">
+                    <a [routerLink]="['/geo/regions', region.id]" class="btn btn-icon btn-outline-secondary btn-sm" title="Modifier" (click)="regionService.select(region)">
+                      <i class="fas fa-pen"></i>
+                    </a>
+                    <button class="btn btn-icon btn-outline-danger btn-sm" title="Supprimer" (click)="deleteRegion(region)">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+
+        </tbody>
+      </table>
+    </div>
+
+    <app-pagination></app-pagination>
+  </div>
+
+</div>

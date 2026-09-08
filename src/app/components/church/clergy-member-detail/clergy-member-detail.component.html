@@ -1,0 +1,125 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/clergy-members"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Détail affectation</h1>
+        <p class="page-subtitle mb-0" *ngIf="member()">{{ memberName() }}</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <button class="btn btn-outline-danger btn-sm" [disabled]="deleting()" (click)="deleteMember()">
+        <i class="fas fa-trash me-1"></i>Supprimer
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mb-3"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="row g-3">
+      <div class="col-lg-4"><div class="card p-4"><div class="skeleton-line" style="width:100%;height:20px;"></div></div></div>
+      <div class="col-lg-8"><div class="card p-4">@for (i of [1,2,3]; track i) { <div class="skeleton-line mb-3" style="width:100%;"></div> }</div></div>
+    </div>
+  }
+
+  @if (!loading() && member(); as m) {
+    <div class="row g-3">
+
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header">Rattachement</div>
+          <div class="card-body">
+            <div class="quick-info">
+              <div class="quick-info-item"><i class="fas fa-user text-primary-app"></i><span>{{ memberName() }}</span></div>
+              <div class="quick-info-item"><i class="fas fa-church text-primary-app"></i><span>{{ m.church?.name ?? m.churchId }}</span></div>
+              <div class="quick-info-item">
+                <i class="fas fa-circle-dot text-primary-app"></i>
+                <span>{{ m.endDate ? 'Affectation terminée' : 'Affectation active' }}</span>
+              </div>
+              @if (m.code) {
+                <div class="quick-info-item"><i class="fas fa-hashtag text-primary-app"></i><span>Code {{ m.code }}</span></div>
+              }
+            </div>
+            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">Le membre et l'entité sont immuables. Renseigner une date de fin met fin à l'affectation.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <form [formGroup]="form">
+
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Fonction ecclésiale</span>
+              @if (isFieldModified('role') && !isFieldSaving('role')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('role')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('role')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('role')) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (isFieldJustSaved('role')) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+            </div>
+            <div class="card-body">
+              <select class="form-select" formControlName="role"
+                [class.border-warning]="isFieldModified('role') && !isFieldJustSaved('role') && !isFieldSaving('role')"
+                [class.border-success]="isFieldJustSaved('role')">
+                @for (r of roleList; track r) { <option [value]="r">{{ roleLabels[r] }}</option> }
+              </select>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Période</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Début</span>
+                    @if (isFieldModified('startDate') && !isFieldSaving('startDate')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('startDate')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('startDate')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('startDate')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('startDate')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="date" class="form-control" formControlName="startDate"
+                    [class.border-warning]="isFieldModified('startDate') && !isFieldJustSaved('startDate') && !isFieldSaving('startDate')"
+                    [class.border-success]="isFieldJustSaved('startDate')">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Fin</span>
+                    @if (isFieldModified('endDate') && !isFieldSaving('endDate')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('endDate')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('endDate')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('endDate')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('endDate')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="date" class="form-control" formControlName="endDate" placeholder="Toujours active"
+                    [class.border-warning]="isFieldModified('endDate') && !isFieldJustSaved('endDate') && !isFieldSaving('endDate')"
+                    [class.border-success]="isFieldJustSaved('endDate')">
+                  <div class="form-text">Vide = affectation toujours active.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

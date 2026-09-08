@@ -1,0 +1,176 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// _bootstrap-overrides.scss — Surcharges ciblées Bootstrap.
+// On ne réécrit pas ce que Bootstrap fait déjà bien : on ajuste seulement ce
+// qui doit correspondre à l'identité visuelle du projet.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Card ──────────────────────────────────────────────────────────────────────
+.card {
+  border-color: #e8edf5;
+  box-shadow: var(--shadow-card);
+
+  .card-header {
+    background: transparent;
+    border-bottom-color: #f0f2f7;
+    font-weight: 600;
+    font-size: .9rem;
+    color: var(--color-primary);
+    padding: .875rem 1.25rem;
+  }
+
+  .card-footer {
+    background: #fafbfc;
+    border-top-color: #f0f2f7;
+  }
+}
+
+// ── Bouton primary — dégradé au lieu de couleur plate ─────────────────────────
+// Le calcul de contraste automatique de Bootstrap choisit parfois du texte
+// noir sur $primary selon sa teinte (ex: #009999 dans un projet dérivé) — pas
+// assez tranché visuellement sur le dégradé. Texte forcé en blanc via les CSS
+// custom properties de Bootstrap (couvre aussi hover/active/disabled, pas
+// seulement l'état par défaut). Vérifier après un rebrand (§ Identité
+// visuelle) que $secondary/$success/$warning/$info n'ont pas le même souci —
+// Bootstrap calcule le contraste indépendamment pour chaque couleur.
+.btn-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-active-color: #fff;
+  --bs-btn-disabled-color: #fff;
+  background: var(--gradient-primary);
+  border-color: transparent;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    background: var(--gradient-primary);
+    border-color: transparent;
+    filter: brightness(1.12);
+    box-shadow: 0 4px 12px rgba(22, 35, 92, .3);
+  }
+
+  &:focus-visible {
+    box-shadow: 0 0 0 .25rem rgba(22, 35, 92, .35);
+  }
+}
+
+// ── Focus couleur = primary ───────────────────────────────────────────────────
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 .25rem rgba(22, 35, 92, .15);
+}
+
+.form-check-input:checked {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+
+  &:focus {
+    box-shadow: 0 0 0 .25rem rgba(22, 35, 92, .2);
+  }
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+.table {
+  > thead > tr > th {
+    background: #f8fafc;
+    color: #4a5568;
+    font-size: .75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    border-bottom-width: 2px;
+    border-color: #e8edf5;
+    white-space: nowrap;
+  }
+
+  > tbody > tr {
+    transition: background-color .12s ease;
+
+    &:hover > td { background-color: #f8fafc; }
+
+    > td {
+      vertical-align: middle;
+      border-color: #f0f2f7;
+      font-size: .875rem;
+    }
+  }
+}
+
+// ── Dropdown Bootstrap ────────────────────────────────────────────────────────
+.dropdown-menu {
+  border-color: #e8edf5;
+  box-shadow: var(--shadow-md);
+  border-radius: 10px;
+  font-size: .875rem;
+
+  .dropdown-item {
+    color: #4a5568;
+    padding: .55rem 1rem;
+
+    &:hover, &:focus { background: #f8fafc; color: var(--color-primary); }
+    &.active         { background: var(--color-primary); }
+  }
+}
+
+// ── Modal (voir shared/modal/) ─────────────────────────────────────────────────
+.modal-content {
+  border-color: #e8edf5;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+}
+
+.modal-header {
+  border-bottom-color: #f0f2f7;
+
+  .modal-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--color-primary);
+  }
+}
+
+// ── Alert ─────────────────────────────────────────────────────────────────────
+.alert { border-radius: 8px; }
+
+// ── Badge Bootstrap (différent de .status-badge custom) ──────────────────────
+.badge {
+  font-weight: 600;
+  font-size: .72rem;
+  letter-spacing: .02em;
+}
+
+// ── Nav tabs ─────────────────────────────────────────────────────────────────
+.nav-tabs {
+  border-bottom-color: #e8edf5;
+
+  .nav-link {
+    color: #718096;
+    font-size: .875rem;
+    font-weight: 500;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: .6rem 1rem;
+    border-radius: 0;
+
+    &:hover  { color: var(--color-primary); border-bottom-color: #e8edf5; }
+    &.active {
+      color: var(--color-primary);
+      font-weight: 600;
+      border-bottom-color: var(--color-primary);
+      background: transparent;
+    }
+  }
+}
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+.page-link {
+  color: var(--color-primary);
+  border-color: #e8edf5;
+
+  &:hover { background: #f8fafc; color: var(--color-primary); }
+}
+
+.page-item.active .page-link {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}

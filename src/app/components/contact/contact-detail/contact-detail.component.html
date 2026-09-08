@@ -1,0 +1,167 @@
+<div class="container-fluid px-0">
+
+  <!-- En-tête -->
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/contact"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Message de contact</h1>
+        <p class="page-subtitle mb-0" *ngIf="message()">{{ message()!.email }}</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <button class="btn btn-outline-danger btn-sm" [disabled]="deleting()" (click)="deleteMessage()">
+        <i class="fas fa-trash me-1"></i>Supprimer
+      </button>
+    </div>
+  </div>
+
+  <!-- Erreur — affichée même si un stub reste visible en dessous (échec du rafraîchissement) -->
+  @if (error()) {
+    <div class="alert alert-danger mb-3">
+      <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+    </div>
+  }
+
+  <!-- Skeleton — seulement si aucun stub n'est disponible -->
+  @if (loading()) {
+    <div class="row g-3">
+      <div class="col-lg-4">
+        <div class="card p-4 text-center">
+          <div class="skeleton-line mx-auto mb-2" style="width:160px;"></div>
+          <div class="skeleton-line mx-auto" style="width:100px;height:20px;border-radius:20px;"></div>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="card p-4">
+          @for (i of [1,2,3]; track i) {
+            <div class="skeleton-line mb-3" style="width:100%;"></div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Contenu -->
+  @if (!loading() && message(); as m) {
+    <div class="row g-3">
+
+      <!-- Colonne gauche : infos expéditeur -->
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header">Expéditeur</div>
+          <div class="card-body">
+            <div class="quick-info text-start">
+              <div class="quick-info-item">
+                <i class="fas fa-user text-primary-app"></i>
+                <span>{{ m.name }}</span>
+              </div>
+              <div class="quick-info-item">
+                <i class="fas fa-envelope text-primary-app"></i>
+                <span>{{ m.email }}</span>
+              </div>
+              @if (m.ip) {
+                <div class="quick-info-item">
+                  <i class="fas fa-network-wired text-primary-app"></i>
+                  <span class="font-mono">{{ m.ip }}</span>
+                </div>
+              }
+              @if (m.createdAt) {
+                <div class="quick-info-item">
+                  <i class="fas fa-calendar text-primary-app"></i>
+                  <span>Reçu le {{ m.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+              }
+              @if (m.readAt) {
+                <div class="quick-info-item">
+                  <i class="fas fa-eye text-primary-app"></i>
+                  <span>Lu le {{ m.readAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+              }
+              @if (m.answeredAt) {
+                <div class="quick-info-item">
+                  <i class="fas fa-check-circle text-primary-app"></i>
+                  <span>Traité le {{ m.answeredAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne droite -->
+      <div class="col-lg-8">
+
+        <!-- Message -->
+        <div class="card mb-3">
+          <div class="card-header">{{ m.subject || 'Sans sujet' }}</div>
+          <div class="card-body">
+            <p class="mb-0" style="white-space:pre-line;">{{ m.message }}</p>
+          </div>
+        </div>
+
+        <!-- Statut + note interne — FieldSaveMixin -->
+        <form [formGroup]="form">
+
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Statut</span>
+              @if (isFieldModified('status') && !isFieldSaving('status')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('status')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('status')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('status')) {
+                <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
+              }
+              @if (isFieldJustSaved('status')) {
+                <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
+              }
+            </div>
+            <div class="card-body">
+              <select class="form-select" formControlName="status"
+                [class.border-warning]="isFieldModified('status') && !isFieldJustSaved('status') && !isFieldSaving('status')"
+                [class.border-success]="isFieldJustSaved('status')">
+                @for (s of statusList; track s) {
+                  <option [value]="s">{{ s }}</option>
+                }
+              </select>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Note interne</span>
+              @if (isFieldModified('adminNote') && !isFieldSaving('adminNote')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('adminNote')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('adminNote')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('adminNote')) {
+                <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
+              }
+              @if (isFieldJustSaved('adminNote')) {
+                <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
+              }
+            </div>
+            <div class="card-body">
+              <div class="textarea-field-wrap">
+                <textarea class="form-control" rows="4" formControlName="adminNote" placeholder="Note visible uniquement par l'équipe..."
+                  [class.border-warning]="isFieldModified('adminNote') && !isFieldJustSaved('adminNote') && !isFieldSaving('adminNote')"
+                  [class.border-success]="isFieldJustSaved('adminNote')"></textarea>
+              </div>
+            </div>
+          </div>
+
+        </form>
+
+      </div>
+    </div>
+  }
+
+</div>

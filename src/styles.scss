@@ -1,0 +1,38 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// STYLES.SCSS — Point d'entrée unique.
+// Utilise @use avec syntaxe "with" pour passer les variables à Bootstrap
+// sans dépendre du @import déprécié.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// 1. Bootstrap avec variables surchargées directement
+// Palette Amisache — voir documents/charte-graphique.md
+//   #16235C Bleu firmament · #5E9FD6 Bleu ciel · #D4AF37 Or de gloire · #F7FAFE Blanc nuage
+@use "bootstrap/scss/bootstrap" with (
+  $primary:   #16235C,
+  $secondary: #64748b, // neutre — garde .btn-outline-secondary lisible ; le bleu ciel identitaire vit sur $info
+  $success:   #2f9e6e,
+  $warning:   #D4AF37,
+  $danger:    #dc2626,
+  $info:      #5E9FD6,
+  $light:     #F7FAFE,
+  $dark:      #16235C,
+
+  // Cormorant (serif noble) réservée aux grands titres — appliquée via
+  // --font-heading là où c'est pertinent, pas globalement (cf. charte §4).
+  $font-family-base: ('Inter', system-ui, -apple-system, 'Segoe UI', sans-serif),
+  $font-size-base:   0.9rem,
+
+  $border-radius:    6px,
+  $border-radius-lg: 10px,
+  $border-radius-xl: 16px
+);
+
+// 2. Variables custom non-Bootstrap (gradients, dimensions...)
+// Chargé APRÈS Bootstrap car n'a pas besoin de lui
+@use "./assets/scss/variables";
+
+// 3. Fichiers globaux
+@use "./assets/scss/base";
+@use "./assets/scss/bootstrap-overrides";
+@use "./assets/scss/utilities";
+@use "./assets/scss/components";

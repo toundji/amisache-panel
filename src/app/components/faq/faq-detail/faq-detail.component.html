@@ -1,0 +1,199 @@
+<div class="container-fluid px-0">
+
+  <!-- En-tête -->
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/faq"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Détail FAQ</h1>
+        <p class="page-subtitle mb-0" *ngIf="faq()">{{ faq()!.category ? categoryLabels[faq()!.category!] : 'Sans catégorie' }}</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <button class="btn btn-outline-danger btn-sm" [disabled]="deleting()" (click)="deleteFaq()">
+        <i class="fas fa-trash me-1"></i>Supprimer
+      </button>
+    </div>
+  </div>
+
+  <!-- Erreur — affichée même si un stub reste visible en dessous (échec du rafraîchissement) -->
+  @if (error()) {
+    <div class="alert alert-danger mb-3">
+      <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+    </div>
+  }
+
+  <!-- Skeleton — seulement si aucun stub n'est disponible -->
+  @if (loading()) {
+    <div class="row g-3">
+      <div class="col-lg-4">
+        <div class="card p-4 text-center">
+          <div class="skeleton-line mx-auto" style="width:100px;height:20px;border-radius:20px;"></div>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <div class="card p-4">
+          @for (i of [1,2,3]; track i) {
+            <div class="skeleton-line mb-3" style="width:100%;"></div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Contenu -->
+  @if (!loading() && faq(); as f) {
+    <div class="row g-3">
+
+      <!-- Colonne gauche : visibilité -->
+      <div class="col-lg-4">
+        <div class="card">
+          <div class="card-header">Visibilité</div>
+          <div class="card-body text-center">
+            <span class="status-badge" [class]="isAnswered() ? 'status-success' : 'status-warning'">
+              {{ isAnswered() ? 'Répondue' : 'Brouillon' }}
+            </span>
+            @if (isHidden()) {
+              <span class="status-badge status-disabled ms-1">Masquée</span>
+            }
+
+            <p class="text-muted mt-3 mb-3" style="font-size:.85rem;">
+              @if (!isAnswered()) {
+                Cette FAQ reste invisible côté public tant qu'aucune réponse n'est enregistrée.
+              } @else if (isHidden()) {
+                Cette FAQ a une réponse mais reste masquée manuellement.
+              } @else {
+                Cette FAQ est visible sur la route publique.
+              }
+            </p>
+
+            <button class="btn btn-outline-secondary btn-sm w-100" [disabled]="togglingVisibility() || !isAnswered()" (click)="toggleVisibility()">
+              @if (togglingVisibility()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              @if (isHidden()) {
+                <span><i class="fas fa-eye me-1"></i>Republier</span>
+              } @else {
+                <span><i class="fas fa-eye-slash me-1"></i>Masquer</span>
+              }
+            </button>
+
+            @if (f.createdAt) {
+              <div class="quick-info text-start mt-3">
+                <div class="quick-info-item">
+                  <i class="fas fa-calendar text-primary-app"></i>
+                  <span>Créée le {{ f.createdAt | date:'dd/MM/yyyy' }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Colonne droite -->
+      <div class="col-lg-8">
+        <form [formGroup]="form">
+
+          <!-- Question -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Question</span>
+              @if (isFieldModified('question') && !isFieldSaving('question')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('question')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('question')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('question')) {
+                <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
+              }
+              @if (isFieldJustSaved('question')) {
+                <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
+              }
+            </div>
+            <div class="card-body">
+              <input type="text" class="form-control" formControlName="question"
+                [class.border-warning]="isFieldModified('question') && !isFieldJustSaved('question') && !isFieldSaving('question')"
+                [class.border-success]="isFieldJustSaved('question')">
+            </div>
+          </div>
+
+          <!-- Réponse -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Réponse</span>
+              @if (isFieldModified('answer') && !isFieldSaving('answer')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('answer')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('answer')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('answer')) {
+                <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
+              }
+              @if (isFieldJustSaved('answer')) {
+                <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
+              }
+            </div>
+            <div class="card-body">
+              <div class="textarea-field-wrap">
+                <textarea class="form-control" rows="5" formControlName="answer" placeholder="Laisser vide pour repasser en brouillon..."
+                  [class.border-warning]="isFieldModified('answer') && !isFieldJustSaved('answer') && !isFieldSaving('answer')"
+                  [class.border-success]="isFieldJustSaved('answer')"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Catégorie + ordre -->
+          <div class="card">
+            <div class="card-header">Classement</div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-8">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Catégorie</span>
+                    @if (isFieldModified('category') && !isFieldSaving('category')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('category')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('category')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('category')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('category')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <select class="form-select" formControlName="category"
+                    [class.border-warning]="isFieldModified('category') && !isFieldJustSaved('category') && !isFieldSaving('category')"
+                    [class.border-success]="isFieldJustSaved('category')">
+                    <option value="">Aucune</option>
+                    @for (c of categoryList; track c) {
+                      <option [value]="c">{{ categoryLabels[c] }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label d-flex align-items-center justify-content-between">
+                    <span>Ordre</span>
+                    @if (isFieldModified('sortOrder') && !isFieldSaving('sortOrder')) {
+                      <span class="d-flex gap-1">
+                        <button type="button" class="btn btn-outline-warning btn-sm" (click)="saveSingleField('sortOrder')"><i class="fas fa-save"></i></button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="resetField('sortOrder')"><i class="fas fa-undo"></i></button>
+                      </span>
+                    }
+                    @if (isFieldSaving('sortOrder')) { <span class="spinner-border spinner-border-sm"></span> }
+                    @if (isFieldJustSaved('sortOrder')) { <i class="fas fa-check text-success"></i> }
+                  </label>
+                  <input type="number" class="form-control" formControlName="sortOrder"
+                    [class.border-warning]="isFieldModified('sortOrder') && !isFieldJustSaved('sortOrder') && !isFieldSaving('sortOrder')"
+                    [class.border-success]="isFieldJustSaved('sortOrder')">
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

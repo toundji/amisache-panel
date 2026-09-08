@@ -1,0 +1,67 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/faq"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Nouvelle question</h1>
+        <p class="page-subtitle mb-0">Laisser la réponse vide crée un brouillon — invisible sur la route publique</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+            <div class="mb-3">
+              <label class="form-label">Question</label>
+              <input type="text" class="form-control" formControlName="question"
+                [class.is-invalid]="invalid('question')" placeholder="Comment fonctionne...?">
+              <app-field-errors [formGroup]="form" controlName="question" fieldLabel="La question" [serverErrors]="error?.validations"></app-field-errors>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Réponse</label>
+              <textarea class="form-control" rows="5" formControlName="answer" placeholder="Laisser vide pour un brouillon..."></textarea>
+              <app-field-errors [formGroup]="form" controlName="answer" fieldLabel="La réponse" [serverErrors]="error?.validations"></app-field-errors>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-8">
+                <label class="form-label">Catégorie</label>
+                <select class="form-select" formControlName="category">
+                  <option value="">Aucune</option>
+                  @for (c of categoryList; track c) {
+                    <option [value]="c">{{ categoryLabels[c] }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Ordre d'affichage</label>
+                <input type="number" class="form-control" formControlName="sortOrder">
+              </div>
+            </div>
+
+            @if (error?.msg) {
+              <div class="alert alert-danger mt-3 mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error?.msg }}
+              </div>
+            }
+
+            <div class="d-flex gap-2 mt-4">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+                @if (submitting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                Créer la FAQ
+              </button>
+              <a routerLink="/faq" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

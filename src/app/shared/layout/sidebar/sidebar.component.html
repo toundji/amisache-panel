@@ -1,0 +1,52 @@
+<aside class="sidebar" [class.collapsed]="isCollapsed" [class.show-mobile]="isMobileOpen">
+
+  <!-- Profil -->
+  <div class="sidebar-profile">
+    <div class="profile-avatar">
+      <div class="avatar-initials">{{ initials }}</div>
+      <span class="dot-online"></span>
+    </div>
+    <div class="profile-meta" *ngIf="showText">
+      <div class="profile-name">{{ authService.user()?.firstName || authService.user()?.email }}</div>
+      <div class="profile-role">{{ authService.user()?.roles?.[0] }}</div>
+    </div>
+    <button class="btn-close-mobile" (click)="closeMobileSidebar()" *ngIf="isMobile && isMobileOpen">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="sidebar-nav">
+    <ul class="nav flex-column" style="list-style:none;padding:0;margin:0;">
+      <li *ngFor="let item of menuItems; trackBy: trackByFn">
+
+        <a *ngIf="!item.children" class="nav-link" [routerLink]="item.route" routerLinkActive="active"
+          [routerLinkActiveOptions]="{exact: item.route === '/'}" (click)="isMobile && onNavigate()"
+          [title]="!showText ? item.title : ''">
+          <span class="nav-icon"><i [class]="item.icon"></i></span>
+          <span class="nav-label" *ngIf="showText">{{ item.title }}</span>
+        </a>
+
+        <div *ngIf="item.children" [class.expanded]="item.isExpanded">
+          <button class="nav-link nav-toggle" (click)="toggleSubMenu(item)" [title]="!showText ? item.title : ''">
+            <span class="nav-icon"><i [class]="item.icon"></i></span>
+            <span class="nav-label" *ngIf="showText">{{ item.title }}</span>
+            <i *ngIf="showText" class="fas fa-chevron-right nav-arrow" [class.rotated]="item.isExpanded"></i>
+          </button>
+
+          <div class="submenu" [class.show]="item.isExpanded && showText">
+            <a *ngFor="let child of item.children" class="submenu-link" [routerLink]="child.route"
+              routerLinkActive="active" (click)="isMobile && onNavigate()">
+              <span class="submenu-icon"><i [class]="child.icon"></i></span>
+              <span>{{ child.title }}</span>
+            </a>
+          </div>
+        </div>
+
+      </li>
+    </ul>
+  </nav>
+
+  <div class="sidebar-footer" *ngIf="showText">v1 · {{ currentYear }}</div>
+
+</aside>

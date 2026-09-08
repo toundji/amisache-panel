@@ -1,0 +1,182 @@
+<div class="container-fluid px-0">
+
+  <!-- En-tête -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><i class="fas fa-envelope-open-text me-2 text-primary-app"></i>Emails échoués</h1>
+      <p class="page-subtitle">{{ pagination.totalItems() }} email(s)</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+    </div>
+  </div>
+
+  <!-- Barre de filtres -->
+  <div class="filter-bar">
+    <div class="filter-row">
+      <div class="search-input-group">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input type="text" class="form-control" placeholder="Destinataire..."
+            [ngModel]="filters().search" (ngModelChange)="updateSearch($event)">
+        </div>
+      </div>
+
+      <div class="btn-group btn-group-sm" role="group">
+        <button type="button" class="btn"
+          [class.btn-primary]="filters().status === MailFailedStatus.pending"
+          [class.btn-outline-secondary]="filters().status !== MailFailedStatus.pending"
+          (click)="setStatusFilter(MailFailedStatus.pending)">En attente</button>
+        <button type="button" class="btn"
+          [class.btn-primary]="filters().status === MailFailedStatus.abandoned"
+          [class.btn-outline-secondary]="filters().status !== MailFailedStatus.abandoned"
+          (click)="setStatusFilter(MailFailedStatus.abandoned)">Abandonnés</button>
+        <button type="button" class="btn"
+          [class.btn-primary]="filters().status === ''"
+          [class.btn-outline-secondary]="filters().status !== ''"
+          (click)="setStatusFilter('')">Tous</button>
+      </div>
+
+      <app-column-visibility></app-column-visibility>
+
+      @if (filters().search) {
+        <button class="btn btn-sm btn-link text-muted text-decoration-none" (click)="updateSearch('')">
+          <i class="fas fa-times me-1"></i>Reset
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Tableau -->
+  <div class="data-table-wrapper">
+    <div class="data-table-scroll">
+    <table class="table table-hover mb-0 data-table--cards">
+      <thead>
+        <tr>
+          <th style="width:48px;">#</th>
+          <th>Destinataire</th>
+          @if (columnVisibility.isVisible('type')) {
+            <th class="d-none d-md-table-cell">Type</th>
+          }
+          @if (columnVisibility.isVisible('lastError')) {
+            <th class="d-none d-lg-table-cell">Dernière erreur</th>
+          }
+          @if (columnVisibility.isVisible('attempts')) {
+            <th class="sortable" (click)="toggleSort('attempts')">
+              Tentatives
+              <i class="fas ms-1" [class.fa-sort]="filters().sortBy !== 'attempts'"
+                [class.fa-sort-up]="filters().sortBy === 'attempts' && filters().sortOrder === 'asc'"
+                [class.fa-sort-down]="filters().sortBy === 'attempts' && filters().sortOrder === 'desc'"></i>
+            </th>
+          }
+          <th>Statut</th>
+          @if (columnVisibility.isVisible('createdAt')) {
+            <th class="d-none d-lg-table-cell sortable" (click)="toggleSort('createdAt')">
+              Créé le
+              <i class="fas ms-1" [class.fa-sort]="filters().sortBy !== 'createdAt'"
+                [class.fa-sort-up]="filters().sortBy === 'createdAt' && filters().sortOrder === 'asc'"
+                [class.fa-sort-down]="filters().sortBy === 'createdAt' && filters().sortOrder === 'desc'"></i>
+            </th>
+          }
+          <th style="width:110px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- Skeleton — premier chargement -->
+        @if (isLoading()) {
+          @for (i of [1,2,3,4,5]; track i) {
+            <tr>
+              <td><div class="skeleton-line" style="width:20px;"></div></td>
+              <td><div class="skeleton-line" style="width:160px;"></div></td>
+              @if (columnVisibility.isVisible('type')) {
+                <td class="d-none d-md-table-cell"><div class="skeleton-line" style="width:120px;"></div></td>
+              }
+              @if (columnVisibility.isVisible('lastError')) {
+                <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:200px;"></div></td>
+              }
+              @if (columnVisibility.isVisible('attempts')) {
+                <td><div class="skeleton-line" style="width:30px;"></div></td>
+              }
+              <td><div class="skeleton-line" style="width:80px;height:22px;border-radius:20px;"></div></td>
+              @if (columnVisibility.isVisible('createdAt')) {
+                <td class="d-none d-lg-table-cell"><div class="skeleton-line" style="width:100px;"></div></td>
+              }
+              <td><div class="skeleton-line" style="width:70px;"></div></td>
+            </tr>
+          }
+        }
+
+        <!-- Erreur -->
+        @if (!isLoading() && error()) {
+          <tr>
+            <td colspan="8">
+              <div class="alert alert-danger mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}
+              </div>
+            </td>
+          </tr>
+        }
+
+        <!-- État vide -->
+        @if (!isLoading() && !error() && pagedJobs()!.length === 0) {
+          <tr>
+            <td colspan="8">
+              <div class="empty-state">
+                <i class="fas fa-envelope-open-text empty-icon"></i>
+                <p class="empty-title">Aucun email échoué</p>
+                <p class="empty-text">Modifiez vos filtres pour élargir la recherche</p>
+              </div>
+            </td>
+          </tr>
+        }
+
+        <!-- Données -->
+        @if (!isLoading() && !error()) {
+          @for (job of pagedJobs()!; track job.id; let i = $index) {
+            <tr>
+              <td class="cell-index" style="font-size:.85rem;color:#9aa5b4;">{{ pagination.startItem() + i }}</td>
+              <td class="cell-title" data-label="Destinataire" style="font-size:.85rem;">{{ job.to }}</td>
+              @if (columnVisibility.isVisible('type')) {
+                <td class="d-none d-md-table-cell" data-label="Type" style="font-size:.85rem;">{{ typeLabels[job.type] }}</td>
+              }
+              @if (columnVisibility.isVisible('lastError')) {
+                <td class="d-none d-lg-table-cell text-muted text-truncate" data-label="Dernière erreur" style="font-size:.8rem; max-width:260px;" [title]="job.lastError || ''">
+                  {{ job.lastError || '—' }}
+                </td>
+              }
+              @if (columnVisibility.isVisible('attempts')) {
+                <td data-label="Tentatives">{{ job.attempts }}</td>
+              }
+              <td data-label="Statut"><span class="status-badge" [class]="statusBadgeClass(job.status)">{{ job.status }}</span></td>
+              @if (columnVisibility.isVisible('createdAt')) {
+                <td class="d-none d-lg-table-cell text-muted" data-label="Créé le" style="font-size:.8rem;">{{ job.createdAt | date:'dd/MM/yyyy HH:mm' }}</td>
+              }
+              <td class="cell-actions">
+                <div class="d-flex gap-1">
+                  @if (job.status === MailFailedStatus.pending) {
+                    <button class="btn btn-icon btn-outline-primary btn-sm" title="Relancer" (click)="retry(job)">
+                      <i class="fas fa-redo"></i>
+                    </button>
+                    <button class="btn btn-icon btn-outline-secondary btn-sm" title="Abandonner" (click)="abandon(job)">
+                      <i class="fas fa-ban"></i>
+                    </button>
+                  } @else {
+                    <span class="text-muted small">—</span>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        }
+
+      </tbody>
+    </table>
+    </div>
+
+    <app-pagination></app-pagination>
+  </div>
+
+</div>
