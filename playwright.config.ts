@@ -33,7 +33,18 @@ export default defineConfig({
   },
 
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'setup', testMatch: /auth\.setup\.ts/ },
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      testIgnore: /authenticated\.spec\.ts/,
+    },
+    {
+      name: 'chromium-auth',
+      testMatch: /authenticated\.spec\.ts/,
+      dependencies: ['setup'],
+      use: { ...devices['Desktop Chrome'], storageState: 'e2e/.auth/user.json' },
+    },
   ],
 
   // Démarre `ng serve` si rien n'écoute déjà sur le port (réutilise sinon).

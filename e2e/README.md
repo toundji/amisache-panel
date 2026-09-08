@@ -14,30 +14,35 @@ npm run e2e:report     # rouvrir le dernier rapport HTML
 `playwright.config.ts` démarre `ng serve` sur le port **4200** (réutilise un
 serveur déjà en place hors CI). Surcharge possible : `E2E_PORT`, `E2E_BASE_URL`.
 
-## Fichiers
+## Projets Playwright
 
-| Fichier | Couverture | Dépend de l'API ? |
+| Projet | Specs | Auth |
 |---|---|---|
-| `smoke.spec.ts` | boot, redirections des guards (`/` → `/auth/login`, route protégée → `returnUrl`, wildcard), rendu de la page de connexion, absence d'erreur JS | non |
-| `login-form.spec.ts` | validation du formulaire (champs invalides, email mal formé, mot de passe court), bascule visibilité du mot de passe, erreur sur identifiants invalides | l'erreur sur identifiants invalides touche `POST /auth/login` |
-| `authenticated.spec.ts` | parcours connecté : dashboard, entités, arborescence, horaires, moyens de paiement, publications | **oui** — sauté tant que `E2E_EMAIL` / `E2E_PASSWORD` absents |
+| `setup` | `auth.setup.ts` | se connecte une fois, sauve `storageState` dans `e2e/.auth/user.json` (gitignoré) |
+| `chromium` | `smoke.spec.ts`, `login-form.spec.ts` | déconnecté |
+| `chromium-auth` | `authenticated.spec.ts` | rejoue le `storageState` du projet `setup` (aucun login par test) |
 
-## Parcours connecté
+| Fichier | Couverture |
+|---|---|
+| `smoke.spec.ts` | boot, redirections des guards (`/` → `/auth/login`, route protégée → `returnUrl`, wildcard), rendu page de connexion, absence d'erreur JS |
+| `login-form.spec.ts` | validation formulaire (champs invalides, email mal formé, mot de passe court), bascule visibilité du mot de passe, erreur sur identifiants invalides (`POST /auth/login`) |
+| `authenticated.spec.ts` | tableau de bord + navigation vers churches, arborescence, clergé, horaires, demandes, dons, moyens de paiement, groupes, publications |
 
-La config versionnée pointe sur `https://api.nutito.org` avec une **clé API
-placeholder** (`environment.ts`) → pas d'accès réel à l'API. Pour exécuter
-`authenticated.spec.ts` :
+## Identifiants
 
-1. servir un build avec la vraie clé API back-office injectée ;
-2. fournir un compte : `E2E_EMAIL=… E2E_PASSWORD=… npm run e2e`.
+`authenticated.spec.ts` (et le projet `setup`) ne tournent que si :
 
-Le compte de test back-end (`seed-test-user.ts`, `SEED_TEST_USER_EMAIL`) est le
-candidat naturel.
+```bash
+E2E_EMAIL=... E2E_PASSWORD=... npm run e2e
+```
+
+Sans ça, `setup` + les 10 specs connectées sont `skipped` (exit 0).
+La clé API back-office est celle déjà dans `environment.ts` — elle fonctionne
+contre `https://api.nutito.org`.
 
 ## Dernier run (référence)
 
 ```
-10 passed, 6 skipped  (~37 s, Chromium)
+avec identifiants :  21 passed                     (~36 s)
+sans identifiants :  10 passed, 11 skipped         (~13 s)
 ```
-
-Les 6 `skipped` = `authenticated.spec.ts`, en attente d'identifiants.
