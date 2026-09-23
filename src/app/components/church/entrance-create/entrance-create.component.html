@@ -5,7 +5,7 @@
       <app-back-button fallback="/entrances"></app-back-button>
       <div>
         <h1 class="page-title mb-0">Nouvelle entrée</h1>
-        <p class="page-subtitle mb-0">L'entité de rattachement ne pourra plus être modifiée après création</p>
+        <p class="page-subtitle mb-0">L'église de rattachement ne pourra plus être modifiée après création</p>
       </div>
     </div>
   </div>
@@ -32,12 +32,12 @@
                 <app-field-errors [formGroup]="form" controlName="type" fieldLabel="Le type" [serverErrors]="error?.validations"></app-field-errors>
               </div>
               <div class="col-md-3">
-                <label class="form-label">Entité</label>
+                <label class="form-label">Église</label>
                 <select class="form-select" formControlName="churchId" [class.is-invalid]="invalid('churchId')">
                   <option value="">Choisir...</option>
                   @for (c of churches() ?? []; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
                 </select>
-                <app-field-errors [formGroup]="form" controlName="churchId" fieldLabel="L'entité" [serverErrors]="error?.validations"></app-field-errors>
+                <app-field-errors [formGroup]="form" controlName="churchId" fieldLabel="L'église" [serverErrors]="error?.validations"></app-field-errors>
               </div>
               <div class="col-md-3">
                 <label class="form-label">Latitude</label>
@@ -48,6 +48,11 @@
                 <label class="form-label">Longitude</label>
                 <input type="number" step="any" class="form-control" formControlName="lng" [class.is-invalid]="invalid('lng')" placeholder="2.42">
                 <app-field-errors [formGroup]="form" controlName="lng" fieldLabel="La longitude" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+              <div class="col-12">
+                <button type="button" class="btn btn-outline-secondary btn-sm" (click)="mapOpen.set(true)">
+                  <i class="fas fa-map-location-dot me-1"></i>Choisir sur la carte
+                </button>
               </div>
             </div>
 
@@ -69,5 +74,24 @@
       </div>
     </div>
   </div>
+
+  <app-modal [open]="mapOpen()" title="Choisir la position de l'entrée" size="lg" (closed)="mapOpen.set(false)">
+    @if (mapOpen()) {
+      <app-location-picker
+        [lat]="form.value.lat" [lng]="form.value.lng"
+        [referenceLat]="selectedChurch()?.address?.location?.coordinates?.[1] ?? null"
+        [referenceLng]="selectedChurch()?.address?.location?.coordinates?.[0] ?? null"
+        [referenceLabel]="selectedChurch()?.name ?? 'Église'"
+        (positionChange)="onMapPosition($event)">
+      </app-location-picker>
+      <p class="text-muted mt-2 mb-0" style="font-size:.8rem;">
+        <i class="fas fa-circle text-primary me-1"></i>Position de l'église —
+        <i class="fas fa-map-marker-alt me-1"></i>cliquez ou glissez pour placer l'entrée.
+      </p>
+      <div class="d-flex justify-content-end mt-3">
+        <button type="button" class="btn btn-primary btn-sm" (click)="mapOpen.set(false)">Valider</button>
+      </div>
+    }
+  </app-modal>
 
 </div>

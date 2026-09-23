@@ -35,6 +35,7 @@ export interface Request {
   text?: string;
   offering?: string;
   attachments?: string;
+  homeAddress?: string;
   status: RequestStatus;
   churchId: string;
   userId: string;

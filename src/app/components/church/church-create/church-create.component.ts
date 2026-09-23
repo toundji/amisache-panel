@@ -16,10 +16,20 @@ import {
 import { ServerError } from '../../../models/server-error.model';
 import { FieldErrorsComponent } from '../../../shared/field-errors/field-errors.component';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
+import { LocationPickerComponent } from '../../../shared/location-picker/location-picker.component';
+import { ModalComponent } from '../../../shared/modal/modal.component';
 
 @Component({
   selector: 'app-church-create',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, FieldErrorsComponent, BackButtonComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    FieldErrorsComponent,
+    BackButtonComponent,
+    LocationPickerComponent,
+    ModalComponent,
+  ],
   templateUrl: './church-create.component.html',
   styleUrl: './church-create.component.scss',
 })
@@ -45,7 +55,6 @@ export class ChurchCreateComponent {
     slug: ['', [Validators.maxLength(160)]],
     parentId: [''],
     countryId: [''],
-    leaderMessage: [''],
     accentColor: [''],
     defaultLanguage: ['fr', [Validators.maxLength(10)]],
     // Adresse (objet-valeur embarqué)
@@ -68,11 +77,18 @@ export class ChurchCreateComponent {
     return (this.villages() ?? []).filter((v) => v.zoneId === zoneId);
   });
 
+  // Carte en pop-up : repère fixe sur la position de l'église parente
+  // choisie, pour situer la nouvelle église par rapport à elle.
+  mapOpen = signal(false);
+  private selectedParentId = signal(this.form.value.parentId as string);
+  selectedParent = computed(() => (this.parents() ?? []).find((c) => c.id === this.selectedParentId()));
+
   constructor() {
     if (this.countries() === undefined) this.countryService.list().subscribe({ error: () => undefined });
     if (this.zones() === undefined) this.zoneService.list().subscribe({ error: () => undefined });
     if (this.villages() === undefined) this.villageService.list().subscribe({ error: () => undefined });
     if (this.parents() === undefined) this.churchService.listAllForSelect().subscribe({ error: () => undefined });
+    this.form.get('parentId')!.valueChanges.subscribe((id) => this.selectedParentId.set(id));
 
     // Ajuste les validators parent/pays selon le type choisi.
     this.form.get('type')!.valueChanges.subscribe((type: EntityType) => {
@@ -115,7 +131,6 @@ export class ChurchCreateComponent {
       type: v.type,
       name: String(v.name).trim(),
       slug: v.slug?.trim() || undefined,
-      leaderMessage: v.leaderMessage?.trim() || undefined,
       accentColor: v.accentColor?.trim() || undefined,
       defaultLanguage: v.defaultLanguage?.trim() || undefined,
       parentId: this.isConference() ? undefined : v.parentId || undefined,
@@ -135,7 +150,7 @@ export class ChurchCreateComponent {
     this.churchService.create(body).subscribe({
       next: (church) => {
         this.submitting.set(false);
-        Swal.fire({ icon: 'success', title: 'Entité créée', timer: 1200, showConfirmButton: false }).then(() => {
+        Swal.fire({ icon: 'success', title: 'Église créée', timer: 1200, showConfirmButton: false }).then(() => {
           this.router.navigate(['/churches', church.id]);
         });
       },

@@ -60,6 +60,19 @@ export class PublicationService {
     );
   }
 
+  /** GET /publications/church/:churchId — publications d'une église, tous statuts (clergé de cette église, ou admin). */
+  listForChurch(
+    churchId: string,
+    query: Pick<ListPublicationAdminQuery, 'groupId' | 'status'> = {},
+  ): Observable<Publication[]> {
+    let params = new HttpParams();
+    if (query.groupId) params = params.set('groupId', query.groupId);
+    if (query.status) params = params.set('status', query.status);
+    return this.http.get<Publication[]>(`publications/church/${churchId}`, { params }).pipe(
+      tap((publications) => this.publicationsSignal.set(publications)),
+    );
+  }
+
   create(body: CreatePublicationDto): Observable<Publication> {
     return this.http.post<Publication>('publications', body);
   }

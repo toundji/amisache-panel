@@ -50,13 +50,29 @@ export class ChatService {
   // ── Conversations ──────────────────────────────────────────
 
   myConversations(query: ListConversationsQuery = {}): Observable<PaginatedConversations> {
+    return this.fetchConversations('chat/conversations', query);
+  }
+
+  /**
+   * Toutes les conversations (admin/engineer) — pas seulement celles où
+   * l'utilisateur connecté est participant. Nécessaire pour voir les
+   * conversations ouvertes par la bulle publique du portail (visiteur
+   * anonyme, `ActorType.GUEST`) : aucun compte admin/clergé n'y est jamais
+   * participant tant qu'un handoff n'a pas eu lieu, donc `myConversations`
+   * (participant uniquement) n'en montre jamais aucune.
+   */
+  listAdmin(query: ListConversationsQuery = {}): Observable<PaginatedConversations> {
+    return this.fetchConversations('chat/conversations/admin', query);
+  }
+
+  private fetchConversations(url: string, query: ListConversationsQuery): Observable<PaginatedConversations> {
     let params = new HttpParams();
     Object.entries(query).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
         params = params.set(key, String(value));
       }
     });
-    return this.http.get<PaginatedConversations>('chat/conversations', { params }).pipe(
+    return this.http.get<PaginatedConversations>(url, { params }).pipe(
       tap((result) => {
         this.conversationsSignal.set(result.data);
         this.conversationsPaginationMetaSignal.set({
@@ -126,6 +142,58 @@ export class ChatService {
   resetMessages(): void {
     this.messagesSignal.set(undefined);
     this.messagesPaginationMetaSignal.set({ total: 0, page: 1, limit: 30, totalPages: 1 });
+  }
+
+  // ── Temps réel (ChatSocketService, événements du ChatGateway) ─
+  // Ces méthodes ne font qu'appliquer localement un événement déjà validé
+  // côté serveur — aucun appel réseau ici, contrairement au reste du
+  // service. Séparées de sendMessage/deleteMessage/markRead (qui, elles,
+  // déclenchent l'écriture) pour que le composant n'ait jamais à manipuler
+  // messagesSignal/conversationsSignal directement.
+
+  /** Insère un message reçu en direct — ignore les doublons (l'expéditeur l'a déjà ajouté de façon optimiste). */
+  receiveMessage(message: Message): void {
+    this.messagesSignal.update((current) => {
+      if ((current ?? []).some((m) => m.id === message.id)) return current;
+      return [...(current ?? []), message];
+    });
+  }
+
+  /** Remplace un message existant (suppression...) reçu en direct. */
+  receiveMessageUpdate(message: Message): void {
+    this.messagesSignal.update((current) =>
+      (current ?? []).map((m) => (m.id === message.id ? message : m)),
+    );
+  }
+
+  /** Marque localement comme lus les messages envoyés par un autre acteur que `readerActorId`. */
+  receiveReadReceipt(readerActorId: string, lastReadAt: string): void {
+    this.messagesSignal.update((current) =>
+      (current ?? []).map((m) =>
+        m.senderId && m.senderId !== readerActorId && !m.readAt ? { ...m, readAt: lastReadAt } : m,
+      ),
+    );
+  }
+
+  /** Patch un résumé de conversation déjà listé (nouveau message, handoff...) — renvoie false si absent de la liste. */
+  patchConversationSummary(summary: {
+    id: string;
+    status?: Conversation['status'];
+    mode?: Conversation['mode'];
+    lastMessageAt?: string;
+    lastMessagePreview?: string;
+    lastMessageSenderId?: string | null;
+  }): boolean {
+    let found = false;
+    this.conversationsSignal.update((current) => {
+      if (!current) return current;
+      return current.map((c) => {
+        if (c.id !== summary.id) return c;
+        found = true;
+        return { ...c, ...summary };
+      });
+    });
+    return found;
   }
 
   sendMessage(conversationId: string, body: SendMessageDto): Observable<Message> {

@@ -9,10 +9,12 @@ import { EntranceService } from '../../../services/entrance.service';
 import { Entrance, ENTRANCE_TYPE_LABELS, EntranceType } from '../../../models/entrance.model';
 import { FieldSaveMixin } from '../../../shared/mixins/field-save.mixin';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
+import { ModalComponent } from '../../../shared/modal/modal.component';
+import { LocationPickerComponent } from '../../../shared/location-picker/location-picker.component';
 
 @Component({
   selector: 'app-entrance-detail',
-  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent, ModalComponent, LocationPickerComponent],
   templateUrl: './entrance-detail.component.html',
   styleUrl: './entrance-detail.component.scss',
 })
@@ -39,6 +41,10 @@ export class EntranceDetailComponent extends FieldSaveMixin implements OnInit {
   private originalLoc: { lat: number | null; lng: number | null } = { lat: null, lng: null };
   locSaving = signal(false);
   locJustSaved = signal(false);
+
+  // Carte en pop-up : repère fixe sur la position de l'église, pour situer
+  // l'entrée par rapport à elle plutôt que de saisir lat/lng à l'aveugle.
+  mapOpen = signal(false);
 
   form: FormGroup = this.fb.group({
     name: [this.stub?.name ?? ''],
@@ -109,6 +115,10 @@ export class EntranceDetailComponent extends FieldSaveMixin implements OnInit {
 
   resetLoc(): void {
     this.form.patchValue({ lat: this.originalLoc.lat, lng: this.originalLoc.lng });
+  }
+
+  onMapPosition(position: { lat: number; lng: number }): void {
+    this.form.patchValue({ lat: position.lat, lng: position.lng });
   }
 
   saveLoc(): void {

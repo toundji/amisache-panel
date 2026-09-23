@@ -18,6 +18,24 @@
     </div>
 
     <div class="navbar-right">
+      <!-- Sélecteur d'église — clergé avec plusieurs affectations actives uniquement.
+           Admin/engineer voient toute la plateforme, pas de notion d'église "active". -->
+      <div *ngIf="!clergyContext.isFullAccess() && (clergyContext.myChurches()?.length ?? 0) > 0"
+        class="nav-item dropdown me-2">
+        <button class="church-switcher-btn" data-bs-toggle="dropdown">
+          <i class="fas fa-church me-2"></i>
+          <span class="d-none d-md-inline">{{ clergyContext.activeChurch()?.name ?? 'Choisir une église' }}</span>
+          <i class="fas fa-chevron-down caret d-none d-md-inline ms-2"></i>
+        </button>
+        <div class="dropdown-menu" style="min-width:240px;">
+          <button *ngFor="let membership of clergyContext.myChurches()" class="dropdown-item"
+            [class.active]="membership.churchId === clergyContext.activeChurchId()"
+            (click)="selectChurch(membership.churchId)">
+            {{ membership.church?.name ?? membership.churchId }}
+          </button>
+        </div>
+      </div>
+
       <button class="btn-nav-icon d-none d-md-flex" (click)="toggleFullscreen()" title="Plein écran">
         <i class="fas fa-expand"></i>
       </button>

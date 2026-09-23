@@ -64,7 +64,7 @@
                 <div class="quick-info-item"><i class="fas fa-hashtag text-primary-app"></i><span>Code {{ p.code }}</span></div>
               }
             </div>
-            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">L'entité, le groupe et le type sont immuables.</p>
+            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">L'église, le groupe et le type sont immuables.</p>
           </div>
         </div>
       </div>
@@ -155,29 +155,52 @@
           <div class="card-header">Médias @if (media()) { ({{ media()!.length }}) }</div>
           <div class="card-body">
 
-            <form [formGroup]="mediaForm" (ngSubmit)="addMedia()" class="row g-2 align-items-end mb-3">
-              <div class="col-sm-3">
-                <label class="form-label" style="font-size:.8rem;">Nature</label>
-                <select class="form-select form-select-sm" formControlName="kind">
-                  @for (k of kindList; track k) { <option [value]="k">{{ kindLabels[k] }}</option> }
-                </select>
+            <div class="btn-group btn-group-sm mb-2">
+              <button type="button" class="btn" [class.btn-secondary]="mediaMode() === 'link'" [class.btn-outline-secondary]="mediaMode() !== 'link'" (click)="mediaMode.set('link')">Lien</button>
+              <button type="button" class="btn" [class.btn-secondary]="mediaMode() === 'file'" [class.btn-outline-secondary]="mediaMode() !== 'file'" (click)="mediaMode.set('file')">Fichier</button>
+            </div>
+
+            @if (mediaMode() === 'link') {
+              <form [formGroup]="mediaForm" (ngSubmit)="addMedia()" class="row g-2 align-items-end mb-3">
+                <div class="col-sm-3">
+                  <label class="form-label" style="font-size:.8rem;">Nature</label>
+                  <select class="form-select form-select-sm" formControlName="kind">
+                    @for (k of kindList; track k) { <option [value]="k">{{ kindLabels[k] }}</option> }
+                  </select>
+                </div>
+                <div class="col-sm-3">
+                  <label class="form-label" style="font-size:.8rem;">Fournisseur</label>
+                  <select class="form-select form-select-sm" formControlName="provider">
+                    @for (pr of providerList; track pr) { <option [value]="pr">{{ providerLabels[pr] }}</option> }
+                  </select>
+                </div>
+                <div class="col-sm-4">
+                  <label class="form-label" style="font-size:.8rem;">URL</label>
+                  <input type="url" class="form-control form-control-sm" formControlName="url" placeholder="https://...">
+                </div>
+                <div class="col-sm-2">
+                  <button type="submit" class="btn btn-primary btn-sm w-100" [disabled]="mediaAdding()">
+                    @if (mediaAdding()) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="fas fa-plus"></i> } Ajouter
+                  </button>
+                </div>
+              </form>
+            } @else {
+              <div class="row g-2 align-items-end mb-3">
+                <div class="col-sm-4">
+                  <label class="form-label" style="font-size:.8rem;">Nature</label>
+                  <select class="form-select form-select-sm" [ngModel]="fileKind()" (ngModelChange)="fileKind.set($event)">
+                    @for (k of kindList; track k) { <option [value]="k">{{ kindLabels[k] }}</option> }
+                  </select>
+                </div>
+                <div class="col-sm-8">
+                  <label class="btn btn-outline-secondary btn-sm w-100" [class.disabled]="fileUploading()">
+                    @if (fileUploading()) { <span class="spinner-border spinner-border-sm me-1"></span> } @else { <i class="fas fa-upload me-1"></i> }
+                    Choisir un fichier (image ou vidéo)
+                    <input type="file" hidden accept="image/*,video/*" [disabled]="fileUploading()" (change)="onMediaFileSelected($event)">
+                  </label>
+                </div>
               </div>
-              <div class="col-sm-3">
-                <label class="form-label" style="font-size:.8rem;">Fournisseur</label>
-                <select class="form-select form-select-sm" formControlName="provider">
-                  @for (pr of providerList; track pr) { <option [value]="pr">{{ providerLabels[pr] }}</option> }
-                </select>
-              </div>
-              <div class="col-sm-4">
-                <label class="form-label" style="font-size:.8rem;">URL</label>
-                <input type="url" class="form-control form-control-sm" formControlName="url" placeholder="https://...">
-              </div>
-              <div class="col-sm-2">
-                <button type="submit" class="btn btn-primary btn-sm w-100" [disabled]="mediaAdding()">
-                  @if (mediaAdding()) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="fas fa-plus"></i> } Ajouter
-                </button>
-              </div>
-            </form>
+            }
 
             @if (mediaLoading()) {
               @for (i of [1,2]; track i) { <div class="skeleton-line mb-2" style="width:100%;"></div> }

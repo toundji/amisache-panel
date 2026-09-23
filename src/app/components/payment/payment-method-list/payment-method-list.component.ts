@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import { PaymentMethodService } from '../../../services/payment-method.service';
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { PaymentMethod } from '../../../models/payment-method.model';
 import { PAYMENT_OPERATOR_LABELS, PaymentOperator } from '../../../models/payment.model';
 import { PaginationService } from '../../../shared/pagination/pagination.service';
@@ -38,6 +39,7 @@ function loadPersisted(): Partial<Pick<MethodFilters, 'churchId' | 'operator' | 
 export class PaymentMethodListComponent {
   readonly methodService = inject(PaymentMethodService);
   readonly churchService = inject(ChurchService);
+  readonly clergyContext = inject(ClergyContextService);
   readonly pagination = inject(PaginationService);
 
   operatorList = Object.values(PaymentOperator);
@@ -90,13 +92,28 @@ export class PaymentMethodListComponent {
     this.load();
   }
 
+  // Clergé sans accès complet : jamais la liste globale (/payment-methods,
+  // publique mais toutes églises confondues) — uniquement ceux de son église active.
   private load(showLoader = false): void {
     if (showLoader) Swal.showLoading();
     else this.refreshing.set(true);
     this.error.set(null);
 
+    const churchId = this.clergyContext.activeChurchId();
     // activeOnly=false → l'API renvoie aussi les méthodes désactivées.
-    this.methodService.list({ activeOnly: false }).subscribe({
+    const obs = this.clergyContext.isFullAccess()
+      ? this.methodService.list({ activeOnly: false })
+      : churchId
+        ? this.methodService.listForChurch(churchId, { activeOnly: false })
+        : null;
+
+    if (!obs) {
+      this.refreshing.set(false);
+      if (showLoader) Swal.close();
+      return;
+    }
+
+    obs.subscribe({
       next: () => {
         this.refreshing.set(false);
         if (showLoader) Swal.close();

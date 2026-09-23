@@ -1,0 +1,15 @@
+{
+  "hosting": {
+    "site": "AmisaPanel",
+    "public": "dist/amisache-panel/browser",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [{
+      "source": "**",
+      "destination": "/index.html"
+    }]
+  }
+}

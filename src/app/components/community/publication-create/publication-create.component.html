@@ -5,7 +5,7 @@
       <app-back-button fallback="/community/publications"></app-back-button>
       <div>
         <h1 class="page-title mb-0">Nouvelle publication</h1>
-        <p class="page-subtitle mb-0">Créée en brouillon. L'entité, le groupe et le type sont fixés à la création.</p>
+        <p class="page-subtitle mb-0">Créée en brouillon. L'église, le groupe et le type sont fixés à la création.</p>
       </div>
     </div>
   </div>
@@ -18,12 +18,12 @@
 
             <div class="row g-3">
               <div class="col-md-4">
-                <label class="form-label">Entité ecclésiale</label>
+                <label class="form-label">Église</label>
                 <select class="form-select" formControlName="churchId" [class.is-invalid]="invalid('churchId')">
-                  <option value="">Choisir une entité...</option>
+                  <option value="">Choisir une église...</option>
                   @for (c of churches() ?? []; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
                 </select>
-                <app-field-errors [formGroup]="form" controlName="churchId" fieldLabel="L'entité" [serverErrors]="error?.validations"></app-field-errors>
+                <app-field-errors [formGroup]="form" controlName="churchId" fieldLabel="L'église" [serverErrors]="error?.validations"></app-field-errors>
               </div>
               <div class="col-md-4">
                 <label class="form-label">Type de publication</label>

@@ -37,6 +37,15 @@ export class RequestService {
     );
   }
 
+  /** GET /requests/church/:churchId — demandes d'une église (clergé de cette église, ou admin). */
+  listForChurch(churchId: string, query: Pick<ListRequestQuery, 'status'> = {}): Observable<Request[]> {
+    let params = new HttpParams();
+    if (query.status) params = params.set('status', query.status);
+    return this.http.get<Request[]>(`requests/church/${churchId}`, { params }).pipe(
+      tap((requests) => this.requestsSignal.set(requests)),
+    );
+  }
+
   getById(id: string): Observable<Request> {
     return this.http.get<Request>(`requests/${id}`);
   }

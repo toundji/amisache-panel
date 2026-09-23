@@ -60,5 +60,6 @@ export interface UpdateClergyMemberDto {
 export interface ListClergyMemberQuery {
   /** Absent → toutes les affectations (le back-end filtre seulement si fourni). */
   churchId?: string;
+  userId?: string;
   activeOnly?: boolean;
 }

@@ -1,11 +1,12 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Observable } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { ChurchService } from '../../../services/church.service';
+import { ChurchProfileService } from '../../../services/church-profile.service';
 import { ZoneService } from '../../../services/zone.service';
 import { VillageService } from '../../../services/village.service';
 import {
@@ -14,12 +15,24 @@ import {
   VALIDATION_STATUS_LABELS,
   ValidationStatus,
 } from '../../../models/church.model';
+import { ChurchProfile } from '../../../models/church-profile.model';
 import { FieldSaveMixin } from '../../../shared/mixins/field-save.mixin';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
+import { LocationPickerComponent } from '../../../shared/location-picker/location-picker.component';
+import { PerimeterPoint, PolygonPickerComponent } from '../../../shared/polygon-picker/polygon-picker.component';
+import { ModalComponent } from '../../../shared/modal/modal.component';
 
 @Component({
   selector: 'app-church-detail',
-  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    FormsModule,
+    BackButtonComponent,
+    LocationPickerComponent,
+    PolygonPickerComponent,
+    ModalComponent,
+  ],
   templateUrl: './church-detail.component.html',
   styleUrl: './church-detail.component.scss',
 })
@@ -27,6 +40,7 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly churchService = inject(ChurchService);
+  private readonly churchProfileService = inject(ChurchProfileService);
   private readonly zoneService = inject(ZoneService);
   private readonly villageService = inject(VillageService);
   private readonly fb = inject(FormBuilder);
@@ -43,7 +57,26 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
   error = signal<string | null>(null);
   deleting = signal(false);
   statusSaving = signal(false);
+  // Carte GPS en pop-up : repère fixe sur la position de l'église parente,
+  // pour se situer par rapport à elle plutôt que face à des lat/lng nus.
+  locationMapOpen = signal(false);
+  perimeterMapOpen = signal(false);
+  parents = this.churchService.allForSelect;
+  selectedParent = computed(() => (this.parents() ?? []).find((c) => c.id === this.church()?.parentId));
+
   bannerUploading = signal(false);
+  logoUploading = signal(false);
+  photosUploading = signal(false);
+  photoRemoving = signal<string | null>(null);
+
+  // Choix fichier/lien — chaque image de présentation peut soit être
+  // uploadée, soit pointer vers un lien déjà hébergé ailleurs (ex.
+  // Wikimedia Commons, cf. EVOLUTION.md).
+  bannerMode = signal<'file' | 'link'>('file');
+  bannerLinkInput = signal('');
+  logoMode = signal<'file' | 'link'>('file');
+  logoLinkInput = signal('');
+  photoLinkInput = signal('');
 
   // ── Emprise géographique (polygone, 4 à 20 sommets — PATCH dédié) ──
   perimeterPoints = signal<{ lat: number | null; lng: number | null }[]>([]);
@@ -62,10 +95,16 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
   addressSaving = signal(false);
   addressJustSaved = signal(false);
 
+  // ── Message du responsable (ChurchProfile, table séparée de Church) ──
+  churchProfile = signal<ChurchProfile | null>(null);
+  leaderMessageControl = this.fb.control('');
+  private originalLeaderMessage = '';
+  profileSaving = signal(false);
+  profileJustSaved = signal(false);
+
   form: FormGroup = this.fb.group({
     name: [this.stub?.name ?? ''],
     slug: [this.stub?.slug ?? ''],
-    leaderMessage: [this.stub?.leaderMessage ?? ''],
     accentColor: [this.stub?.accentColor ?? '#16235C'],
     defaultLanguage: [this.stub?.defaultLanguage ?? 'fr'],
     zoneId: [this.stub?.address?.zoneId ?? ''],
@@ -101,6 +140,7 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
   ngOnInit(): void {
     if (this.zones() === undefined) this.zoneService.list().subscribe({ error: () => undefined });
     if (this.villages() === undefined) this.villageService.list().subscribe({ error: () => undefined });
+    if (this.parents() === undefined) this.churchService.listAllForSelect().subscribe({ error: () => undefined });
     this.load();
   }
 
@@ -114,7 +154,6 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
         this.form.patchValue({
           name: church.name,
           slug: church.slug,
-          leaderMessage: church.leaderMessage ?? '',
           accentColor: church.accentColor ?? '#16235C',
           defaultLanguage: church.defaultLanguage ?? 'fr',
           zoneId: church.address?.zoneId ?? '',
@@ -135,8 +174,47 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
       error: () => {
         this.loading.set(false);
         this.refreshing.set(false);
-        this.error.set("Erreur lors du chargement de l'entité.");
+        this.error.set("Erreur lors du chargement de l'église.");
         if (showLoader) Swal.close();
+      },
+    });
+
+    this.churchProfileService.getForChurch(this.churchId).subscribe({
+      next: (profile) => {
+        this.churchProfile.set(profile);
+        this.leaderMessageControl.setValue(profile?.leaderMessage ?? '');
+        this.originalLeaderMessage = profile?.leaderMessage ?? '';
+      },
+      error: () => undefined,
+    });
+  }
+
+  // ── Message du responsable (ChurchProfile) ────────────────
+  isLeaderMessageModified(): boolean {
+    return (this.leaderMessageControl.value ?? '') !== this.originalLeaderMessage;
+  }
+
+  resetLeaderMessage(): void {
+    this.leaderMessageControl.setValue(this.originalLeaderMessage);
+  }
+
+  saveLeaderMessage(): void {
+    if (!this.isLeaderMessageModified() || this.profileSaving()) return;
+    const leaderMessage = this.leaderMessageControl.value?.trim() || undefined;
+
+    this.profileSaving.set(true);
+    this.churchProfileService.upsertForChurch(this.churchId, { leaderMessage }).subscribe({
+      next: (profile) => {
+        this.churchProfile.set(profile);
+        this.originalLeaderMessage = profile.leaderMessage ?? '';
+        this.leaderMessageControl.setValue(this.originalLeaderMessage);
+        this.profileSaving.set(false);
+        this.profileJustSaved.set(true);
+        setTimeout(() => this.profileJustSaved.set(false), 2000);
+      },
+      error: (err) => {
+        this.profileSaving.set(false);
+        Swal.fire('Erreur', err?.error?.msg ?? 'Enregistrement impossible.', 'error');
       },
     });
   }
@@ -242,6 +320,129 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
     });
   }
 
+  submitBannerLink(): void {
+    const url = this.bannerLinkInput().trim();
+    if (!url || this.bannerUploading()) return;
+
+    this.bannerUploading.set(true);
+    this.churchService.updateBanner(this.church()!.id, url).subscribe({
+      next: (church) => {
+        this.church.set(church);
+        this.bannerUploading.set(false);
+        this.bannerLinkInput.set('');
+      },
+      error: (err) => {
+        this.bannerUploading.set(false);
+        Swal.fire('Erreur', err?.error?.msg ?? 'Lien invalide.', 'error');
+      },
+    });
+  }
+
+  // ── Logo ─────────────────────────────────────────────────
+  onLogoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    this.logoUploading.set(true);
+    this.churchService.updateLogo(this.church()!.id, file).subscribe({
+      next: (church) => {
+        this.church.set(church);
+        this.logoUploading.set(false);
+        input.value = '';
+      },
+      error: (err) => {
+        this.logoUploading.set(false);
+        input.value = '';
+        Swal.fire('Erreur', err?.error?.msg ?? 'Upload impossible.', 'error');
+      },
+    });
+  }
+
+  submitLogoLink(): void {
+    const url = this.logoLinkInput().trim();
+    if (!url || this.logoUploading()) return;
+
+    this.logoUploading.set(true);
+    this.churchService.updateLogo(this.church()!.id, url).subscribe({
+      next: (church) => {
+        this.church.set(church);
+        this.logoUploading.set(false);
+        this.logoLinkInput.set('');
+      },
+      error: (err) => {
+        this.logoUploading.set(false);
+        Swal.fire('Erreur', err?.error?.msg ?? 'Lien invalide.', 'error');
+      },
+    });
+  }
+
+  // ── Galerie de photos ────────────────────────────────────
+  onPhotosSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = input.files ? Array.from(input.files) : [];
+    if (!files.length) return;
+
+    this.photosUploading.set(true);
+    this.churchService.addPhotos(this.church()!.id, files).subscribe({
+      next: (church) => {
+        this.church.set(church);
+        this.photosUploading.set(false);
+        input.value = '';
+      },
+      error: (err) => {
+        this.photosUploading.set(false);
+        input.value = '';
+        Swal.fire('Erreur', err?.error?.msg ?? 'Upload impossible.', 'error');
+      },
+    });
+  }
+
+  addPhotoLink(): void {
+    const url = this.photoLinkInput().trim();
+    if (!url || this.photosUploading()) return;
+
+    this.photosUploading.set(true);
+    this.churchService.addPhotos(this.church()!.id, [url]).subscribe({
+      next: (church) => {
+        this.church.set(church);
+        this.photosUploading.set(false);
+        this.photoLinkInput.set('');
+      },
+      error: (err) => {
+        this.photosUploading.set(false);
+        Swal.fire('Erreur', err?.error?.msg ?? 'Lien invalide.', 'error');
+      },
+    });
+  }
+
+  removePhoto(url: string): void {
+    const church = this.church();
+    if (!church || this.photoRemoving()) return;
+
+    Swal.fire({
+      title: 'Retirer cette photo ?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Retirer',
+      cancelButtonText: 'Annuler',
+      confirmButtonColor: '#dc2626',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.photoRemoving.set(url);
+      this.churchService.removePhoto(church.id, url).subscribe({
+        next: (updated) => {
+          this.church.set(updated);
+          this.photoRemoving.set(null);
+        },
+        error: (err) => {
+          this.photoRemoving.set(null);
+          Swal.fire('Erreur', err?.error?.msg ?? 'Suppression impossible.', 'error');
+        },
+      });
+    });
+  }
+
   // ── Emprise géographique ─────────────────────────────────
   private seedPerimeter(church: Church): void {
     const ring = church.perimeter?.coordinates?.[0] ?? [];
@@ -266,6 +467,10 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
     this.perimeterPoints.update((pts) =>
       pts.map((p, i) => (i === index ? { ...p, [axis]: num } : p)),
     );
+  }
+
+  onPerimeterPointsChange(points: PerimeterPoint[]): void {
+    this.perimeterPoints.set(points);
   }
 
   isPerimeterModified(): boolean {
@@ -314,8 +519,8 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
     if (!church) return;
 
     Swal.fire({
-      title: 'Supprimer cette entité ?',
-      text: `« ${church.name} » sera supprimée définitivement. Refusé tant qu'elle a des entités enfants.`,
+      title: 'Supprimer cette église ?',
+      text: `« ${church.name} » sera supprimée définitivement. Refusé tant qu'elle a des églises enfants.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Supprimer',
@@ -328,7 +533,7 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
         next: () => this.router.navigate(['/churches']),
         error: (err) => {
           this.deleting.set(false);
-          Swal.fire('Erreur', err?.error?.msg ?? 'Suppression impossible (entités enfants ?).', 'error');
+          Swal.fire('Erreur', err?.error?.msg ?? 'Suppression impossible (églises enfants ?).', 'error');
         },
       });
     });

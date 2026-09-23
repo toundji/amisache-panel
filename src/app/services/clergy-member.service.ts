@@ -41,6 +41,15 @@ export class ClergyMemberService {
     );
   }
 
+  /** GET /clergy-members/church/:churchId — liste complète d'une église (clergé de cette église, ou admin). */
+  listForChurch(churchId: string, query: Pick<ListClergyMemberQuery, 'activeOnly'> = {}): Observable<ClergyMember[]> {
+    let params = new HttpParams();
+    if (query.activeOnly) params = params.set('activeOnly', String(query.activeOnly));
+    return this.http.get<ClergyMember[]>(`clergy-members/church/${churchId}`, { params }).pipe(
+      tap((members) => this.membersSignal.set(members)),
+    );
+  }
+
   getById(id: string): Observable<ClergyMember> {
     return this.http.get<ClergyMember>(`clergy-members/${id}`);
   }

@@ -35,6 +35,13 @@ export class EntranceService {
     );
   }
 
+  /** GET /entrances/church/:churchId — liste complète d'une église (clergé de cette église, ou admin). */
+  listForChurch(churchId: string): Observable<Entrance[]> {
+    return this.http.get<Entrance[]>(`entrances/church/${churchId}`).pipe(
+      tap((entrances) => this.entrancesSignal.set(entrances)),
+    );
+  }
+
   getById(id: string): Observable<Entrance> {
     return this.http.get<Entrance>(`entrances/${id}`);
   }

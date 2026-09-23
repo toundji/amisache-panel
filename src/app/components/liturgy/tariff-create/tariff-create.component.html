@@ -1,0 +1,74 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/liturgy/tariffs"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Nouveau tarif</h1>
+        <p class="page-subtitle mb-0">L'église et le motif ne pourront plus être modifiés après création.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card">
+        <div class="card-body">
+          <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Église</label>
+                <select class="form-select" formControlName="churchId" [class.is-invalid]="invalid('churchId')">
+                  <option value="">Choisir une église...</option>
+                  @for (c of churches() ?? []; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                </select>
+                <app-field-errors [formGroup]="form" controlName="churchId" fieldLabel="L'église" [serverErrors]="error?.validations"></app-field-errors>
+                <div class="form-text">
+                  Une église sans tarif propre hérite de celui de son église supérieure (doyenné,
+                  diocèse/archidiocèse, conférence) — publier ici un tarif sur une église de niveau
+                  supérieur en fait le tarif par défaut de toutes ses églises filles qui n'en ont pas.
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Motif (intention ou sacrement)</label>
+                <select class="form-select" formControlName="typeId" [class.is-invalid]="invalid('typeId')">
+                  <option value="">Choisir un motif...</option>
+                  @if ((intentionTypes() ?? []).length > 0) {
+                    <optgroup label="Intention de messe">
+                      @for (t of intentionTypes(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
+                    </optgroup>
+                  }
+                  @if ((sacramentTypes() ?? []).length > 0) {
+                    <optgroup label="Sacrement">
+                      @for (t of sacramentTypes(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
+                    </optgroup>
+                  }
+                </select>
+                <app-field-errors [formGroup]="form" controlName="typeId" fieldLabel="Le motif" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Montant (FCFA)</label>
+                <input type="number" min="1" class="form-control" formControlName="amount" [class.is-invalid]="invalid('amount')">
+                <app-field-errors [formGroup]="form" controlName="amount" fieldLabel="Le montant" [serverErrors]="error?.validations"></app-field-errors>
+              </div>
+            </div>
+
+            @if (error?.msg) {
+              <div class="alert alert-danger mt-3 mb-0"><i class="fas fa-exclamation-triangle me-2"></i>{{ error?.msg }}</div>
+            }
+
+            <div class="d-flex gap-2 mt-4">
+              <button type="submit" class="btn btn-primary" [disabled]="submitting()">
+                @if (submitting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
+                Publier le tarif
+              </button>
+              <a routerLink="/liturgy/tariffs" class="btn btn-outline-secondary">Annuler</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

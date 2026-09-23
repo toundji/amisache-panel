@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import { GroupService } from '../../../services/group.service';
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { GROUP_TYPE_LABELS, Group, GroupType } from '../../../models/group.model';
 import { PaginationService } from '../../../shared/pagination/pagination.service';
 import { PaginationComponent } from '../../../shared/pagination/pagination.component';
@@ -36,6 +37,7 @@ function loadPersisted(): Partial<Pick<GroupFilters, 'churchId' | 'type'>> {
 export class GroupListComponent {
   readonly groupService = inject(GroupService);
   readonly churchService = inject(ChurchService);
+  readonly clergyContext = inject(ClergyContextService);
   readonly pagination = inject(PaginationService);
 
   typeList = Object.values(GroupType);
@@ -84,12 +86,27 @@ export class GroupListComponent {
     this.load();
   }
 
+  // Clergé sans accès complet : jamais la liste globale (/groups, publique
+  // mais toutes églises confondues) — uniquement les groupes de son église active.
   private load(showLoader = false): void {
     if (showLoader) Swal.showLoading();
     else this.refreshing.set(true);
     this.error.set(null);
 
-    this.groupService.list().subscribe({
+    const churchId = this.clergyContext.activeChurchId();
+    const obs = this.clergyContext.isFullAccess()
+      ? this.groupService.list()
+      : churchId
+        ? this.groupService.listForChurch(churchId)
+        : null;
+
+    if (!obs) {
+      this.refreshing.set(false);
+      if (showLoader) Swal.close();
+      return;
+    }
+
+    obs.subscribe({
       next: () => {
         this.refreshing.set(false);
         if (showLoader) Swal.close();

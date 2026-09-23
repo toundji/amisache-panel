@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import {
   Church,
   ENTITY_TYPE_LABELS,
@@ -42,6 +43,7 @@ function loadPersistedFilters(): Partial<PersistedChurchFilters> {
 })
 export class ChurchListComponent {
   readonly churchService = inject(ChurchService);
+  readonly clergyContext = inject(ClergyContextService);
   readonly pagination = inject(PaginationService);
 
   typeList = Object.values(EntityType);
@@ -49,7 +51,14 @@ export class ChurchListComponent {
   statusList = Object.values(ValidationStatus);
   statusLabels = VALIDATION_STATUS_LABELS;
 
-  churches = this.churchService.churches;
+  // Clergé sans rôle admin/engineer : jamais /churches/admin (403 garanti) — la
+  // liste vient des propres affectations actives, déjà chargées par
+  // ClergyContextService, sans appel réseau supplémentaire.
+  churches = computed<Church[] | undefined>(() =>
+    this.clergyContext.isFullAccess()
+      ? this.churchService.churches()
+      : this.clergyContext.myChurches()?.map((m) => m.church).filter((c): c is Church => !!c),
+  );
   parents = this.churchService.allForSelect;
 
   isLoading = computed(() => this.churches() === undefined);
@@ -81,6 +90,16 @@ export class ChurchListComponent {
     const showLoader = this.isManualRefresh;
     this.isManualRefresh = false;
 
+    // Clergé sans accès complet : jamais /churches/admin (403 garanti) — la
+    // liste vient déjà de ClergyContextService, voir `churches` ci-dessus.
+    if (!this.clergyContext.isFullAccess()) {
+      this.pagination.setTotalOnly(this.clergyContext.myChurches()?.length ?? 0);
+      this.refreshing.set(false);
+      this.error.set(null);
+      if (showLoader) Swal.close();
+      return;
+    }
+
     if (showLoader) Swal.showLoading();
     else this.refreshing.set(true);
     this.error.set(null);
@@ -101,7 +120,7 @@ export class ChurchListComponent {
         },
         error: () => {
           this.refreshing.set(false);
-          this.error.set('Erreur lors du chargement des entités.');
+          this.error.set('Erreur lors du chargement des églises.');
           if (showLoader) Swal.close();
         },
       });
@@ -153,8 +172,8 @@ export class ChurchListComponent {
 
   deleteChurch(church: Church): void {
     Swal.fire({
-      title: 'Supprimer cette entité ?',
-      text: `« ${church.name} » sera supprimée définitivement. Refusé tant qu'elle a des entités enfants.`,
+      title: 'Supprimer cette église ?',
+      text: `« ${church.name} » sera supprimée définitivement. Refusé tant qu'elle a des églises enfants.`,
       icon: 'warning',
       showCancelButton: true,
       confirmButtonText: 'Supprimer',
@@ -164,7 +183,7 @@ export class ChurchListComponent {
       if (!result.isConfirmed) return;
       this.churchService.delete(church.id).subscribe({
         next: () => this.forceReload(),
-        error: (err) => Swal.fire('Erreur', err?.error?.msg ?? 'Suppression impossible (entités enfants ?).', 'error'),
+        error: (err) => Swal.fire('Erreur', err?.error?.msg ?? 'Suppression impossible (églises enfants ?).', 'error'),
       });
     });
   }

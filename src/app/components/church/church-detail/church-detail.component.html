@@ -4,7 +4,7 @@
     <div class="d-flex align-items-center gap-3">
       <app-back-button fallback="/churches"></app-back-button>
       <div>
-        <h1 class="page-title mb-0">Détail entité</h1>
+        <h1 class="page-title mb-0">Détail église</h1>
         <p class="page-subtitle mb-0" *ngIf="church()">{{ typeLabels[church()!.type] }} · {{ church()!.name }}</p>
       </div>
     </div>
@@ -44,11 +44,89 @@
             } @else {
               <div class="text-muted py-4"><i class="fas fa-image fa-2x"></i><p class="mb-0 mt-2" style="font-size:.85rem;">Aucune bannière</p></div>
             }
-            <label class="btn btn-outline-secondary btn-sm w-100 mt-2" [class.disabled]="bannerUploading()">
-              @if (bannerUploading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
-              <i class="fas fa-upload me-1"></i>{{ c.bannerPhoto ? 'Remplacer' : 'Ajouter' }}
-              <input type="file" hidden accept="image/png,image/jpeg" (change)="onBannerSelected($event)" [disabled]="bannerUploading()">
+            <div class="btn-group btn-group-sm w-100 mt-2 mb-2">
+              <button type="button" class="btn" [class.btn-secondary]="bannerMode() === 'file'" [class.btn-outline-secondary]="bannerMode() !== 'file'" (click)="bannerMode.set('file')">Fichier</button>
+              <button type="button" class="btn" [class.btn-secondary]="bannerMode() === 'link'" [class.btn-outline-secondary]="bannerMode() !== 'link'" (click)="bannerMode.set('link')">Lien</button>
+            </div>
+            @if (bannerMode() === 'file') {
+              <label class="btn btn-outline-secondary btn-sm w-100" [class.disabled]="bannerUploading()">
+                @if (bannerUploading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                <i class="fas fa-upload me-1"></i>{{ c.bannerPhoto ? 'Remplacer' : 'Ajouter' }}
+                <input type="file" hidden accept="image/png,image/jpeg" (change)="onBannerSelected($event)" [disabled]="bannerUploading()">
+              </label>
+            } @else {
+              <div class="input-group input-group-sm">
+                <input type="url" class="form-control" placeholder="https://..." [ngModel]="bannerLinkInput()" (ngModelChange)="bannerLinkInput.set($event)" [disabled]="bannerUploading()">
+                <button type="button" class="btn btn-outline-secondary" [disabled]="bannerUploading() || !bannerLinkInput().trim()" (click)="submitBannerLink()">
+                  @if (bannerUploading()) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="fas fa-check"></i> }
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Logo -->
+        <div class="card mb-3">
+          <div class="card-header">Logo</div>
+          <div class="card-body text-center">
+            @if (c.logo) {
+              <img [src]="c.logo" alt="Logo" class="img-fluid rounded mb-2" style="max-height:140px;object-fit:contain;">
+            } @else {
+              <div class="text-muted py-4"><i class="fas fa-image fa-2x"></i><p class="mb-0 mt-2" style="font-size:.85rem;">Aucun logo</p></div>
+            }
+            <div class="btn-group btn-group-sm w-100 mt-2 mb-2">
+              <button type="button" class="btn" [class.btn-secondary]="logoMode() === 'file'" [class.btn-outline-secondary]="logoMode() !== 'file'" (click)="logoMode.set('file')">Fichier</button>
+              <button type="button" class="btn" [class.btn-secondary]="logoMode() === 'link'" [class.btn-outline-secondary]="logoMode() !== 'link'" (click)="logoMode.set('link')">Lien</button>
+            </div>
+            @if (logoMode() === 'file') {
+              <label class="btn btn-outline-secondary btn-sm w-100" [class.disabled]="logoUploading()">
+                @if (logoUploading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                <i class="fas fa-upload me-1"></i>{{ c.logo ? 'Remplacer' : 'Ajouter' }}
+                <input type="file" hidden accept="image/png,image/jpeg" (change)="onLogoSelected($event)" [disabled]="logoUploading()">
+              </label>
+            } @else {
+              <div class="input-group input-group-sm">
+                <input type="url" class="form-control" placeholder="https://..." [ngModel]="logoLinkInput()" (ngModelChange)="logoLinkInput.set($event)" [disabled]="logoUploading()">
+                <button type="button" class="btn btn-outline-secondary" [disabled]="logoUploading() || !logoLinkInput().trim()" (click)="submitLogoLink()">
+                  @if (logoUploading()) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="fas fa-check"></i> }
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Photos -->
+        <div class="card mb-3">
+          <div class="card-header">Photos</div>
+          <div class="card-body">
+            @if (c.photos && c.photos.length > 0) {
+              <div class="d-flex flex-wrap gap-2 mb-2">
+                @for (photo of c.photos; track photo) {
+                  <div class="position-relative">
+                    <img [src]="photo" alt="Photo de l'église" class="rounded" style="width:80px;height:80px;object-fit:cover;">
+                    <button type="button" class="btn btn-icon btn-outline-danger btn-sm position-absolute top-0 end-0"
+                      style="transform:translate(40%,-40%);"
+                      [disabled]="photoRemoving() === photo"
+                      (click)="removePhoto(photo)">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-muted py-2"><i class="fas fa-images fa-2x"></i><p class="mb-0 mt-2" style="font-size:.85rem;">Aucune photo</p></div>
+            }
+            <label class="btn btn-outline-secondary btn-sm w-100 mt-2" [class.disabled]="photosUploading()">
+              @if (photosUploading()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              <i class="fas fa-upload me-1"></i>Uploader des photos
+              <input type="file" hidden accept="image/png,image/jpeg" multiple (change)="onPhotosSelected($event)" [disabled]="photosUploading()">
             </label>
+            <div class="input-group input-group-sm mt-2">
+              <input type="url" class="form-control" placeholder="Ou coller un lien https://..." [ngModel]="photoLinkInput()" (ngModelChange)="photoLinkInput.set($event)" [disabled]="photosUploading()">
+              <button type="button" class="btn btn-outline-secondary" [disabled]="photosUploading() || !photoLinkInput().trim()" (click)="addPhotoLink()">
+                @if (photosUploading()) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="fas fa-plus"></i> }
+              </button>
+            </div>
           </div>
         </div>
 
@@ -139,19 +217,19 @@
           <div class="card mb-3">
             <div class="card-header d-flex align-items-center justify-content-between">
               <span>Message du responsable</span>
-              @if (isFieldModified('leaderMessage') && !isFieldSaving('leaderMessage')) {
+              @if (isLeaderMessageModified() && !profileSaving()) {
                 <div class="btn-group btn-group-sm">
-                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('leaderMessage')"><i class="fas fa-save"></i></button>
-                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('leaderMessage')"><i class="fas fa-undo"></i></button>
+                  <button type="button" class="btn btn-outline-warning" (click)="saveLeaderMessage()"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetLeaderMessage()"><i class="fas fa-undo"></i></button>
                 </div>
               }
-              @if (isFieldSaving('leaderMessage')) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
-              @if (isFieldJustSaved('leaderMessage')) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+              @if (profileSaving()) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (profileJustSaved()) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
             </div>
             <div class="card-body">
-              <textarea class="form-control" rows="4" formControlName="leaderMessage"
-                [class.border-warning]="isFieldModified('leaderMessage') && !isFieldJustSaved('leaderMessage') && !isFieldSaving('leaderMessage')"
-                [class.border-success]="isFieldJustSaved('leaderMessage')"></textarea>
+              <textarea class="form-control" rows="4" [formControl]="leaderMessageControl"
+                [class.border-warning]="isLeaderMessageModified() && !profileJustSaved() && !profileSaving()"
+                [class.border-success]="profileJustSaved()"></textarea>
             </div>
           </div>
 
@@ -237,6 +315,11 @@
                   <label class="form-label">Longitude</label>
                   <input type="number" step="any" class="form-control" formControlName="lng">
                 </div>
+                <div class="col-12">
+                  <button type="button" class="btn btn-outline-secondary btn-sm" (click)="locationMapOpen.set(true)">
+                    <i class="fas fa-map-location-dot me-1"></i>Choisir sur la carte
+                  </button>
+                </div>
               </div>
               <div class="form-text mt-2">L'enregistrement remplace l'intégralité de l'adresse. L'emprise géographique (polygone) se gère à part.</div>
             </div>
@@ -258,6 +341,9 @@
             @if (perimeterJustSaved()) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
           </div>
           <div class="card-body">
+            <button type="button" class="btn btn-outline-secondary btn-sm mb-3" (click)="perimeterMapOpen.set(true)">
+              <i class="fas fa-draw-polygon me-1"></i>{{ perimeterPoints().length > 0 ? 'Modifier sur la carte' : 'Dessiner sur la carte' }}
+            </button>
             @if (perimeterPoints().length === 0) {
               <p class="text-muted mb-3" style="font-size:.85rem;"><i class="fas fa-draw-polygon me-1"></i>Aucune emprise définie.</p>
             }
@@ -294,5 +380,47 @@
       </div>
     </div>
   }
+
+  <app-modal [open]="locationMapOpen()" title="Choisir la position GPS" size="lg" (closed)="locationMapOpen.set(false)">
+    @if (locationMapOpen()) {
+      <app-location-picker
+        [lat]="form.get('lat')?.value" [lng]="form.get('lng')?.value"
+        [referenceLat]="selectedParent()?.address?.location?.coordinates?.[1] ?? null"
+        [referenceLng]="selectedParent()?.address?.location?.coordinates?.[0] ?? null"
+        [referenceLabel]="selectedParent()?.name ?? 'Église parente'"
+        (positionChange)="form.patchValue({ lat: $event.lat, lng: $event.lng })">
+      </app-location-picker>
+      @if (selectedParent()?.address?.location) {
+        <p class="text-muted mt-2 mb-0" style="font-size:.8rem;">
+          <i class="fas fa-circle text-primary me-1"></i>Position de « {{ selectedParent()?.name }} ».
+        </p>
+      }
+      <div class="d-flex justify-content-end mt-3">
+        <button type="button" class="btn btn-primary btn-sm" (click)="locationMapOpen.set(false)">Valider</button>
+      </div>
+    }
+  </app-modal>
+
+  <app-modal [open]="perimeterMapOpen()" title="Dessiner l'emprise géographique" size="lg" (closed)="perimeterMapOpen.set(false)">
+    @if (perimeterMapOpen()) {
+      <app-polygon-picker
+        [points]="perimeterPoints()"
+        [max]="PERIMETER_MAX"
+        [referenceLat]="form.get('lat')?.value"
+        [referenceLng]="form.get('lng')?.value"
+        [referenceLabel]="church()?.name ?? 'Église'"
+        (pointsChange)="onPerimeterPointsChange($event)"
+        class="d-block">
+      </app-polygon-picker>
+      @if (form.get('lat')?.value && form.get('lng')?.value) {
+        <p class="text-muted mt-1 mb-0" style="font-size:.8rem;">
+          <i class="fas fa-circle text-primary me-1"></i>Position de « {{ church()?.name }} ».
+        </p>
+      }
+      <div class="d-flex justify-content-end mt-3">
+        <button type="button" class="btn btn-primary btn-sm" (click)="perimeterMapOpen.set(false)">Valider</button>
+      </div>
+    }
+  </app-modal>
 
 </div>

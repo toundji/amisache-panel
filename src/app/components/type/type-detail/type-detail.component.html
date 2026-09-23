@@ -133,6 +133,87 @@
             </div>
           </div>
 
+          @if (isRequestScope()) {
+            <!-- Délai minimum -->
+            <div class="card mt-3">
+              <div class="card-header d-flex align-items-center justify-content-between">
+                <span>Délai minimum avant la date souhaitée</span>
+                @if (isFieldModified('minLeadDays') && !isFieldSaving('minLeadDays')) {
+                  <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('minLeadDays')"><i class="fas fa-save"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" (click)="resetField('minLeadDays')"><i class="fas fa-undo"></i></button>
+                  </div>
+                }
+                @if (isFieldSaving('minLeadDays')) {
+                  <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
+                }
+                @if (isFieldJustSaved('minLeadDays')) {
+                  <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
+                }
+              </div>
+              <div class="card-body">
+                <div class="input-group" style="max-width:220px;">
+                  <input type="number" class="form-control" formControlName="minLeadDays" min="0"
+                    [class.border-warning]="isFieldModified('minLeadDays') && !isFieldJustSaved('minLeadDays') && !isFieldSaving('minLeadDays')"
+                    [class.border-success]="isFieldJustSaved('minLeadDays')">
+                  <span class="input-group-text">jour(s)</span>
+                </div>
+                <div class="form-text">Une demande de ce type doit être envoyée au moins ce nombre de jours avant la date souhaitée.</div>
+              </div>
+            </div>
+
+            <!-- Célébration à domicile -->
+            <div class="card mt-3">
+              <div class="card-header d-flex align-items-center justify-content-between">
+                <span>Célébration à domicile</span>
+                @if (isFieldModified('allowHomeCelebration') && !isFieldSaving('allowHomeCelebration')) {
+                  <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('allowHomeCelebration')"><i class="fas fa-save"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" (click)="resetField('allowHomeCelebration')"><i class="fas fa-undo"></i></button>
+                  </div>
+                }
+                @if (isFieldSaving('allowHomeCelebration')) {
+                  <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
+                }
+                @if (isFieldJustSaved('allowHomeCelebration')) {
+                  <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
+                }
+              </div>
+              <div class="card-body">
+                <div class="form-check form-switch">
+                  <input type="checkbox" class="form-check-input" id="allowHomeCelebration" formControlName="allowHomeCelebration">
+                  <label class="form-check-label" for="allowHomeCelebration">Ce type peut être demandé en célébration à domicile plutôt qu'à l'église</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Correspondance à un horaire -->
+            <div class="card mt-3">
+              <div class="card-header d-flex align-items-center justify-content-between">
+                <span>Correspondance à un horaire</span>
+                @if (isFieldModified('requiresScheduleMatch') && !isFieldSaving('requiresScheduleMatch')) {
+                  <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('requiresScheduleMatch')"><i class="fas fa-save"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" (click)="resetField('requiresScheduleMatch')"><i class="fas fa-undo"></i></button>
+                  </div>
+                }
+                @if (isFieldSaving('requiresScheduleMatch')) {
+                  <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
+                }
+                @if (isFieldJustSaved('requiresScheduleMatch')) {
+                  <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
+                }
+              </div>
+              <div class="card-body">
+                <div class="form-check form-switch">
+                  <input type="checkbox" class="form-check-input" id="requiresScheduleMatch" formControlName="requiresScheduleMatch">
+                  <label class="form-check-label" for="requiresScheduleMatch">La date souhaitée doit correspondre à un horaire déjà publié par la paroisse</label>
+                </div>
+                <div class="form-text">Ignoré si la paroisse choisie n'a publié aucun horaire — la date reste alors libre.</div>
+              </div>
+            </div>
+          }
+
         </form>
       </div>
     </div>

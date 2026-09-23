@@ -95,7 +95,7 @@
                 <i class="fas" [class.fa-robot]="conversation.mode === 'BOT'" [class.fa-headset]="conversation.mode === 'AGENT'"></i>
                 {{ conversation.mode === 'BOT' ? 'Bot' : 'Agent' }}
               </td>
-              <td class="text-muted" data-label="Dernier message" style="font-size:.85rem;max-width:320px;">
+              <td class="cell-wide text-muted" data-label="Dernier message" style="font-size:.85rem;max-width:320px;">
                 {{ conversation.lastMessagePreview || '—' }}
               </td>
               <td class="d-none d-lg-table-cell text-muted" data-label="Le" style="font-size:.8rem;">

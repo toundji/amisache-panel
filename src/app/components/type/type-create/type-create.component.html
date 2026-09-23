@@ -35,6 +35,31 @@
               </div>
             </div>
 
+            @if (isRequestScope()) {
+              <hr class="my-4">
+              <h2 class="h6 mb-3">Règles de demande</h2>
+              <div class="row g-3">
+                <div class="col-md-5">
+                  <label class="form-label">Délai minimum avant la date souhaitée</label>
+                  <div class="input-group">
+                    <input type="number" class="form-control" formControlName="minLeadDays" min="0">
+                    <span class="input-group-text">jour(s)</span>
+                  </div>
+                  <app-field-errors [formGroup]="form" controlName="minLeadDays" fieldLabel="Le délai" [serverErrors]="error?.validations"></app-field-errors>
+                </div>
+                <div class="col-md-7 d-flex flex-column gap-2 justify-content-center">
+                  <div class="form-check form-switch">
+                    <input type="checkbox" class="form-check-input" id="allowHomeCelebration" formControlName="allowHomeCelebration">
+                    <label class="form-check-label" for="allowHomeCelebration">Peut être célébré à domicile</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input type="checkbox" class="form-check-input" id="requiresScheduleMatch" formControlName="requiresScheduleMatch">
+                    <label class="form-check-label" for="requiresScheduleMatch">La date doit correspondre à un horaire publié</label>
+                  </div>
+                </div>
+              </div>
+            }
+
             @if (error?.msg) {
               <div class="alert alert-danger mt-3 mb-0">
                 <i class="fas fa-exclamation-triangle me-2"></i>{{ error?.msg }}

@@ -39,6 +39,13 @@ export class GroupService {
     );
   }
 
+  /** GET /groups/church/:churchId — groupes d'une église (clergé de cette église, ou admin). */
+  listForChurch(churchId: string): Observable<Group[]> {
+    return this.http.get<Group[]>(`groups/church/${churchId}`).pipe(
+      tap((groups) => this.groupsSignal.set(groups)),
+    );
+  }
+
   getById(id: string): Observable<Group> {
     return this.http.get<Group>(`groups/${id}`);
   }

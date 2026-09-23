@@ -2,6 +2,7 @@ import { Component, EventEmitter, inject, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { AvatarHelper } from '../../avatar/avatar.helper';
 import { NotificationBellComponent } from '../../notification-bell/notification-bell.component';
 import { NavigationHistoryService } from '../../navigation/navigation-history.service';
@@ -14,6 +15,7 @@ import { NavigationHistoryService } from '../../navigation/navigation-history.se
 })
 export class TopbarComponent {
   readonly authService = inject(AuthService);
+  readonly clergyContext = inject(ClergyContextService);
   readonly navHistory = inject(NavigationHistoryService);
 
   // Émet un simple signal "toggle" sans valeur — le layout inverse son état
@@ -37,6 +39,10 @@ export class TopbarComponent {
 
   logout(): void {
     this.authService.logout();
+  }
+
+  selectChurch(churchId: string): void {
+    this.clergyContext.setActiveChurch(churchId);
   }
 
   get initials(): string {

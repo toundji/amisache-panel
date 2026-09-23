@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import { EntranceService } from '../../../services/entrance.service';
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { Entrance, ENTRANCE_TYPE_LABELS, EntranceType } from '../../../models/entrance.model';
 import { PaginationService } from '../../../shared/pagination/pagination.service';
 import { PaginationComponent } from '../../../shared/pagination/pagination.component';
@@ -36,6 +37,7 @@ function loadPersisted(): Partial<Pick<EntranceFilters, 'churchId' | 'type'>> {
 export class EntranceListComponent {
   readonly entranceService = inject(EntranceService);
   readonly churchService = inject(ChurchService);
+  readonly clergyContext = inject(ClergyContextService);
   readonly pagination = inject(PaginationService);
 
   typeList = Object.values(EntranceType);
@@ -79,12 +81,27 @@ export class EntranceListComponent {
     this.load();
   }
 
+  // Clergé sans accès complet : jamais la liste globale (/entrances, publique
+  // mais toutes églises confondues) — uniquement les entrées de son église active.
   private load(showLoader = false): void {
     if (showLoader) Swal.showLoading();
     else this.refreshing.set(true);
     this.error.set(null);
 
-    this.entranceService.list().subscribe({
+    const churchId = this.clergyContext.activeChurchId();
+    const obs = this.clergyContext.isFullAccess()
+      ? this.entranceService.list()
+      : churchId
+        ? this.entranceService.listForChurch(churchId)
+        : null;
+
+    if (!obs) {
+      this.refreshing.set(false);
+      if (showLoader) Swal.close();
+      return;
+    }
+
+    obs.subscribe({
       next: () => {
         this.refreshing.set(false);
         if (showLoader) Swal.close();

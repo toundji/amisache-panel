@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -10,10 +10,20 @@ import { ENTRANCE_TYPE_LABELS, EntranceType } from '../../../models/entrance.mod
 import { ServerError } from '../../../models/server-error.model';
 import { FieldErrorsComponent } from '../../../shared/field-errors/field-errors.component';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
+import { ModalComponent } from '../../../shared/modal/modal.component';
+import { LocationPickerComponent } from '../../../shared/location-picker/location-picker.component';
 
 @Component({
   selector: 'app-entrance-create',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, FieldErrorsComponent, BackButtonComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterLink,
+    FieldErrorsComponent,
+    BackButtonComponent,
+    ModalComponent,
+    LocationPickerComponent,
+  ],
   templateUrl: './entrance-create.component.html',
   styleUrl: './entrance-create.component.scss',
 })
@@ -39,13 +49,24 @@ export class EntranceCreateComponent {
   submitting = signal(false);
   error?: ServerError;
 
+  // Carte en pop-up : repère fixe sur la position de l'église choisie, pour
+  // situer l'entrée par rapport à elle plutôt que de saisir lat/lng à l'aveugle.
+  mapOpen = signal(false);
+  private selectedChurchId = signal(this.form.value.churchId as string);
+  selectedChurch = computed(() => (this.churches() ?? []).find((c) => c.id === this.selectedChurchId()));
+
   constructor() {
     if (this.churches() === undefined) this.churchService.listAllForSelect().subscribe({ error: () => undefined });
+    this.form.get('churchId')!.valueChanges.subscribe((id) => this.selectedChurchId.set(id));
   }
 
   invalid(controlName: string): boolean {
     const control = this.form.get(controlName);
     return !!(control?.touched && control?.invalid);
+  }
+
+  onMapPosition(position: { lat: number; lng: number }): void {
+    this.form.patchValue({ lat: position.lat, lng: position.lng });
   }
 
   onSubmit(): void {

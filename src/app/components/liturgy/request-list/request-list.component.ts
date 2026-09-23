@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import { RequestService } from '../../../services/request.service';
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { UserService } from '../../../services/user.service';
 import { Request, REQUEST_STATUS_LABELS, RequestStatus } from '../../../models/request.model';
 import { PaginationService } from '../../../shared/pagination/pagination.service';
@@ -45,6 +46,7 @@ const STATUS_BADGE: Record<RequestStatus, string> = {
 export class RequestListComponent {
   readonly requestService = inject(RequestService);
   readonly churchService = inject(ChurchService);
+  readonly clergyContext = inject(ClergyContextService);
   private readonly userService = inject(UserService);
   readonly pagination = inject(PaginationService);
 
@@ -96,29 +98,44 @@ export class RequestListComponent {
     if (this.churches() === undefined) {
       this.churchService.listAllForSelect().subscribe({ error: () => undefined });
     }
-    if (this.userService.allForSelect() === undefined) {
+    // GET /users est admin/manager/engineer uniquement — jamais pour un clergy
+    // (403 garanti). Les demandes church-scoped embarquent déjà `user` (backend).
+    if (this.clergyContext.isFullAccess() && this.userService.allForSelect() === undefined) {
       this.userService.listAllForSelect().subscribe({ error: () => undefined });
     }
   }
 
+  // Clergé sans accès complet : jamais /requests/admin (403 garanti) —
+  // uniquement les demandes de son église active.
   private fetch(churchId: string, status: RequestStatus | '', showLoader = false): void {
     if (showLoader) Swal.showLoading();
     else this.refreshing.set(true);
     this.error.set(null);
 
-    this.requestService
-      .listAdmin({ churchId: churchId || undefined, status: status || undefined })
-      .subscribe({
-        next: () => {
-          this.refreshing.set(false);
-          if (showLoader) Swal.close();
-        },
-        error: () => {
-          this.refreshing.set(false);
-          this.error.set('Erreur lors du chargement des demandes.');
-          if (showLoader) Swal.close();
-        },
-      });
+    const activeChurchId = this.clergyContext.activeChurchId();
+    const obs = this.clergyContext.isFullAccess()
+      ? this.requestService.listAdmin({ churchId: churchId || undefined, status: status || undefined })
+      : activeChurchId
+        ? this.requestService.listForChurch(activeChurchId, { status: status || undefined })
+        : null;
+
+    if (!obs) {
+      this.refreshing.set(false);
+      if (showLoader) Swal.close();
+      return;
+    }
+
+    obs.subscribe({
+      next: () => {
+        this.refreshing.set(false);
+        if (showLoader) Swal.close();
+      },
+      error: () => {
+        this.refreshing.set(false);
+        this.error.set('Erreur lors du chargement des demandes.');
+        if (showLoader) Swal.close();
+      },
+    });
   }
 
   refresh(): void {

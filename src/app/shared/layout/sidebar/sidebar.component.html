@@ -18,7 +18,7 @@
   <!-- Navigation -->
   <nav class="sidebar-nav">
     <ul class="nav flex-column" style="list-style:none;padding:0;margin:0;">
-      <li *ngFor="let item of menuItems; trackBy: trackByFn">
+      <li *ngFor="let item of visibleMenuItems(); trackBy: trackByFn">
 
         <a *ngIf="!item.children" class="nav-link" [routerLink]="item.route" routerLinkActive="active"
           [routerLinkActiveOptions]="{exact: item.route === '/'}" (click)="isMobile && onNavigate()"

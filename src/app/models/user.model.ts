@@ -2,13 +2,16 @@
 // src/shared/common.enum.ts (UserRole, UserStatus)
 // src/users/entities/user.entity.ts (User)
 
+// Amisache : agent/investor (hérités du template) retirés, clergy ajouté —
+// voir amisache-backend AMISACHE.md §5. clergy est un marqueur plateforme
+// grossier ; le rôle ecclésial précis (curé, diacre...) et l'église
+// concernée vivent dans ClergyMember, pas ici (clergy-member.model.ts).
 export enum UserRole {
   user = 'user',
-  agent = 'agent',
-  investor = 'investor',
   manager = 'manager',
   admin = 'admin',
   engineer = 'engineer',
+  clergy = 'clergy',
 }
 
 export enum UserStatus {
@@ -32,6 +35,9 @@ export interface User {
   createdAt?: string;
   updatedAt?: string;
 }
+
+/** Projection minimale de GET /users/lookup?email= — voir UserService.lookupByEmail. */
+export type UserLookup = Pick<User, 'id' | 'firstName' | 'lastName' | 'email' | 'profile'>;
 
 export type ListUsersSortBy = 'firstName' | 'lastName' | 'email' | 'status' | 'createdAt';
 

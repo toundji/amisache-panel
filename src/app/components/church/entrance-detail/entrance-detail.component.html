@@ -45,7 +45,7 @@
                 <div class="quick-info-item"><i class="fas fa-calendar text-primary-app"></i><span>Créée le {{ e.createdAt | date:'dd/MM/yyyy' }}</span></div>
               }
             </div>
-            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">L'entité de rattachement est immuable.</p>
+            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">L'église de rattachement est immuable.</p>
           </div>
         </div>
       </div>
@@ -115,6 +115,11 @@
                   <label class="form-label">Longitude</label>
                   <input type="number" step="any" class="form-control" formControlName="lng">
                 </div>
+                <div class="col-12">
+                  <button type="button" class="btn btn-outline-secondary btn-sm" (click)="mapOpen.set(true)">
+                    <i class="fas fa-map-location-dot me-1"></i>Choisir sur la carte
+                  </button>
+                </div>
               </div>
               <div class="form-text mt-2">L'enregistrement remplace la position GPS de l'entrée.</div>
             </div>
@@ -124,5 +129,24 @@
       </div>
     </div>
   }
+
+  <app-modal [open]="mapOpen()" title="Choisir la position de l'entrée" size="lg" (closed)="mapOpen.set(false)">
+    @if (mapOpen()) {
+      <app-location-picker
+        [lat]="form.value.lat" [lng]="form.value.lng"
+        [referenceLat]="entrance()?.church?.address?.location?.coordinates?.[1] ?? null"
+        [referenceLng]="entrance()?.church?.address?.location?.coordinates?.[0] ?? null"
+        [referenceLabel]="entrance()?.church?.name ?? 'Église'"
+        (positionChange)="onMapPosition($event)">
+      </app-location-picker>
+      <p class="text-muted mt-2 mb-0" style="font-size:.8rem;">
+        <i class="fas fa-circle text-primary me-1"></i>Position de l'église —
+        <i class="fas fa-map-marker-alt me-1"></i>cliquez ou glissez pour placer l'entrée.
+      </p>
+      <div class="d-flex justify-content-end mt-3">
+        <button type="button" class="btn btn-primary btn-sm" (click)="mapOpen.set(false)">Valider</button>
+      </div>
+    }
+  </app-modal>
 
 </div>

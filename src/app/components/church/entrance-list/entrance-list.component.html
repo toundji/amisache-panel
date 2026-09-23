@@ -27,7 +27,7 @@
 
       <select class="form-select form-select-sm" style="max-width:220px;"
         [ngModel]="filters().churchId" (ngModelChange)="updateFilter('churchId', $event)">
-        <option value="">Toutes les entités</option>
+        <option value="">Toutes les églises</option>
         @for (c of churches() ?? []; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
       </select>
 
@@ -53,7 +53,7 @@
             <th style="width:48px;">#</th>
             <th>Nom</th>
             <th class="d-none d-md-table-cell">Type</th>
-            <th class="d-none d-md-table-cell">Entité</th>
+            <th class="d-none d-md-table-cell">Église</th>
             <th class="d-none d-lg-table-cell">Coordonnées</th>
             <th style="width:90px;">Actions</th>
           </tr>
@@ -99,7 +99,7 @@
                   </a>
                 </td>
                 <td class="d-none d-md-table-cell" data-label="Type" style="font-size:.85rem;">{{ typeLabels[e.type] }}</td>
-                <td class="d-none d-md-table-cell" data-label="Entité" style="font-size:.85rem;">{{ churchName(e) }}</td>
+                <td class="d-none d-md-table-cell" data-label="Église" style="font-size:.85rem;">{{ churchName(e) }}</td>
                 <td class="d-none d-lg-table-cell text-muted" data-label="Coordonnées" style="font-size:.8rem;">{{ coords(e) }}</td>
                 <td class="cell-actions">
                   <div class="d-flex gap-1">

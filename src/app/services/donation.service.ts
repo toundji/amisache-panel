@@ -37,6 +37,13 @@ export class DonationService {
     );
   }
 
+  /** GET /donations/church/:churchId — dons d'une église (clergé de cette église, ou admin). */
+  listForChurch(churchId: string): Observable<Donation[]> {
+    return this.http.get<Donation[]>(`donations/church/${churchId}`).pipe(
+      tap((donations) => this.donationsSignal.set(donations)),
+    );
+  }
+
   getById(id: string): Observable<Donation> {
     return this.http.get<Donation>(`donations/${id}`);
   }

@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 
 import { MembershipService } from '../../../services/membership.service';
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { Membership } from '../../../models/membership.model';
 import { PaginationService } from '../../../shared/pagination/pagination.service';
 import { PaginationComponent } from '../../../shared/pagination/pagination.component';
@@ -29,6 +30,7 @@ function loadPersisted(): { churchId?: string } {
 export class MembershipListComponent {
   readonly membershipService = inject(MembershipService);
   readonly churchService = inject(ChurchService);
+  readonly clergyContext = inject(ClergyContextService);
   readonly pagination = inject(PaginationService);
 
   memberships = this.membershipService.memberships;
@@ -70,12 +72,27 @@ export class MembershipListComponent {
     this.load();
   }
 
+  // Clergé sans accès complet : jamais /memberships/admin (403 garanti) —
+  // uniquement les abonnés de son église active.
   private load(showLoader = false): void {
     if (showLoader) Swal.showLoading();
     else this.refreshing.set(true);
     this.error.set(null);
 
-    this.membershipService.listAdmin().subscribe({
+    const churchId = this.clergyContext.activeChurchId();
+    const obs = this.clergyContext.isFullAccess()
+      ? this.membershipService.listAdmin()
+      : churchId
+        ? this.membershipService.listForChurch(churchId)
+        : null;
+
+    if (!obs) {
+      this.refreshing.set(false);
+      if (showLoader) Swal.close();
+      return;
+    }
+
+    obs.subscribe({
       next: () => {
         this.refreshing.set(false);
         if (showLoader) Swal.close();

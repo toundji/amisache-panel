@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import { DonationService } from '../../../services/donation.service';
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { UserService } from '../../../services/user.service';
 import { Donation } from '../../../models/donation.model';
 import { PaginationService } from '../../../shared/pagination/pagination.service';
@@ -36,6 +37,7 @@ function loadPersisted(): Partial<Pick<DonationFilters, 'churchId'>> {
 export class DonationListComponent {
   readonly donationService = inject(DonationService);
   readonly churchService = inject(ChurchService);
+  readonly clergyContext = inject(ClergyContextService);
   private readonly userService = inject(UserService);
   readonly pagination = inject(PaginationService);
 
@@ -81,17 +83,34 @@ export class DonationListComponent {
     if (this.churches() === undefined) {
       this.churchService.listAllForSelect().subscribe({ error: () => undefined });
     }
-    if (this.userService.allForSelect() === undefined) {
+    // GET /users est admin/manager/engineer uniquement — jamais pour un clergy
+    // (403 garanti). Les dons church-scoped embarquent déjà `user` (backend).
+    if (this.clergyContext.isFullAccess() && this.userService.allForSelect() === undefined) {
       this.userService.listAllForSelect().subscribe({ error: () => undefined });
     }
   }
 
+  // Clergé sans accès complet : jamais /donations/admin (403 garanti) —
+  // uniquement les dons de son église active.
   private fetch(churchId: string, showLoader = false): void {
     if (showLoader) Swal.showLoading();
     else this.refreshing.set(true);
     this.error.set(null);
 
-    this.donationService.listAdmin({ churchId: churchId || undefined }).subscribe({
+    const activeChurchId = this.clergyContext.activeChurchId();
+    const obs = this.clergyContext.isFullAccess()
+      ? this.donationService.listAdmin({ churchId: churchId || undefined })
+      : activeChurchId
+        ? this.donationService.listForChurch(activeChurchId)
+        : null;
+
+    if (!obs) {
+      this.refreshing.set(false);
+      if (showLoader) Swal.close();
+      return;
+    }
+
+    obs.subscribe({
       next: () => {
         this.refreshing.set(false);
         if (showLoader) Swal.close();

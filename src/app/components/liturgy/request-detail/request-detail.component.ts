@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { RequestService } from '../../../services/request.service';
 import { ChurchService } from '../../../services/church.service';
 import { UserService } from '../../../services/user.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { Request, REQUEST_STATUS_LABELS, RequestStatus } from '../../../models/request.model';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
 
@@ -28,6 +29,7 @@ export class RequestDetailComponent implements OnInit {
   private readonly requestService = inject(RequestService);
   private readonly churchService = inject(ChurchService);
   private readonly userService = inject(UserService);
+  private readonly clergyContext = inject(ClergyContextService);
 
   private readonly requestId = this.route.snapshot.paramMap.get('id')!;
   private readonly stub =
@@ -46,7 +48,9 @@ export class RequestDetailComponent implements OnInit {
     if (this.churchService.allForSelect() === undefined) {
       this.churchService.listAllForSelect().subscribe({ error: () => undefined });
     }
-    if (this.userService.allForSelect() === undefined) {
+    // GET /users est admin/manager/engineer uniquement — jamais pour un clergy
+    // (403 garanti). `request.user` est désormais chargé côté backend.
+    if (this.clergyContext.isFullAccess() && this.userService.allForSelect() === undefined) {
       this.userService.listAllForSelect().subscribe({ error: () => undefined });
     }
     this.load();

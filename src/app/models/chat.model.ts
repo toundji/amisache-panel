@@ -1,6 +1,7 @@
-// Doit rester synchronisé avec nest-auth-base :
-// src/shared/common.enum.ts (ConversationStatus, ConversationMode, ActorType, ParticipantRole, MessageKind, AttachmentKind)
-// src/chat/entities/*.entity.ts, src/chat/dto/*.dto.ts
+// Doit rester synchronisé avec amisache-backend :
+// src/shared/common.enum.ts (ConversationStatus, ConversationMode, ActorType, MessageKind, AttachmentKind)
+// src/chat/chat.enum.ts (ParticipantRole — propre au métier Amisache, pas shared/)
+// src/chat/entities/*.entity.ts, src/chat/dto/*.dto.ts, src/chat/controllers/chat-guest.controller.ts
 
 export enum ConversationStatus {
   OPEN = 'OPEN',
@@ -14,19 +15,24 @@ export enum ConversationMode {
   AGENT = 'AGENT',
 }
 
-/** Décide comment résoudre actorId/senderId — HUMAN = ligne User, AI = bot logique, SYSTEM = peut être null */
+/** Décide comment résoudre actorId/senderId — HUMAN = ligne User, GUEST = visiteur
+ *  anonyme de la bulle publique (aucune ligne User), AI = bot, SYSTEM = peut être null */
 export enum ActorType {
   HUMAN = 'HUMAN',
+  GUEST = 'GUEST',
   AI = 'AI',
   SYSTEM = 'SYSTEM',
 }
 
+/** Rôles propres au métier Amisache (fidèle/clergé) — remplace le DRIVER/CLIENT/
+ *  ASSIGNED_AGENT générique du template, cf. amisache-backend EVOLUTION.md 2026-09-20. */
 export enum ParticipantRole {
   OWNER = 'OWNER',
   MEMBER = 'MEMBER',
-  ASSIGNED_AGENT = 'ASSIGNED_AGENT',
-  CLIENT = 'CLIENT',
-  DRIVER = 'DRIVER',
+  /** Le fidèle (ou visiteur) qui pose une question. */
+  FAITHFUL = 'FAITHFUL',
+  /** Un membre du clergé/personnel qui répond au nom d'une paroisse. */
+  CLERGY = 'CLERGY',
 }
 
 export enum MessageKind {
@@ -53,9 +59,8 @@ export const CONVERSATION_STATUS_LABELS: Record<ConversationStatus, string> = {
 export const PARTICIPANT_ROLE_LABELS: Record<ParticipantRole, string> = {
   [ParticipantRole.OWNER]: 'Propriétaire',
   [ParticipantRole.MEMBER]: 'Membre',
-  [ParticipantRole.ASSIGNED_AGENT]: 'Agent assigné',
-  [ParticipantRole.CLIENT]: 'Client',
-  [ParticipantRole.DRIVER]: 'Chauffeur',
+  [ParticipantRole.FAITHFUL]: 'Fidèle',
+  [ParticipantRole.CLERGY]: 'Clergé',
 };
 
 export interface Conversation {

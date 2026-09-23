@@ -29,17 +29,29 @@ export interface TypeItem {
   code?: string;
   createdAt?: string;
   updatedAt?: string;
+  /** Ce type (INTENTION/SACRAMENT) peut-il être demandé en célébration à domicile ? */
+  allowHomeCelebration: boolean;
+  /** Délai minimum, en jours, entre l'envoi d'une demande de ce type et la date souhaitée. */
+  minLeadDays: number;
+  /** La date doit correspondre à un horaire déjà publié par la paroisse (ignoré si elle n'en a aucun). */
+  requiresScheduleMatch: boolean;
 }
 
 export interface CreateTypeDto {
   name: string;
   scope: TypeScope;
+  allowHomeCelebration?: boolean;
+  minLeadDays?: number;
+  requiresScheduleMatch?: boolean;
 }
 
 export interface UpdateTypeDto {
   name?: string;
   scope?: TypeScope;
   active?: boolean;
+  allowHomeCelebration?: boolean;
+  minLeadDays?: number;
+  requiresScheduleMatch?: boolean;
 }
 
 export interface ListTypeAdminQuery {

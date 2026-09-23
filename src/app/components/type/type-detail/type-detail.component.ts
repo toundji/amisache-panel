@@ -39,7 +39,16 @@ export class TypeDetailComponent extends FieldSaveMixin implements OnInit {
   form: FormGroup = this.fb.group({
     name: [this.stub?.name ?? ''],
     scope: [this.stub?.scope ?? ''],
+    allowHomeCelebration: [this.stub?.allowHomeCelebration ?? false],
+    minLeadDays: [this.stub?.minLeadDays ?? 2],
+    requiresScheduleMatch: [this.stub?.requiresScheduleMatch ?? false],
   });
+
+  /** Ces trois règles ne s'appliquent qu'aux demandes (intentions/sacrements). */
+  isRequestScope(): boolean {
+    const scope = this.type()?.scope;
+    return scope === TypeScope.INTENTION || scope === TypeScope.SACRAMENT;
+  }
 
   protected getFormGroup(): FormGroup {
     return this.form;
@@ -65,7 +74,13 @@ export class TypeDetailComponent extends FieldSaveMixin implements OnInit {
     this.typeService.getById(this.typeId).subscribe({
       next: (type) => {
         this.type.set(type);
-        this.form.patchValue({ name: type.name, scope: type.scope });
+        this.form.patchValue({
+          name: type.name,
+          scope: type.scope,
+          allowHomeCelebration: type.allowHomeCelebration,
+          minLeadDays: type.minLeadDays,
+          requiresScheduleMatch: type.requiresScheduleMatch,
+        });
         this.initOriginalValues();
 
         this.loading.set(false);

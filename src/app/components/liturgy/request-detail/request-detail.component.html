@@ -63,6 +63,16 @@
       </div>
 
       <div class="col-lg-8">
+        @if (r.homeAddress) {
+          <div class="alert alert-warning d-flex align-items-start gap-2 mb-3">
+            <i class="fas fa-house mt-1"></i>
+            <div>
+              <div class="fw-semibold">Célébration à domicile</div>
+              <div>{{ r.homeAddress }}</div>
+            </div>
+          </div>
+        }
+
         <div class="card mb-3">
           <div class="card-header">Demande</div>
           <div class="card-body">

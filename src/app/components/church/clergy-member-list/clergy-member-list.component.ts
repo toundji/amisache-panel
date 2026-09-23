@@ -6,6 +6,8 @@ import Swal from 'sweetalert2';
 
 import { ClergyMemberService } from '../../../services/clergy-member.service';
 import { ChurchService } from '../../../services/church.service';
+import { UserService } from '../../../services/user.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { ClergyMember, ECCLESIAL_ROLE_LABELS, EcclesialRole } from '../../../models/clergy-member.model';
 import { PaginationService } from '../../../shared/pagination/pagination.service';
 import { PaginationComponent } from '../../../shared/pagination/pagination.component';
@@ -37,6 +39,8 @@ function loadPersisted(): Partial<Pick<ClergyFilters, 'churchId' | 'role' | 'act
 export class ClergyMemberListComponent {
   readonly clergyService = inject(ClergyMemberService);
   readonly churchService = inject(ChurchService);
+  readonly userService = inject(UserService);
+  readonly clergyContext = inject(ClergyContextService);
   readonly pagination = inject(PaginationService);
 
   roleList = Object.values(EcclesialRole);
@@ -87,12 +91,27 @@ export class ClergyMemberListComponent {
     this.load();
   }
 
+  // Clergé sans accès complet : jamais la liste globale (/clergy-members,
+  // publique mais toutes églises confondues) — uniquement son église active.
   private load(showLoader = false): void {
     if (showLoader) Swal.showLoading();
     else this.refreshing.set(true);
     this.error.set(null);
 
-    this.clergyService.list().subscribe({
+    const churchId = this.clergyContext.activeChurchId();
+    const obs = this.clergyContext.isFullAccess()
+      ? this.clergyService.list()
+      : churchId
+        ? this.clergyService.listForChurch(churchId)
+        : null;
+
+    if (!obs) {
+      this.refreshing.set(false);
+      if (showLoader) Swal.close();
+      return;
+    }
+
+    obs.subscribe({
       next: () => {
         this.refreshing.set(false);
         if (showLoader) Swal.close();
@@ -126,6 +145,14 @@ export class ClergyMemberListComponent {
 
   churchName(m: ClergyMember): string {
     return m.church?.name ?? (this.churches() ?? []).find((c) => c.id === m.churchId)?.name ?? '—';
+  }
+
+  selectUser(m: ClergyMember): void {
+    if (m.user) this.userService.select(m.user);
+  }
+
+  selectChurch(m: ClergyMember): void {
+    if (m.church) this.churchService.select(m.church);
   }
 
   deleteMember(m: ClergyMember): void {

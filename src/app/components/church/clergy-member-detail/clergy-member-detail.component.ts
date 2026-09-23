@@ -6,13 +6,17 @@ import { Observable } from 'rxjs';
 import Swal from 'sweetalert2';
 
 import { ClergyMemberService } from '../../../services/clergy-member.service';
+import { ChurchService } from '../../../services/church.service';
+import { UserService } from '../../../services/user.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { ClergyMember, ECCLESIAL_ROLE_LABELS, EcclesialRole } from '../../../models/clergy-member.model';
 import { FieldSaveMixin } from '../../../shared/mixins/field-save.mixin';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-clergy-member-detail',
-  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent, RouterLink],
   templateUrl: './clergy-member-detail.component.html',
   styleUrl: './clergy-member-detail.component.scss',
 })
@@ -20,6 +24,9 @@ export class ClergyMemberDetailComponent extends FieldSaveMixin implements OnIni
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly clergyService = inject(ClergyMemberService);
+  private readonly churchService = inject(ChurchService);
+  private readonly userService = inject(UserService);
+  readonly clergyContext = inject(ClergyContextService);
   private readonly fb = inject(FormBuilder);
 
   private readonly memberId = this.route.snapshot.paramMap.get('id')!;
@@ -94,6 +101,16 @@ export class ClergyMemberDetailComponent extends FieldSaveMixin implements OnIni
     const m = this.member();
     const n = `${m?.user?.firstName ?? ''} ${m?.user?.lastName ?? ''}`.trim();
     return n || m?.user?.email || m?.userId || '';
+  }
+
+  selectUser(): void {
+    const user = this.member()?.user;
+    if (user) this.userService.select(user);
+  }
+
+  selectChurch(): void {
+    const church = this.member()?.church;
+    if (church) this.churchService.select(church);
   }
 
   deleteMember(): void {

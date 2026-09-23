@@ -25,6 +25,13 @@ export class MembershipService {
     );
   }
 
+  /** GET /memberships/church/:churchId — abonnés d'une église (clergé de cette église, ou admin). */
+  listForChurch(churchId: string): Observable<Membership[]> {
+    return this.http.get<Membership[]>(`memberships/church/${churchId}`).pipe(
+      tap((memberships) => this.membershipsSignal.set(memberships)),
+    );
+  }
+
   delete(id: string): Observable<{ success: boolean }> {
     return this.http.delete<{ success: boolean }>(`memberships/${id}`);
   }

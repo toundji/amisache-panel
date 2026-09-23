@@ -1,10 +1,12 @@
-import { Component, computed, ElementRef, inject, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, computed, DestroyRef, ElementRef, inject, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import Swal from 'sweetalert2';
 
 import { ChatService } from '../../../services/chat.service';
+import { ChatSocketService } from '../../../services/chat-socket.service';
 import { AuthService } from '../../../services/auth.service';
 import {
   ActorType,
@@ -34,7 +36,9 @@ export interface SelectedFile {
 export class ConversationDetailComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly fb = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
   readonly chatService = inject(ChatService);
+  readonly chatSocket = inject(ChatSocketService);
   readonly authService = inject(AuthService);
 
   @ViewChild('bodyTextarea') private bodyTextareaRef?: ElementRef<HTMLTextAreaElement>;
@@ -64,6 +68,8 @@ export class ConversationDetailComponent implements OnInit, OnDestroy {
   });
   loadingOlder = signal(false);
   sending = signal(false);
+  peerTyping = signal(false);
+  private typingIdleTimer?: ReturnType<typeof setTimeout>;
 
   readonly composer: FormGroup = this.fb.group({
     body: [''],
@@ -98,18 +104,72 @@ export class ConversationDetailComponent implements OnInit, OnDestroy {
 
   readonly handoffForm: FormGroup = this.fb.group({
     fromActorId: ['', [Validators.required]],
-    toRole: [ParticipantRole.ASSIGNED_AGENT, [Validators.required]],
+    toRole: [ParticipantRole.CLERGY, [Validators.required]],
   });
 
   ngOnInit(): void {
     this.load();
     this.loadMessages();
+    this.chatSocket.connect();
+    this.chatSocket.joinConversation(this.conversationId);
+    this.wireSocket();
   }
 
   ngOnDestroy(): void {
     // Évite qu'un fil déjà chargé "fuite" visuellement à l'ouverture d'une autre conversation.
     this.chatService.resetMessages();
     this.clearSelectedFiles();
+    this.chatSocket.leaveConversation(this.conversationId);
+    clearTimeout(this.typingIdleTimer);
+  }
+
+  /** Écoute les événements temps réel du fil ouvert — appelé une fois, à l'entrée sur la page. */
+  private wireSocket(): void {
+    this.chatSocket
+      .on<{ message: Message }>('message:new')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ message }) => {
+        if (message.conversationId !== this.conversationId) return;
+        this.chatService.receiveMessage(message);
+        this.peerTyping.set(false);
+      });
+
+    this.chatSocket
+      .on<{ message: Message }>('message:deleted')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(({ message }) => {
+        if (message.conversationId !== this.conversationId) return;
+        this.chatService.receiveMessageUpdate(message);
+      });
+
+    this.chatSocket
+      .on<{ conversationId: string; actorId: string; lastReadAt: string }>('conversation:read')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((event) => {
+        if (event.conversationId !== this.conversationId) return;
+        this.chatService.receiveReadReceipt(event.actorId, event.lastReadAt);
+      });
+
+    this.chatSocket
+      .on<{ conversationId: string; actorType: ActorType; isTyping: boolean }>('typing')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((event) => {
+        if (event.conversationId !== this.conversationId) return;
+        this.peerTyping.set(event.isTyping);
+      });
+  }
+
+  /** Relance l'indicateur "en train d'écrire", avec extinction automatique si la frappe s'arrête. */
+  onComposerInput(): void {
+    if (!this.typingIdleTimer) {
+      this.chatSocket.setTyping(this.conversationId, true);
+    } else {
+      clearTimeout(this.typingIdleTimer);
+    }
+    this.typingIdleTimer = setTimeout(() => {
+      this.typingIdleTimer = undefined;
+      this.chatSocket.setTyping(this.conversationId, false);
+    }, 2000);
   }
 
   private load(showLoader = false): void {
@@ -172,6 +232,7 @@ export class ConversationDetailComponent implements OnInit, OnDestroy {
     if (this.isMine(message)) return 'Vous';
     if (message.senderType === ActorType.AI) return 'Bot';
     if (message.senderType === ActorType.SYSTEM) return 'Système';
+    if (message.senderType === ActorType.GUEST) return `Visiteur ${message.senderId?.slice(0, 8) ?? ''}`;
     return message.senderId ? message.senderId.slice(0, 8) : 'Inconnu';
   }
 
@@ -350,6 +411,9 @@ export class ConversationDetailComponent implements OnInit, OnDestroy {
     }
 
     this.sending.set(true);
+    clearTimeout(this.typingIdleTimer);
+    this.typingIdleTimer = undefined;
+    this.chatSocket.setTyping(this.conversationId, false);
     const body = ((this.composer.value.body as string) ?? '').trim() || undefined;
     const files = this.selectedFiles().map((sf) => sf.file);
 

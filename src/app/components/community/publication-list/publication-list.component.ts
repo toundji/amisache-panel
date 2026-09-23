@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import { PublicationService } from '../../../services/publication.service';
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { TypeService } from '../../../services/type.service';
 import { TypeScope } from '../../../models/type.model';
 import {
@@ -48,6 +49,7 @@ const STATUS_BADGE: Record<PublicationStatus, string> = {
 export class PublicationListComponent {
   readonly publicationService = inject(PublicationService);
   readonly churchService = inject(ChurchService);
+  readonly clergyContext = inject(ClergyContextService);
   private readonly typeService = inject(TypeService);
   readonly pagination = inject(PaginationService);
 
@@ -99,24 +101,37 @@ export class PublicationListComponent {
     }
   }
 
+  // Clergé sans accès complet : jamais /publications/admin (403 garanti) —
+  // uniquement les publications de son église active.
   private fetch(churchId: string, status: PublicationStatus | '', showLoader = false): void {
     if (showLoader) Swal.showLoading();
     else this.refreshing.set(true);
     this.error.set(null);
 
-    this.publicationService
-      .listAdmin({ churchId: churchId || undefined, status: status || undefined })
-      .subscribe({
-        next: () => {
-          this.refreshing.set(false);
-          if (showLoader) Swal.close();
-        },
-        error: () => {
-          this.refreshing.set(false);
-          this.error.set('Erreur lors du chargement des publications.');
-          if (showLoader) Swal.close();
-        },
-      });
+    const activeChurchId = this.clergyContext.activeChurchId();
+    const obs = this.clergyContext.isFullAccess()
+      ? this.publicationService.listAdmin({ churchId: churchId || undefined, status: status || undefined })
+      : activeChurchId
+        ? this.publicationService.listForChurch(activeChurchId, { status: status || undefined })
+        : null;
+
+    if (!obs) {
+      this.refreshing.set(false);
+      if (showLoader) Swal.close();
+      return;
+    }
+
+    obs.subscribe({
+      next: () => {
+        this.refreshing.set(false);
+        if (showLoader) Swal.close();
+      },
+      error: () => {
+        this.refreshing.set(false);
+        this.error.set('Erreur lors du chargement des publications.');
+        if (showLoader) Swal.close();
+      },
+    });
   }
 
   refresh(): void {

@@ -37,8 +37,21 @@
           <div class="card-header">Rattachement</div>
           <div class="card-body">
             <div class="quick-info">
-              <div class="quick-info-item"><i class="fas fa-user text-primary-app"></i><span>{{ memberName() }}</span></div>
-              <div class="quick-info-item"><i class="fas fa-church text-primary-app"></i><span>{{ m.church?.name ?? m.churchId }}</span></div>
+              <div class="quick-info-item">
+                <i class="fas fa-user text-primary-app"></i>
+                <span>
+                  {{ memberName() }}
+                  @if (clergyContext.isFullAccess()) {
+                    <a [routerLink]="['/users', m.userId]" class="d-block text-muted text-decoration-none" style="font-size:.75rem;" (click)="selectUser()">
+                      <i class="fas fa-arrow-up-right-from-square me-1"></i>Voir l'utilisateur
+                    </a>
+                  }
+                </span>
+              </div>
+              <div class="quick-info-item">
+                <i class="fas fa-church text-primary-app"></i>
+                <a [routerLink]="['/churches', m.churchId]" class="text-decoration-none" (click)="selectChurch()">{{ m.church?.name ?? m.churchId }}</a>
+              </div>
               <div class="quick-info-item">
                 <i class="fas fa-circle-dot text-primary-app"></i>
                 <span>{{ m.endDate ? 'Affectation terminée' : 'Affectation active' }}</span>
@@ -47,7 +60,7 @@
                 <div class="quick-info-item"><i class="fas fa-hashtag text-primary-app"></i><span>Code {{ m.code }}</span></div>
               }
             </div>
-            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">Le membre et l'entité sont immuables. Renseigner une date de fin met fin à l'affectation.</p>
+            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">Le membre et l'église sont immuables. Renseigner une date de fin met fin à l'affectation.</p>
           </div>
         </div>
       </div>

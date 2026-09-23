@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 import { DonationService } from '../../../services/donation.service';
 import { ChurchService } from '../../../services/church.service';
 import { UserService } from '../../../services/user.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { Donation } from '../../../models/donation.model';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
 
@@ -20,6 +21,7 @@ export class DonationDetailComponent implements OnInit {
   private readonly donationService = inject(DonationService);
   private readonly churchService = inject(ChurchService);
   private readonly userService = inject(UserService);
+  private readonly clergyContext = inject(ClergyContextService);
 
   private readonly donationId = this.route.snapshot.paramMap.get('id')!;
   private readonly stub =
@@ -34,7 +36,9 @@ export class DonationDetailComponent implements OnInit {
     if (this.churchService.allForSelect() === undefined) {
       this.churchService.listAllForSelect().subscribe({ error: () => undefined });
     }
-    if (this.userService.allForSelect() === undefined) {
+    // GET /users est admin/manager/engineer uniquement — jamais pour un clergy
+    // (403 garanti). `donation.user` est désormais chargé côté backend.
+    if (this.clergyContext.isFullAccess() && this.userService.allForSelect() === undefined) {
       this.userService.listAllForSelect().subscribe({ error: () => undefined });
     }
     this.load();

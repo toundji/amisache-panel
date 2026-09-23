@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Observable } from 'rxjs';
 import Swal from 'sweetalert2';
 
@@ -9,6 +9,7 @@ import { PublicationService } from '../../../services/publication.service';
 import { MediaService } from '../../../services/media.service';
 import { ChurchService } from '../../../services/church.service';
 import { TypeService } from '../../../services/type.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { TypeScope } from '../../../models/type.model';
 import {
   Publication,
@@ -29,7 +30,7 @@ const NULLABLE_FIELDS = ['startDate', 'endDate'];
 
 @Component({
   selector: 'app-publication-detail',
-  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, BackButtonComponent],
   templateUrl: './publication-detail.component.html',
   styleUrl: './publication-detail.component.scss',
 })
@@ -40,6 +41,7 @@ export class PublicationDetailComponent extends FieldSaveMixin implements OnInit
   private readonly mediaService = inject(MediaService);
   private readonly churchService = inject(ChurchService);
   private readonly typeService = inject(TypeService);
+  private readonly clergyContext = inject(ClergyContextService);
   private readonly fb = inject(FormBuilder);
 
   private readonly publicationId = this.route.snapshot.paramMap.get('id')!;
@@ -117,7 +119,25 @@ export class PublicationDetailComponent extends FieldSaveMixin implements OnInit
 
     if (refresh) Swal.showLoading();
     this.error.set(null);
-    this.publicationService.listAdmin().subscribe({
+
+    // Clergé sans accès complet : jamais /publications/admin (403 garanti) —
+    // uniquement les publications de son église active.
+    const churchId = this.clergyContext.activeChurchId();
+    const obs = this.clergyContext.isFullAccess()
+      ? this.publicationService.listAdmin()
+      : churchId
+        ? this.publicationService.listForChurch(churchId)
+        : null;
+
+    if (!obs) {
+      this.error.set('Publication introuvable. Ouvrez-la depuis la liste.');
+      this.loading.set(false);
+      this.refreshing.set(false);
+      if (refresh) Swal.close();
+      return;
+    }
+
+    obs.subscribe({
       next: () => {
         const found = this.publicationService.loaded(this.publicationId);
         if (found) {
@@ -206,6 +226,43 @@ export class PublicationDetailComponent extends FieldSaveMixin implements OnInit
       error: (err) => {
         this.statusSaving.set(false);
         Swal.fire('Erreur', err?.error?.msg ?? 'Changement de statut impossible.', 'error');
+      },
+    });
+  }
+
+  // Choix lien/fichier — un média peut soit pointer vers un lien existant
+  // (YouTube, Facebook, déjà hébergé ailleurs), soit être uploadé directement.
+  mediaMode = signal<'link' | 'file'>('link');
+  fileKind = signal<MediaKind>(MediaKind.IMAGE);
+  fileUploading = signal(false);
+
+  onMediaFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || this.fileUploading()) return;
+
+    this.fileUploading.set(true);
+    this.mediaService.upload(file).subscribe({
+      next: ({ url }) => {
+        this.mediaService
+          .add({ kind: this.fileKind(), provider: MediaProvider.UPLOAD, url, publicationId: this.publicationId })
+          .subscribe({
+            next: () => {
+              this.fileUploading.set(false);
+              input.value = '';
+              this.loadMedia();
+            },
+            error: (err) => {
+              this.fileUploading.set(false);
+              input.value = '';
+              Swal.fire('Erreur', err?.error?.msg ?? 'Rattachement impossible.', 'error');
+            },
+          });
+      },
+      error: (err) => {
+        this.fileUploading.set(false);
+        input.value = '';
+        Swal.fire('Erreur', err?.error?.msg ?? 'Upload impossible.', 'error');
       },
     });
   }

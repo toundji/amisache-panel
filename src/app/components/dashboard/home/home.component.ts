@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import { UserService } from '../../../services/user.service';
 import { SessionService } from '../../../services/session.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { UserStatus } from '../../../models/user.model';
 import { UserSessionInfo } from '../../../models/session.model';
 
@@ -25,6 +26,7 @@ interface DashboardStats {
 export class HomeComponent {
   private readonly userService = inject(UserService);
   private readonly sessionService = inject(SessionService);
+  readonly clergyContext = inject(ClergyContextService);
 
   loading = signal(true);
   refreshing = signal(false);
@@ -36,9 +38,29 @@ export class HomeComponent {
     this.load();
   }
 
+  // Clergé sans accès complet : jamais GET /users (403 garanti, statistiques
+  // plateforme sans rapport avec son périmètre) — seulement ses sessions.
   private load(showLoader = false): void {
     if (showLoader) Swal.showLoading();
     this.error.set(null);
+
+    if (!this.clergyContext.isFullAccess()) {
+      this.sessionService.getSessions().subscribe({
+        next: (sessions) => {
+          this.recentSessions.set(sessions.slice(0, 5));
+          this.loading.set(false);
+          this.refreshing.set(false);
+          if (showLoader) Swal.close();
+        },
+        error: () => {
+          this.loading.set(false);
+          this.refreshing.set(false);
+          this.error.set('Erreur lors du chargement du tableau de bord.');
+          if (showLoader) Swal.close();
+        },
+      });
+      return;
+    }
 
     forkJoin({
       total: this.userService.listUsers({ limit: 1 }),

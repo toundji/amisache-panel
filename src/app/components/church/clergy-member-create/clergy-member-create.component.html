@@ -5,7 +5,7 @@
       <app-back-button fallback="/clergy-members"></app-back-button>
       <div>
         <h1 class="page-title mb-0">Nouvelle affectation</h1>
-        <p class="page-subtitle mb-0">Le membre et l'entité ne pourront plus être modifiés après création (créer une nouvelle affectation pour un changement d'entité)</p>
+        <p class="page-subtitle mb-0">Le membre et l'église ne pourront plus être modifiés après création (créer une nouvelle affectation pour un changement d'église)</p>
       </div>
     </div>
   </div>
@@ -21,21 +21,40 @@
                 <label class="form-label">Membre (utilisateur)</label>
                 <select class="form-select" formControlName="userId" [class.is-invalid]="invalid('userId')">
                   <option value="">Choisir un utilisateur...</option>
-                  @for (u of users() ?? []; track u.id) {
+                  @for (u of userOptions(); track u.id) {
                     <option [value]="u.id">{{ userLabel(u) }}</option>
                   }
                 </select>
                 <app-field-errors [formGroup]="form" controlName="userId" fieldLabel="Le membre" [serverErrors]="error?.validations"></app-field-errors>
+                @if (!clergyContext.isFullAccess()) {
+                  <div class="mt-2">
+                    <label class="form-label" style="font-size:.8rem;color:#6b7280;">
+                      La liste ci-dessus ne montre que les fidèles qui suivent votre église.
+                      Pour affecter quelqu'un d'autre, cherchez-le par email :
+                    </label>
+                    <div class="input-group input-group-sm">
+                      <input type="email" class="form-control" placeholder="email@exemple.com"
+                        [ngModel]="emailSearch()" (ngModelChange)="emailSearch.set($event)"
+                        [ngModelOptions]="{standalone: true}">
+                      <button type="button" class="btn btn-outline-secondary" [disabled]="searchingEmail()" (click)="searchByEmail()">
+                        @if (searchingEmail()) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="fas fa-search"></i> }
+                      </button>
+                    </div>
+                    @if (emailSearchError()) {
+                      <div class="text-danger" style="font-size:.8rem;">{{ emailSearchError() }}</div>
+                    }
+                  </div>
+                }
               </div>
               <div class="col-md-6">
-                <label class="form-label">Entité ecclésiale</label>
+                <label class="form-label">Église</label>
                 <select class="form-select" formControlName="churchId" [class.is-invalid]="invalid('churchId')">
-                  <option value="">Choisir une entité...</option>
+                  <option value="">Choisir une église...</option>
                   @for (c of churches() ?? []; track c.id) {
                     <option [value]="c.id">{{ c.name }}</option>
                   }
                 </select>
-                <app-field-errors [formGroup]="form" controlName="churchId" fieldLabel="L'entité" [serverErrors]="error?.validations"></app-field-errors>
+                <app-field-errors [formGroup]="form" controlName="churchId" fieldLabel="L'église" [serverErrors]="error?.validations"></app-field-errors>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Fonction ecclésiale</label>

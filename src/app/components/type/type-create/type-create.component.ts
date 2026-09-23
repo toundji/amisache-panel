@@ -27,7 +27,15 @@ export class TypeCreateComponent {
   readonly form: FormGroup = this.fb.group({
     name: ['', [Validators.required, Validators.maxLength(120)]],
     scope: ['', [Validators.required]],
+    allowHomeCelebration: [false],
+    minLeadDays: [2, [Validators.required, Validators.min(0)]],
+    requiresScheduleMatch: [false],
   });
+
+  /** Ces trois règles ne s'appliquent qu'aux demandes (intentions/sacrements). */
+  isRequestScope(): boolean {
+    return this.form.value.scope === TypeScope.INTENTION || this.form.value.scope === TypeScope.SACRAMENT;
+  }
 
   submitting = signal(false);
   error?: ServerError;
@@ -50,6 +58,9 @@ export class TypeCreateComponent {
       .create({
         name: String(this.form.value.name).trim(),
         scope: this.form.value.scope as TypeScope,
+        allowHomeCelebration: !!this.form.value.allowHomeCelebration,
+        minLeadDays: Number(this.form.value.minLeadDays),
+        requiresScheduleMatch: !!this.form.value.requiresScheduleMatch,
       })
       .subscribe({
         next: (type) => {

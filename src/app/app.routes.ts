@@ -48,6 +48,9 @@ import { MembershipListComponent } from './components/church/membership-list/mem
 import { ScheduleListComponent } from './components/liturgy/schedule-list/schedule-list.component';
 import { ScheduleCreateComponent } from './components/liturgy/schedule-create/schedule-create.component';
 import { ScheduleDetailComponent } from './components/liturgy/schedule-detail/schedule-detail.component';
+import { TariffListComponent } from './components/liturgy/tariff-list/tariff-list.component';
+import { TariffCreateComponent } from './components/liturgy/tariff-create/tariff-create.component';
+import { TariffDetailComponent } from './components/liturgy/tariff-detail/tariff-detail.component';
 import { RequestListComponent } from './components/liturgy/request-list/request-list.component';
 import { RequestDetailComponent } from './components/liturgy/request-detail/request-detail.component';
 import { DonationListComponent } from './components/liturgy/donation-list/donation-list.component';
@@ -65,6 +68,7 @@ import { PublicationCreateComponent } from './components/community/publication-c
 import { PublicationDetailComponent } from './components/community/publication-detail/publication-detail.component';
 import { AuthGuard } from './core/guards/auth.guard';
 import { NoAuthGuard } from './core/guards/no-auth.guard';
+import { RoleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   {
@@ -73,17 +77,17 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     children: [
       { path: '', component: HomeComponent, title: 'Tableau de bord' },
-      { path: 'users', component: UserListComponent, title: 'Utilisateurs' },
-      { path: 'users/new', component: UserCreateComponent, title: 'Nouvel utilisateur' },
-      { path: 'users/:id', component: UserDetailComponent, title: 'Détail utilisateur' },
+      { path: 'users', component: UserListComponent, canActivate: [RoleGuard], title: 'Utilisateurs' },
+      { path: 'users/new', component: UserCreateComponent, canActivate: [RoleGuard], title: 'Nouvel utilisateur' },
+      { path: 'users/:id', component: UserDetailComponent, canActivate: [RoleGuard], title: 'Détail utilisateur' },
       { path: 'profile', component: ProfileComponent, title: 'Mon profil' },
       { path: 'sessions', component: SessionsComponent, title: 'Mes sessions' },
-      { path: 'mail/failed', component: MailFailedListComponent, title: 'Emails échoués' },
+      { path: 'mail/failed', component: MailFailedListComponent, canActivate: [RoleGuard], title: 'Emails échoués' },
       { path: 'contact', component: ContactListComponent, title: 'Messages de contact' },
       { path: 'contact/:id', component: ContactDetailComponent, title: 'Détail message' },
-      { path: 'faq', component: FaqListComponent, title: 'FAQ' },
-      { path: 'faq/new', component: FaqCreateComponent, title: 'Nouvelle question' },
-      { path: 'faq/:id', component: FaqDetailComponent, title: 'Détail FAQ' },
+      { path: 'faq', component: FaqListComponent, canActivate: [RoleGuard], title: 'FAQ' },
+      { path: 'faq/new', component: FaqCreateComponent, canActivate: [RoleGuard], title: 'Nouvelle question' },
+      { path: 'faq/:id', component: FaqDetailComponent, canActivate: [RoleGuard], title: 'Détail FAQ' },
       { path: 'geo/countries', component: CountryListComponent, title: 'Pays' },
       { path: 'geo/countries/new', component: CountryCreateComponent, title: 'Nouveau pays' },
       { path: 'geo/countries/:id', component: CountryDetailComponent, title: 'Détail pays' },
@@ -96,13 +100,13 @@ export const routes: Routes = [
       { path: 'geo/villages', component: VillageListComponent, title: 'Villages / Quartiers' },
       { path: 'geo/villages/new', component: VillageCreateComponent, title: 'Nouveau village/quartier' },
       { path: 'geo/villages/:id', component: VillageDetailComponent, title: 'Détail village/quartier' },
-      { path: 'types', component: TypeListComponent, title: 'Types' },
-      { path: 'types/new', component: TypeCreateComponent, title: 'Nouveau type' },
-      { path: 'types/:id', component: TypeDetailComponent, title: 'Détail type' },
-      { path: 'churches', component: ChurchListComponent, title: 'Entités ecclésiales' },
-      { path: 'churches/new', component: ChurchCreateComponent, title: 'Nouvelle entité' },
-      { path: 'churches/tree', component: ChurchTreeComponent, title: 'Arborescence des entités' },
-      { path: 'churches/:id', component: ChurchDetailComponent, title: 'Détail entité' },
+      { path: 'types', component: TypeListComponent, canActivate: [RoleGuard], title: 'Types' },
+      { path: 'types/new', component: TypeCreateComponent, canActivate: [RoleGuard], title: 'Nouveau type' },
+      { path: 'types/:id', component: TypeDetailComponent, canActivate: [RoleGuard], title: 'Détail type' },
+      { path: 'churches', component: ChurchListComponent, title: 'Églises' },
+      { path: 'churches/new', component: ChurchCreateComponent, canActivate: [RoleGuard], title: 'Nouvelle église' },
+      { path: 'churches/tree', component: ChurchTreeComponent, canActivate: [RoleGuard], title: 'Arborescence des églises' },
+      { path: 'churches/:id', component: ChurchDetailComponent, title: 'Détail église' },
       { path: 'clergy-members', component: ClergyMemberListComponent, title: 'Clergé & personnel' },
       { path: 'clergy-members/new', component: ClergyMemberCreateComponent, title: 'Nouvelle affectation' },
       { path: 'clergy-members/:id', component: ClergyMemberDetailComponent, title: 'Détail affectation' },
@@ -117,6 +121,9 @@ export const routes: Routes = [
       { path: 'liturgy/requests/:id', component: RequestDetailComponent, title: 'Détail demande' },
       { path: 'liturgy/donations', component: DonationListComponent, title: 'Dons' },
       { path: 'liturgy/donations/:id', component: DonationDetailComponent, title: 'Détail don' },
+      { path: 'liturgy/tariffs', component: TariffListComponent, title: 'Tarifs' },
+      { path: 'liturgy/tariffs/new', component: TariffCreateComponent, title: 'Nouveau tarif' },
+      { path: 'liturgy/tariffs/:id', component: TariffDetailComponent, title: 'Détail tarif' },
       { path: 'payment/methods', component: PaymentMethodListComponent, title: 'Moyens de paiement' },
       { path: 'payment/methods/new', component: PaymentMethodCreateComponent, title: 'Nouveau moyen de paiement' },
       { path: 'payment/methods/:id', component: PaymentMethodDetailComponent, title: 'Détail moyen de paiement' },
@@ -128,13 +135,13 @@ export const routes: Routes = [
       { path: 'community/publications', component: PublicationListComponent, title: 'Publications' },
       { path: 'community/publications/new', component: PublicationCreateComponent, title: 'Nouvelle publication' },
       { path: 'community/publications/:id', component: PublicationDetailComponent, title: 'Détail publication' },
-      { path: 'settings', component: SettingsListComponent, title: 'Paramètres' },
-      { path: 'settings/new', component: SettingsCreateComponent, title: 'Nouveau setting' },
-      { path: 'settings/:id', component: SettingsDetailComponent, title: 'Détail setting' },
+      { path: 'settings', component: SettingsListComponent, canActivate: [RoleGuard], title: 'Paramètres' },
+      { path: 'settings/new', component: SettingsCreateComponent, canActivate: [RoleGuard], title: 'Nouveau setting' },
+      { path: 'settings/:id', component: SettingsDetailComponent, canActivate: [RoleGuard], title: 'Détail setting' },
       { path: 'notifications', component: NotificationListComponent, title: 'Notifications' },
-      { path: 'chat', component: ConversationListComponent, title: 'Chat' },
-      { path: 'chat/new', component: ConversationCreateComponent, title: 'Nouvelle conversation' },
-      { path: 'chat/:id', component: ConversationDetailComponent, title: 'Conversation' },
+      { path: 'chat', component: ConversationListComponent, canActivate: [RoleGuard], title: 'Chat' },
+      { path: 'chat/new', component: ConversationCreateComponent, canActivate: [RoleGuard], title: 'Nouvelle conversation' },
+      { path: 'chat/:id', component: ConversationDetailComponent, canActivate: [RoleGuard], title: 'Conversation' },
     ],
   },
   {

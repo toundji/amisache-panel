@@ -41,6 +41,13 @@ export class ScheduleService {
     );
   }
 
+  /** GET /schedules/church/:churchId — horaires d'une église (clergé de cette église, ou admin). */
+  listForChurch(churchId: string): Observable<Schedule[]> {
+    return this.http.get<Schedule[]>(`schedules/church/${churchId}`).pipe(
+      tap((schedules) => this.schedulesSignal.set(schedules)),
+    );
+  }
+
   getById(id: string): Observable<Schedule> {
     return this.http.get<Schedule>(`schedules/${id}`);
   }

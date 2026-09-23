@@ -61,8 +61,10 @@ export interface Church {
   type: EntityType;
   name: string;
   slug: string;
-  leaderMessage?: string;
   bannerPhoto?: string;
+  logo?: string;
+  /** Galerie de photos de l'église (URLs) — gérée via POST/DELETE /churches/:id/photos */
+  photos?: string[];
   accentColor?: string;
   defaultLanguage?: string;
   status: ValidationStatus;
@@ -90,7 +92,6 @@ export interface CreateChurchDto {
   type: EntityType;
   name: string;
   slug?: string;
-  leaderMessage?: string;
   accentColor?: string;
   defaultLanguage?: string;
   parentId?: string;
@@ -107,7 +108,6 @@ export interface CreateChurchDto {
 export interface UpdateChurchDto {
   name?: string;
   slug?: string;
-  leaderMessage?: string;
   accentColor?: string;
   defaultLanguage?: string;
   address?: {

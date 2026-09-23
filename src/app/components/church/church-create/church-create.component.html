@@ -4,7 +4,7 @@
     <div class="d-flex align-items-center gap-3">
       <app-back-button fallback="/churches"></app-back-button>
       <div>
-        <h1 class="page-title mb-0">Nouvelle entité ecclésiale</h1>
+        <h1 class="page-title mb-0">Nouvelle église</h1>
         <p class="page-subtitle mb-0">Une CONFÉRENCE est la racine (pays requis, sans parent) ; tout autre niveau requiert un parent</p>
       </div>
     </div>
@@ -49,9 +49,9 @@
                 </div>
               } @else {
                 <div class="col-md-6">
-                  <label class="form-label">Entité parente</label>
+                  <label class="form-label">Église parente</label>
                   <select class="form-select" formControlName="parentId" [class.is-invalid]="invalid('parentId')">
-                    <option value="">Choisir une entité parente...</option>
+                    <option value="">Choisir une église parente...</option>
                     @for (p of parents() ?? []; track p.id) {
                       <option [value]="p.id">{{ p.name }} — {{ typeLabels[p.type] }}</option>
                     }
@@ -74,10 +74,6 @@
           <div class="card-header">Personnalisation</div>
           <div class="card-body">
             <div class="row g-3">
-              <div class="col-12">
-                <label class="form-label">Message du responsable <span class="text-muted">(optionnel)</span></label>
-                <textarea class="form-control" rows="3" formControlName="leaderMessage"></textarea>
-              </div>
               <div class="col-md-4">
                 <label class="form-label">Couleur d'accent <span class="text-muted">(optionnel, #RRGGBB)</span></label>
                 <input type="text" class="form-control" formControlName="accentColor" placeholder="#16235C"
@@ -132,8 +128,13 @@
                 <label class="form-label">Longitude <span class="text-muted">(optionnel)</span></label>
                 <input type="number" step="any" class="form-control" formControlName="lng" placeholder="2.42">
               </div>
+              <div class="col-12">
+                <button type="button" class="btn btn-outline-secondary btn-sm" (click)="mapOpen.set(true)">
+                  <i class="fas fa-map-location-dot me-1"></i>Choisir sur la carte
+                </button>
+              </div>
             </div>
-            <div class="form-text mt-2">Renseignez latitude ET longitude pour enregistrer la position GPS.</div>
+            <div class="form-text mt-2">Cliquez sur la carte, ou renseignez latitude ET longitude à la main.</div>
           </div>
         </div>
 
@@ -146,12 +147,32 @@
         <div class="d-flex gap-2">
           <button type="submit" class="btn btn-primary" [disabled]="submitting()">
             @if (submitting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
-            Créer l'entité
+            Créer l'église
           </button>
           <a routerLink="/churches" class="btn btn-outline-secondary">Annuler</a>
         </div>
       </form>
     </div>
   </div>
+
+  <app-modal [open]="mapOpen()" title="Choisir la position GPS" size="lg" (closed)="mapOpen.set(false)">
+    @if (mapOpen()) {
+      <app-location-picker
+        [lat]="form.get('lat')?.value" [lng]="form.get('lng')?.value"
+        [referenceLat]="selectedParent()?.address?.location?.coordinates?.[1] ?? null"
+        [referenceLng]="selectedParent()?.address?.location?.coordinates?.[0] ?? null"
+        [referenceLabel]="selectedParent()?.name ?? 'Église parente'"
+        (positionChange)="form.patchValue({ lat: $event.lat, lng: $event.lng })">
+      </app-location-picker>
+      @if (selectedParent()?.address?.location) {
+        <p class="text-muted mt-2 mb-0" style="font-size:.8rem;">
+          <i class="fas fa-circle text-primary me-1"></i>Position de « {{ selectedParent()?.name }} ».
+        </p>
+      }
+      <div class="d-flex justify-content-end mt-3">
+        <button type="button" class="btn btn-primary btn-sm" (click)="mapOpen.set(false)">Valider</button>
+      </div>
+    }
+  </app-modal>
 
 </div>

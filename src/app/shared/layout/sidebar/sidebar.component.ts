@@ -1,8 +1,9 @@
-import { Component, EventEmitter, HostListener, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { Component, computed, EventEmitter, HostListener, inject, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { MenuItem } from '../../../models/menu-item.model';
 import { AuthService } from '../../../services/auth.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { AvatarHelper } from '../../avatar/avatar.helper';
 
 @Component({
@@ -20,6 +21,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   @Output() navigated = new EventEmitter<void>();
 
   readonly authService = inject(AuthService);
+  readonly clergyContext = inject(ClergyContextService);
 
   isMobile = false;
   currentYear = new Date().getFullYear();
@@ -29,9 +31,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // (cf. CLAUDE.md § Sidebar).
   menuItems: MenuItem[] = [
     { title: 'Tableau de bord', icon: 'fas fa-th-large', route: '/' },
-    { title: 'Utilisateurs', icon: 'fas fa-users', route: '/users' },
+    { title: 'Utilisateurs', icon: 'fas fa-users', route: '/users', adminOnly: true },
     { title: 'Notifications', icon: 'fas fa-bell', route: '/notifications' },
-    { title: 'Chat', icon: 'fas fa-comments', route: '/chat' },
+    { title: 'Chat', icon: 'fas fa-comments', route: '/chat', adminOnly: true },
     {
       title: 'Découpage géo', icon: 'fas fa-map-location-dot',
       children: [
@@ -41,12 +43,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
         { title: 'Villages / Quartiers', icon: 'fas fa-house-chimney', route: '/geo/villages' },
       ],
     },
-    { title: 'Types', icon: 'fas fa-tags', route: '/types' },
+    { title: 'Types', icon: 'fas fa-tags', route: '/types', adminOnly: true },
     {
       title: 'Hiérarchie ecclésiale', icon: 'fas fa-church',
       children: [
-        { title: 'Entités', icon: 'fas fa-sitemap', route: '/churches' },
-        { title: 'Arborescence', icon: 'fas fa-diagram-project', route: '/churches/tree' },
+        { title: 'Églises', icon: 'fas fa-sitemap', route: '/churches' },
+        { title: 'Arborescence', icon: 'fas fa-diagram-project', route: '/churches/tree', adminOnly: true },
         { title: 'Clergé & personnel', icon: 'fas fa-user-tie', route: '/clergy-members' },
         { title: 'Entrées', icon: 'fas fa-door-open', route: '/entrances' },
         { title: 'Abonnements fidèles', icon: 'fas fa-hand-holding-heart', route: '/memberships' },
@@ -58,6 +60,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         { title: 'Horaires', icon: 'fas fa-calendar-day', route: '/liturgy/schedules' },
         { title: 'Demandes', icon: 'fas fa-envelope-open-text', route: '/liturgy/requests' },
         { title: 'Dons', icon: 'fas fa-hand-holding-dollar', route: '/liturgy/donations' },
+        { title: 'Tarifs', icon: 'fas fa-coins', route: '/liturgy/tariffs' },
       ],
     },
     {
@@ -78,17 +81,42 @@ export class SidebarComponent implements OnInit, OnDestroy {
       title: 'Contenu', icon: 'fas fa-file-alt',
       children: [
         { title: 'Messages de contact', icon: 'fas fa-envelope', route: '/contact' },
-        { title: 'FAQ', icon: 'fas fa-question-circle', route: '/faq' },
+        { title: 'FAQ', icon: 'fas fa-question-circle', route: '/faq', adminOnly: true },
       ],
     },
     {
-      title: 'Système', icon: 'fas fa-cog',
+      title: 'Système', icon: 'fas fa-cog', adminOnly: true,
       children: [
         { title: 'Emails échoués', icon: 'fas fa-envelope-open-text', route: '/mail/failed' },
         { title: 'Paramètres', icon: 'fas fa-sliders-h', route: '/settings' },
       ],
     },
   ];
+
+  /**
+   * Sidebar effective — retire les entrées admin-only pour un compte clergy
+   * sans accès complet, et les groupes qui n'ont plus aucun enfant visible.
+   * `computed()`, pas un getter : un getter est réévalué à CHAQUE cycle de
+   * détection de changement Angular, ce qui reconstruisait un objet
+   * `{ ...item, children: [...] }` neuf à chaque fois — `toggleSubMenu`
+   * mutait bien `isExpanded` sur l'objet du rendu courant, mais le cycle
+   * suivant repartait d'une copie fraîche de `menuItems` (jamais mutée) et
+   * perdait l'état, donnant l'impression qu'aucun sous-menu ne s'ouvrait
+   * (pour un clergy uniquement — l'admin, qui reçoit `menuItems` tel quel,
+   * n'était pas affecté). `computed()` ne recalcule que quand
+   * `isFullAccess()` change, donc les objets renvoyés restent stables et
+   * mutables entre deux rendus.
+   */
+  visibleMenuItems = computed<MenuItem[]>(() => {
+    if (this.clergyContext.isFullAccess()) return this.menuItems;
+
+    return this.menuItems
+      .filter((item) => !item.adminOnly)
+      .map((item) =>
+        item.children ? { ...item, children: item.children.filter((c) => !c.adminOnly) } : item,
+      )
+      .filter((item) => !item.children || item.children.length > 0);
+  });
 
   ngOnInit(): void {
     this.checkScreenSize();

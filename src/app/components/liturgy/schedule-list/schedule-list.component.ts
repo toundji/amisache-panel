@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import { ScheduleService } from '../../../services/schedule.service';
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { TypeService } from '../../../services/type.service';
 import { TypeScope } from '../../../models/type.model';
 import {
@@ -43,6 +44,7 @@ function loadPersisted(): Partial<Pick<ScheduleFilters, 'churchId' | 'frequency'
 export class ScheduleListComponent {
   readonly scheduleService = inject(ScheduleService);
   readonly churchService = inject(ChurchService);
+  readonly clergyContext = inject(ClergyContextService);
   private readonly typeService = inject(TypeService);
   readonly pagination = inject(PaginationService);
 
@@ -99,12 +101,27 @@ export class ScheduleListComponent {
     this.load();
   }
 
+  // Clergé sans accès complet : jamais la liste globale (/schedules, publique
+  // mais toutes églises confondues) — uniquement les horaires de son église active.
   private load(showLoader = false): void {
     if (showLoader) Swal.showLoading();
     else this.refreshing.set(true);
     this.error.set(null);
 
-    this.scheduleService.list().subscribe({
+    const churchId = this.clergyContext.activeChurchId();
+    const obs = this.clergyContext.isFullAccess()
+      ? this.scheduleService.list()
+      : churchId
+        ? this.scheduleService.listForChurch(churchId)
+        : null;
+
+    if (!obs) {
+      this.refreshing.set(false);
+      if (showLoader) Swal.close();
+      return;
+    }
+
+    obs.subscribe({
       next: () => {
         this.refreshing.set(false);
         if (showLoader) Swal.close();

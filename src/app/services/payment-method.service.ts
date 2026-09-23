@@ -41,6 +41,18 @@ export class PaymentMethodService {
     );
   }
 
+  /** GET /payment-methods/church/:churchId — moyens de paiement d'une église (clergé de cette église, ou admin). */
+  listForChurch(
+    churchId: string,
+    query: Pick<ListPaymentMethodQuery, 'activeOnly'> = {},
+  ): Observable<PaymentMethod[]> {
+    let params = new HttpParams();
+    if (query.activeOnly !== undefined) params = params.set('activeOnly', String(query.activeOnly));
+    return this.http.get<PaymentMethod[]>(`payment-methods/church/${churchId}`, { params }).pipe(
+      tap((methods) => this.methodsSignal.set(methods)),
+    );
+  }
+
   getById(id: string): Observable<PaymentMethod> {
     return this.http.get<PaymentMethod>(`payment-methods/${id}`);
   }

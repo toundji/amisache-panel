@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import { PaymentService } from '../../../services/payment.service';
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import {
   PAYMENT_OPERATOR_LABELS,
   PAYMENT_STATUS_LABELS,
@@ -49,6 +50,7 @@ const STATUS_BADGE: Record<PaymentStatus, string> = {
 export class PaymentListComponent {
   readonly paymentService = inject(PaymentService);
   readonly churchService = inject(ChurchService);
+  readonly clergyContext = inject(ClergyContextService);
   readonly pagination = inject(PaginationService);
 
   statusList = Object.values(PaymentStatus);
@@ -112,12 +114,27 @@ export class PaymentListComponent {
     }
   }
 
+  // Clergé sans accès complet : jamais /payments/admin (403 garanti) —
+  // uniquement les paiements de son église active.
   private fetch(status: PaymentStatus | '', showLoader = false): void {
     if (showLoader) Swal.showLoading();
     else this.refreshing.set(true);
     this.error.set(null);
 
-    this.paymentService.listAdmin({ status: status || undefined }).subscribe({
+    const churchId = this.clergyContext.activeChurchId();
+    const obs = this.clergyContext.isFullAccess()
+      ? this.paymentService.listAdmin({ status: status || undefined })
+      : churchId
+        ? this.paymentService.listForChurch(churchId, { status: status || undefined })
+        : null;
+
+    if (!obs) {
+      this.refreshing.set(false);
+      if (showLoader) Swal.close();
+      return;
+    }
+
+    obs.subscribe({
       next: () => {
         this.refreshing.set(false);
         if (showLoader) Swal.close();

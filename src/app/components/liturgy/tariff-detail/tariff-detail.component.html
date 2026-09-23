@@ -1,0 +1,96 @@
+<div class="container-fluid px-0">
+
+  <div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+      <app-back-button fallback="/liturgy/tariffs"></app-back-button>
+      <div>
+        <h1 class="page-title mb-0">Détail tarif</h1>
+        <p class="page-subtitle mb-0" *ngIf="tariff()">{{ typeName() }} · {{ churchName() }}</p>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <button class="btn btn-outline-danger btn-sm" [disabled]="deleting()" (click)="deleteTariff()">
+        <i class="fas fa-trash me-1"></i>Supprimer
+      </button>
+    </div>
+  </div>
+
+  @if (error()) {
+    <div class="alert alert-danger mb-3"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div>
+  }
+
+  @if (loading()) {
+    <div class="row g-3">
+      <div class="col-lg-4"><div class="card p-4"><div class="skeleton-line" style="width:100%;height:20px;"></div></div></div>
+      <div class="col-lg-8"><div class="card p-4">@for (i of [1,2,3]; track i) { <div class="skeleton-line mb-3" style="width:100%;"></div> }</div></div>
+    </div>
+  }
+
+  @if (!loading() && tariff(); as t) {
+    <div class="row g-3">
+
+      <div class="col-lg-4">
+        <div class="card mb-3">
+          <div class="card-header">État</div>
+          <div class="card-body text-center">
+            <span class="status-badge" [class]="t.active ? 'status-success' : 'status-disabled'">
+              {{ t.active ? 'Actif' : 'Désactivé' }}
+            </span>
+            <button class="btn btn-outline-secondary btn-sm w-100 mt-3" [disabled]="activeSaving()" (click)="toggleActive()">
+              @if (activeSaving()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+              {{ t.active ? 'Désactiver' : 'Réactiver' }}
+            </button>
+            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">
+              Désactivé = ignoré par la résolution — comme s'il n'existait pas
+              (les églises filles retombent sur l'église supérieure suivante).
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Rattachement</div>
+          <div class="card-body">
+            <div class="quick-info">
+              <div class="quick-info-item"><i class="fas fa-church text-primary-app"></i><span>{{ churchName() }}</span></div>
+              <div class="quick-info-item"><i class="fas fa-tag text-primary-app"></i><span>{{ typeName() }}</span></div>
+              @if (t.code) {
+                <div class="quick-info-item"><i class="fas fa-hashtag text-primary-app"></i><span>Code {{ t.code }}</span></div>
+              }
+              @if (t.createdAt) {
+                <div class="quick-info-item"><i class="fas fa-calendar text-primary-app"></i><span>Publié le {{ t.createdAt | date:'dd/MM/yyyy' }}</span></div>
+              }
+            </div>
+            <p class="text-muted mt-3 mb-0" style="font-size:.8rem;">L'église et le motif sont immuables après création.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <form [formGroup]="form">
+          <div class="card">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Montant (FCFA)</span>
+              @if (isFieldModified('amount') && !isFieldSaving('amount')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('amount')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('amount')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('amount')) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (isFieldJustSaved('amount')) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+            </div>
+            <div class="card-body">
+              <input type="number" min="1" class="form-control" formControlName="amount"
+                [class.border-warning]="isFieldModified('amount') && !isFieldJustSaved('amount') && !isFieldSaving('amount')"
+                [class.border-success]="isFieldJustSaved('amount')">
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  }
+
+</div>

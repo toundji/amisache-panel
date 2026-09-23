@@ -3,7 +3,7 @@ import { inject, Injectable, signal } from '@angular/core';
 import { map, Observable, tap } from 'rxjs';
 import { AuthResponse } from '../models/auth.model';
 import { UserSessionInfo } from '../models/session.model';
-import { ListUsersQuery, PaginatedUsers, User, UserRole, UserStatus } from '../models/user.model';
+import { ListUsersQuery, PaginatedUsers, User, UserLookup, UserRole, UserStatus } from '../models/user.model';
 
 /**
  * Miroir de UserController (nest-auth-base src/users/controllers/user.controller.ts).
@@ -59,11 +59,27 @@ export class UserService {
     return this.http.patch<User>('users/me', body);
   }
 
-  /** Charge jusqu'à 500 comptes pour peupler les sélecteurs d'utilisateur. */
+  /**
+   * Charge jusqu'à 500 comptes pour peupler les sélecteurs d'utilisateur.
+   * Réservé admin/manager/engineer côté backend — jamais appelé pour un
+   * compte clergy (403 garanti), voir `lookupByEmail`.
+   */
   listAllForSelect(): Observable<PaginatedUsers> {
     return this.http
       .get<PaginatedUsers>('users', { params: new HttpParams().set('limit', '500') })
       .pipe(tap((result) => this.allForSelectSignal.set(result.data)));
+  }
+
+  /**
+   * GET /users/lookup?email= — recherche ciblée par email EXACT, ouverte au
+   * clergé (contrairement à `listAllForSelect`/`listUsers`) pour retrouver un
+   * compte existant à affecter à sa propre église, sans dumper tout
+   * l'annuaire de la plateforme. `null` si aucun compte ne correspond.
+   */
+  lookupByEmail(email: string): Observable<UserLookup | null> {
+    return this.http.get<UserLookup | null>('users/lookup', {
+      params: new HttpParams().set('email', email),
+    });
   }
 
   listUsers(query: ListUsersQuery = {}): Observable<PaginatedUsers> {

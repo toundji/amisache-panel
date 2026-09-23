@@ -204,6 +204,13 @@
                 </div>
               }
             }
+            @if (peerTyping()) {
+              <div class="chat-bubble-row">
+                <div class="chat-bubble chat-bubble-typing" aria-live="polite">
+                  <span></span><span></span><span></span>
+                </div>
+              </div>
+            }
           </div>
 
           <div class="card-footer chat-composer">
@@ -267,7 +274,7 @@
                 </button>
                 <textarea #bodyTextarea class="form-control chat-composer-textarea" rows="1" formControlName="body"
                   placeholder="Votre message... (Entrée pour envoyer, Maj+Entrée pour une nouvelle ligne)"
-                  (input)="autoResizeTextarea(bodyTextarea)"
+                  (input)="autoResizeTextarea(bodyTextarea); onComposerInput()"
                   (keydown)="onComposerKeydown($event)"></textarea>
                 <button type="submit" class="btn btn-primary" [disabled]="sending() || !canSend()">
                   @if (sending()) { <span class="spinner-border spinner-border-sm"></span> } @else { <i class="fas fa-paper-plane"></i> }
