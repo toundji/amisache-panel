@@ -7,6 +7,7 @@ import { UserDetailComponent } from './components/users/user-detail/user-detail.
 import { ProfileComponent } from './components/profile/profile.component';
 import { SessionsComponent } from './components/sessions/sessions.component';
 import { MailFailedListComponent } from './components/mail/mail-failed-list/mail-failed-list.component';
+import { ApiErrorListComponent } from './components/system/api-error-list/api-error-list.component';
 import { ContactListComponent } from './components/contact/contact-list/contact-list.component';
 import { ContactDetailComponent } from './components/contact/contact-detail/contact-detail.component';
 import { FaqListComponent } from './components/faq/faq-list/faq-list.component';
@@ -34,6 +35,9 @@ import { VillageDetailComponent } from './components/address/village-detail/vill
 import { TypeListComponent } from './components/type/type-list/type-list.component';
 import { TypeCreateComponent } from './components/type/type-create/type-create.component';
 import { TypeDetailComponent } from './components/type/type-detail/type-detail.component';
+import { RequestTypeListComponent } from './components/liturgy/request-type-list/request-type-list.component';
+import { RequestTypeCreateComponent } from './components/liturgy/request-type-create/request-type-create.component';
+import { RequestTypeDetailComponent } from './components/liturgy/request-type-detail/request-type-detail.component';
 import { ChurchListComponent } from './components/church/church-list/church-list.component';
 import { ChurchCreateComponent } from './components/church/church-create/church-create.component';
 import { ChurchDetailComponent } from './components/church/church-detail/church-detail.component';
@@ -83,6 +87,7 @@ export const routes: Routes = [
       { path: 'profile', component: ProfileComponent, title: 'Mon profil' },
       { path: 'sessions', component: SessionsComponent, title: 'Mes sessions' },
       { path: 'mail/failed', component: MailFailedListComponent, canActivate: [RoleGuard], title: 'Emails échoués' },
+      { path: 'api-errors', component: ApiErrorListComponent, canActivate: [RoleGuard], title: 'Erreurs serveur' },
       { path: 'contact', component: ContactListComponent, title: 'Messages de contact' },
       { path: 'contact/:id', component: ContactDetailComponent, title: 'Détail message' },
       { path: 'faq', component: FaqListComponent, canActivate: [RoleGuard], title: 'FAQ' },
@@ -103,6 +108,9 @@ export const routes: Routes = [
       { path: 'types', component: TypeListComponent, canActivate: [RoleGuard], title: 'Types' },
       { path: 'types/new', component: TypeCreateComponent, canActivate: [RoleGuard], title: 'Nouveau type' },
       { path: 'types/:id', component: TypeDetailComponent, canActivate: [RoleGuard], title: 'Détail type' },
+      { path: 'request-types', component: RequestTypeListComponent, canActivate: [RoleGuard], title: 'Types de demande' },
+      { path: 'request-types/new', component: RequestTypeCreateComponent, canActivate: [RoleGuard], title: 'Nouveau type de demande' },
+      { path: 'request-types/:id', component: RequestTypeDetailComponent, canActivate: [RoleGuard], title: 'Détail type de demande' },
       { path: 'churches', component: ChurchListComponent, title: 'Églises' },
       { path: 'churches/new', component: ChurchCreateComponent, canActivate: [RoleGuard], title: 'Nouvelle église' },
       { path: 'churches/tree', component: ChurchTreeComponent, canActivate: [RoleGuard], title: 'Arborescence des églises' },

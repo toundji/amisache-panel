@@ -6,10 +6,12 @@ export interface ChurchProfile {
   id: string;
   description?: string;
   leaderMessage?: string;
+  website?: string;
   churchId: string;
 }
 
 export interface UpsertChurchProfileDto {
   description?: string;
   leaderMessage?: string;
+  website?: string;
 }

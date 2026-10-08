@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import { ScheduleService } from '../../../services/schedule.service';
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { TypeService } from '../../../services/type.service';
 import { TypeScope } from '../../../models/type.model';
 import {
@@ -32,6 +33,7 @@ export class ScheduleCreateComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly scheduleService = inject(ScheduleService);
   private readonly churchService = inject(ChurchService);
+  readonly clergyContext = inject(ClergyContextService);
   private readonly typeService = inject(TypeService);
 
   frequencyList = Object.values(ScheduleFrequency);
@@ -68,6 +70,15 @@ export class ScheduleCreateComponent {
     if (this.typeService.activeForScope(TypeScope.SCHEDULE) === undefined) {
       this.typeService.listActive(TypeScope.SCHEDULE).subscribe({ error: () => undefined });
     }
+
+    // Clergé (pas admin/engineer) : jamais de choix d'église — c'est déjà celle qu'il
+    // administre (topbar). `effect()` plutôt qu'une lecture ponctuelle : `activeChurchId()`
+    // peut encore être vide à la construction (chargement des affectations en cours).
+    effect(() => {
+      if (this.clergyContext.isFullAccess()) return;
+      const churchId = this.clergyContext.activeChurchId();
+      if (churchId) this.form.patchValue({ churchId });
+    });
   }
 
   get scheduleTypes() {

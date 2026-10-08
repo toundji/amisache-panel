@@ -7,7 +7,7 @@ export enum EntityType {
   CONFERENCE = 'CONFERENCE',
   ARCHDIOCESE = 'ARCHDIOCESE',
   DIOCESE = 'DIOCESE',
-  DOYENNE = 'DOYENNE',
+  VICARIAT = 'VICARIAT',
   PAROISSE = 'PAROISSE',
   COMMUNAUTE = 'COMMUNAUTE',
   CHURCH = 'CHURCH',
@@ -18,12 +18,33 @@ export const ENTITY_TYPE_LABELS: Record<EntityType, string> = {
   [EntityType.CONFERENCE]: 'Conférence épiscopale',
   [EntityType.ARCHDIOCESE]: 'Archidiocèse',
   [EntityType.DIOCESE]: 'Diocèse',
-  [EntityType.DOYENNE]: 'Doyenné',
+  [EntityType.VICARIAT]: 'Vicariat',
   [EntityType.PAROISSE]: 'Paroisse',
   [EntityType.COMMUNAUTE]: 'Communauté',
   [EntityType.CHURCH]: 'Église',
   [EntityType.CHAPEL]: 'Chapelle',
 };
+
+/** Types proposés à la création — DIOCESE reste valide pour l'existant mais n'est plus proposé. */
+export const SELECTABLE_ENTITY_TYPES: EntityType[] = Object.values(EntityType).filter((t) => t !== EntityType.DIOCESE);
+
+/** Lieu réel ou regroupement administratif (voir backend church.enum.ts). */
+export enum ChurchNature {
+  PHYSICAL = 'PHYSICAL',
+  VIRTUAL = 'VIRTUAL',
+}
+
+export const CHURCH_NATURE_LABELS: Record<ChurchNature, string> = {
+  [ChurchNature.PHYSICAL]: 'Physique',
+  [ChurchNature.VIRTUAL]: 'Virtuelle',
+};
+
+const PHYSICAL_TYPES = [EntityType.ARCHDIOCESE, EntityType.PAROISSE, EntityType.CHURCH, EntityType.CHAPEL];
+
+/** Miroir de defaultNatureFor côté backend. */
+export function defaultNatureFor(type: EntityType): ChurchNature {
+  return PHYSICAL_TYPES.includes(type) ? ChurchNature.PHYSICAL : ChurchNature.VIRTUAL;
+}
 
 export enum ValidationStatus {
   PENDING = 'PENDING',
@@ -59,6 +80,7 @@ export interface GeoPolygon {
 export interface Church {
   id: string;
   type: EntityType;
+  nature: ChurchNature;
   name: string;
   slug: string;
   bannerPhoto?: string;
@@ -90,6 +112,7 @@ export interface AddressInput {
 
 export interface CreateChurchDto {
   type: EntityType;
+  nature?: ChurchNature;
   name: string;
   slug?: string;
   accentColor?: string;
@@ -108,6 +131,7 @@ export interface CreateChurchDto {
 export interface UpdateChurchDto {
   name?: string;
   slug?: string;
+  nature?: ChurchNature;
   accentColor?: string;
   defaultLanguage?: string;
   address?: {

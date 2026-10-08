@@ -101,8 +101,8 @@ export class ScheduleListComponent {
     this.load();
   }
 
-  // Clergé sans accès complet : jamais la liste globale (/schedules, publique
-  // mais toutes églises confondues) — uniquement les horaires de son église active.
+  // Clergé sans accès complet : jamais la liste globale (/schedules/admin,
+  // toutes églises confondues) — uniquement les horaires de son église active.
   private load(showLoader = false): void {
     if (showLoader) Swal.showLoading();
     else this.refreshing.set(true);
@@ -110,7 +110,7 @@ export class ScheduleListComponent {
 
     const churchId = this.clergyContext.activeChurchId();
     const obs = this.clergyContext.isFullAccess()
-      ? this.scheduleService.list()
+      ? this.scheduleService.listAdmin()
       : churchId
         ? this.scheduleService.listForChurch(churchId)
         : null;

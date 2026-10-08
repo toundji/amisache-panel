@@ -7,7 +7,7 @@
 import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { interval, startWith, switchMap } from 'rxjs';
 
 import { NotificationService } from '../../services/notification.service';
@@ -78,6 +78,7 @@ const DROPDOWN_PREVIEW_LIMIT = 5;
 export class NotificationBellComponent implements OnInit {
   private readonly notificationService = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly router = inject(Router);
 
   readonly unreadCount = this.notificationService.unreadCount;
   recent = signal<AppNotification[]>([]);
@@ -101,6 +102,10 @@ export class NotificationBellComponent implements OnInit {
   }
 
   markAsRead(notification: AppNotification): void {
+    // Escalade de l'assistant : ouvre directement la conversation concernée.
+    const conversationId = notification.data?.['conversationId'];
+    if (typeof conversationId === 'string') this.router.navigate(['/chat', conversationId]);
+
     if (notification.isRead) return;
     this.notificationService.markAsRead(notification.id).subscribe(() => {
       notification.isRead = true;

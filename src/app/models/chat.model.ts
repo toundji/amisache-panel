@@ -73,6 +73,11 @@ export interface Conversation {
   lastMessagePreview?: string | null;
   lastMessageSenderId?: string | null;
   closedAt?: string | null;
+  /** Escalade par l'assistant — « à traiter » par un humain (mode reste BOT) */
+  escalatedAt?: string | null;
+  escalationReason?: string | null;
+  /** null = équipe Amisache */
+  escalatedChurchId?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -141,7 +146,8 @@ export interface SendMessageDto {
 }
 
 export interface HandoffDto {
-  fromActorId: string;
+  /** Absent : aucun participant ne quitte le fil (conversation assistant d'un utilisateur connecté) */
+  fromActorId?: string;
   toActorId: string;
   toActorType: ActorType;
   toRole: ParticipantRole;

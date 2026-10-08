@@ -32,35 +32,24 @@ export class SidebarComponent implements OnInit, OnDestroy {
   menuItems: MenuItem[] = [
     { title: 'Tableau de bord', icon: 'fas fa-th-large', route: '/' },
     { title: 'Utilisateurs', icon: 'fas fa-users', route: '/users', adminOnly: true },
-    { title: 'Notifications', icon: 'fas fa-bell', route: '/notifications' },
-    { title: 'Chat', icon: 'fas fa-comments', route: '/chat', adminOnly: true },
     {
-      title: 'Découpage géo', icon: 'fas fa-map-location-dot',
-      children: [
-        { title: 'Pays', icon: 'fas fa-flag', route: '/geo/countries' },
-        { title: 'Régions', icon: 'fas fa-map', route: '/geo/regions' },
-        { title: 'Zones', icon: 'fas fa-draw-polygon', route: '/geo/zones' },
-        { title: 'Villages / Quartiers', icon: 'fas fa-house-chimney', route: '/geo/villages' },
-      ],
-    },
-    { title: 'Types', icon: 'fas fa-tags', route: '/types', adminOnly: true },
-    {
-      title: 'Hiérarchie ecclésiale', icon: 'fas fa-church',
+      title: 'Églises', icon: 'fas fa-church',
       children: [
         { title: 'Églises', icon: 'fas fa-sitemap', route: '/churches' },
         { title: 'Arborescence', icon: 'fas fa-diagram-project', route: '/churches/tree', adminOnly: true },
-        { title: 'Clergé & personnel', icon: 'fas fa-user-tie', route: '/clergy-members' },
-        { title: 'Entrées', icon: 'fas fa-door-open', route: '/entrances' },
-        { title: 'Abonnements fidèles', icon: 'fas fa-hand-holding-heart', route: '/memberships' },
+        { title: 'Personnel', icon: 'fas fa-user-tie', route: '/clergy-members' },
+        { title: 'Portes', icon: 'fas fa-door-open', route: '/entrances' },
+        { title: 'Fidèles', icon: 'fas fa-hand-holding-heart', route: '/memberships' },
       ],
     },
     {
-      title: 'Vie liturgique', icon: 'fas fa-hands-praying',
+      title: 'Programmes & Demandes', icon: 'fas fa-hands-praying',
       children: [
         { title: 'Horaires', icon: 'fas fa-calendar-day', route: '/liturgy/schedules' },
         { title: 'Demandes', icon: 'fas fa-envelope-open-text', route: '/liturgy/requests' },
         { title: 'Dons', icon: 'fas fa-hand-holding-dollar', route: '/liturgy/donations' },
-        { title: 'Tarifs', icon: 'fas fa-coins', route: '/liturgy/tariffs' },
+        { title: 'Tarifs & délais', icon: 'fas fa-coins', route: '/liturgy/tariffs' },
+        { title: 'Types de demande', icon: 'fas fa-book', route: '/request-types', adminOnly: true },
       ],
     },
     {
@@ -78,8 +67,20 @@ export class SidebarComponent implements OnInit, OnDestroy {
       ],
     },
     {
+      title: 'Addressage', icon: 'fas fa-map-location-dot',
+      children: [
+        { title: 'Pays', icon: 'fas fa-flag', route: '/geo/countries' },
+        { title: 'Régions', icon: 'fas fa-map', route: '/geo/regions' },
+        { title: 'Zones', icon: 'fas fa-draw-polygon', route: '/geo/zones' },
+        { title: 'Villages / Quartiers', icon: 'fas fa-house-chimney', route: '/geo/villages' },
+      ],
+    },
+    { title: 'Types', icon: 'fas fa-tags', route: '/types', adminOnly: true },
+    {
       title: 'Contenu', icon: 'fas fa-file-alt',
       children: [
+        { title: 'Notifications', icon: 'fas fa-bell', route: '/notifications' },
+        { title: 'Chat', icon: 'fas fa-comments', route: '/chat', adminOnly: true },
         { title: 'Messages de contact', icon: 'fas fa-envelope', route: '/contact' },
         { title: 'FAQ', icon: 'fas fa-question-circle', route: '/faq', adminOnly: true },
       ],
@@ -88,6 +89,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       title: 'Système', icon: 'fas fa-cog', adminOnly: true,
       children: [
         { title: 'Emails échoués', icon: 'fas fa-envelope-open-text', route: '/mail/failed' },
+        { title: 'Erreurs serveur', icon: 'fas fa-triangle-exclamation', route: '/api-errors' },
         { title: 'Paramètres', icon: 'fas fa-sliders-h', route: '/settings' },
       ],
     },

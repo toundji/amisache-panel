@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -60,6 +60,9 @@ export class ClergyMemberCreateComponent {
   submitting = signal(false);
   error?: ServerError;
 
+  // Évite de relister les membres de la même église à chaque exécution de l'effect.
+  private loadedMembershipsForChurchId: string | null = null;
+
   constructor() {
     if (this.churches() === undefined) this.churchService.listAllForSelect().subscribe({ error: () => undefined });
 
@@ -70,15 +73,23 @@ export class ClergyMemberCreateComponent {
       return;
     }
 
-    const churchId = this.clergyContext.activeChurchId();
-    if (!churchId) return;
-    this.membershipService.listForChurch(churchId).subscribe({
-      next: (memberships) => {
-        this.clergyUserOptionsSignal.set(
-          memberships.map((m) => m.user).filter((u): u is UserLookup => !!u),
-        );
-      },
-      error: () => undefined,
+    // Clergé : jamais de choix d'église (déjà celle qu'il administre, topbar) — et la
+    // liste des fidèles à affecter en dépend. `effect()` plutôt qu'une lecture ponctuelle :
+    // `activeChurchId()` peut encore être vide à la construction (chargement en cours).
+    effect(() => {
+      const churchId = this.clergyContext.activeChurchId();
+      if (!churchId) return;
+      this.form.patchValue({ churchId });
+      if (churchId === this.loadedMembershipsForChurchId) return;
+      this.loadedMembershipsForChurchId = churchId;
+      this.membershipService.listForChurch(churchId).subscribe({
+        next: (memberships) => {
+          this.clergyUserOptionsSignal.set(
+            memberships.map((m) => m.user).filter((u): u is UserLookup => !!u),
+          );
+        },
+        error: () => undefined,
+      });
     });
   }
 

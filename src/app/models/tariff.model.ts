@@ -4,7 +4,7 @@
 // src/liturgy/controllers/tariff.controller.ts
 
 import { Church } from './church.model';
-import { TypeItem } from './type.model';
+import { RequestTypeItem } from './request-type.model';
 
 /**
  * Tarif d'une intention/d'un sacrement, publié par une église. Résolu avec
@@ -13,12 +13,15 @@ import { TypeItem } from './type.model';
  */
 export interface Tariff {
   id: string;
-  amount: string;
+  /** null : l'église ne fixe que le délai, le montant se résout plus haut */
+  amount: string | null;
+  /** Délai minimum (jours) — null : se résout plus haut, puis Type.minLeadDays */
+  minLeadDays: number | null;
   active: boolean;
   churchId: string;
   church?: Church;
   typeId: string;
-  type?: TypeItem;
+  type?: RequestTypeItem;
   code?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -27,11 +30,13 @@ export interface Tariff {
 export interface CreateTariffDto {
   churchId: string;
   typeId: string;
-  amount: number;
+  amount?: number;
+  minLeadDays?: number;
 }
 
 export interface UpdateTariffDto {
-  amount?: number;
+  amount?: number | null;
+  minLeadDays?: number | null;
   active?: boolean;
 }
 

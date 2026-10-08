@@ -9,6 +9,16 @@
       <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
         <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
       </button>
+      <div class="dropdown">
+        <button class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown"
+          [disabled]="exporting() || isLoading()" title="Exporter les demandes filtrées">
+          <i class="fas me-1" [class.fa-file-export]="!exporting()" [class.fa-spinner]="exporting()" [class.fa-spin]="exporting()"></i>Exporter ({{ filtered().length }})
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><button class="dropdown-item" (click)="export('pdf')"><i class="fas fa-file-pdf text-danger me-2"></i>PDF</button></li>
+          <li><button class="dropdown-item" (click)="export('docx')"><i class="fas fa-file-word text-primary me-2"></i>Word</button></li>
+        </ul>
+      </div>
     </div>
   </div>
 
@@ -32,6 +42,25 @@
         [ngModel]="filters().status" (ngModelChange)="updateFilter('status', $event)">
         <option value="">Tous statuts</option>
         @for (s of statusList; track s) { <option [value]="s">{{ statusLabels[s] }}</option> }
+      </select>
+
+      <select class="form-select form-select-sm" style="max-width:190px;"
+        [ngModel]="filters().typeId" (ngModelChange)="updateFilter('typeId', $event)">
+        <option value="">Tous types</option>
+        @for (t of typeOptions(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
+      </select>
+
+      <div class="input-group input-group-sm" style="max-width:320px;">
+        <span class="input-group-text">Du</span>
+        <input type="date" class="form-control" [ngModel]="filters().dateFrom" (ngModelChange)="updateFilter('dateFrom', $event ?? '')">
+        <span class="input-group-text">au</span>
+        <input type="date" class="form-control" [ngModel]="filters().dateTo" (ngModelChange)="updateFilter('dateTo', $event ?? '')">
+      </div>
+
+      <select class="form-select form-select-sm" style="max-width:130px;"
+        [ngModel]="filters().time" (ngModelChange)="updateFilter('time', $event)">
+        <option value="">Toutes heures</option>
+        @for (t of timeOptions(); track t) { <option [value]="t">{{ t }}</option> }
       </select>
 
       @if (hasFilter()) {
@@ -102,7 +131,7 @@
                 </td>
                 <td class="d-none d-md-table-cell" data-label="Type" style="font-size:.85rem;">{{ typeName(r) }}</td>
                 <td class="d-none d-md-table-cell" data-label="Église" style="font-size:.85rem;">{{ churchName(r) }}</td>
-                <td class="d-none d-lg-table-cell text-muted" data-label="Date" style="font-size:.85rem;">{{ r.date | date:'dd/MM/yyyy' }}</td>
+                <td class="d-none d-lg-table-cell text-muted" data-label="Date" style="font-size:.85rem;">{{ r.date | date:'dd/MM/yyyy' }}@if (timeOf(r)) { · {{ timeOf(r) }} }</td>
                 <td data-label="Statut">
                   <span class="status-badge" [class]="statusBadge(r.status)">{{ statusLabels[r.status] }}</span>
                 </td>

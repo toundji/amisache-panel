@@ -48,13 +48,17 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label">Église</label>
-                <select class="form-select" formControlName="churchId" [class.is-invalid]="invalid('churchId')">
-                  <option value="">Choisir une église...</option>
-                  @for (c of churches() ?? []; track c.id) {
-                    <option [value]="c.id">{{ c.name }}</option>
-                  }
-                </select>
-                <app-field-errors [formGroup]="form" controlName="churchId" fieldLabel="L'église" [serverErrors]="error?.validations"></app-field-errors>
+                @if (clergyContext.isFullAccess()) {
+                  <select class="form-select" formControlName="churchId" [class.is-invalid]="invalid('churchId')">
+                    <option value="">Choisir une église...</option>
+                    @for (c of churches() ?? []; track c.id) {
+                      <option [value]="c.id">{{ c.name }}</option>
+                    }
+                  </select>
+                  <app-field-errors [formGroup]="form" controlName="churchId" fieldLabel="L'église" [serverErrors]="error?.validations"></app-field-errors>
+                } @else {
+                  <input type="text" class="form-control" [value]="clergyContext.activeChurch()?.name ?? '—'" disabled>
+                }
               </div>
               <div class="col-md-6">
                 <label class="form-label">Fonction ecclésiale</label>

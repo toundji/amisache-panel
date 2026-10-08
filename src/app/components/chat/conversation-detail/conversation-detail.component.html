@@ -81,6 +81,49 @@
           </div>
         </div>
 
+        <!-- Escalade par l'assistant -->
+        @if (c.escalatedAt) {
+          <div class="card mt-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Question transmise</span>
+              @if (c.mode === 'BOT') {
+                <span class="status-badge status-warning"><i class="fas fa-flag me-1"></i>À traiter</span>
+              }
+            </div>
+            <div class="card-body">
+              <div class="quick-info text-start">
+                <div class="quick-info-item">
+                  <i class="fas fa-church text-primary-app"></i>
+                  <span>
+                    @if (c.escalatedChurchId) {
+                      Clergé de {{ churchService.displayInfo(c.escalatedChurchId)?.name ?? '…' }}
+                    } @else {
+                      Équipe Amisache
+                    }
+                  </span>
+                </div>
+                <div class="quick-info-item">
+                  <i class="fas fa-clock text-primary-app"></i>
+                  <span>Le {{ c.escalatedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+              </div>
+              <p class="mb-0 mt-2" style="font-size:.875rem;white-space:pre-line;">{{ c.escalationReason }}</p>
+            </div>
+          </div>
+        }
+
+        <!-- Retour AGENT -> BOT -->
+        @if (c.mode === 'AGENT') {
+          <div class="card mt-3">
+            <div class="card-body">
+              <button type="button" class="btn btn-outline-primary btn-sm w-100" [disabled]="releasingToBot()" (click)="releaseToBot()">
+                @if (releasingToBot()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                <i class="fas fa-robot me-1"></i>Rendre la main à l'assistant
+              </button>
+            </div>
+          </div>
+        }
+
         <!-- Handoff BOT -> AGENT -->
         @if (c.mode === 'BOT') {
           <div class="card mt-3">
@@ -99,7 +142,7 @@
                     <div class="mb-3">
                       <label class="form-label">Participant bot à remplacer</label>
                       <select class="form-select form-select-sm" formControlName="fromActorId">
-                        <option value="" disabled>Choisir...</option>
+                        <option value="">Aucun (garder tous les participants)</option>
                         @for (p of participants()!; track p.id) {
                           <option [value]="p.actorId">{{ p.actorType }} — {{ roleLabels[p.role] }} ({{ p.actorId.slice(0, 8) }})</option>
                         }
@@ -161,9 +204,16 @@
                     <div class="chat-bubble-sender d-flex align-items-center justify-content-between gap-2">
                       <span>{{ senderLabel(message) }}</span>
                       @if (isMine(message) && !message.contentDeletedAt) {
-                        <button type="button" class="chat-bubble-delete-btn" (click)="deleteMessage(message)" title="Supprimer">
-                          <i class="fas fa-trash"></i>
-                        </button>
+                        <span class="d-flex gap-1">
+                          @if (canSaveAsFaq() && message.body) {
+                            <button type="button" class="chat-bubble-delete-btn chat-bubble-faq-btn" (click)="saveAsFaq(message)" title="Enregistrer comme FAQ">
+                              <i class="fas fa-book-bookmark"></i>
+                            </button>
+                          }
+                          <button type="button" class="chat-bubble-delete-btn" (click)="deleteMessage(message)" title="Supprimer">
+                            <i class="fas fa-trash"></i>
+                          </button>
+                        </span>
                       }
                     </div>
                     @if (message.contentDeletedAt) {
@@ -287,5 +337,28 @@
       </div>
     </div>
   }
+
+  <app-modal [open]="faqModalOpen()" title="Enregistrer comme FAQ" size="lg" (closed)="closeFaqModal()">
+    <form [formGroup]="faqForm" (ngSubmit)="submitFaq()">
+      <p class="text-muted small">La FAQ sera publiée et l'assistant s'en servira pour répondre aux prochaines questions similaires.</p>
+      <div class="mb-3">
+        <label class="form-label">Question</label>
+        <textarea class="form-control" rows="3" formControlName="question"
+          [class.is-invalid]="faqForm.get('question')?.invalid && faqForm.get('question')?.touched"></textarea>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Réponse</label>
+        <textarea class="form-control" rows="6" formControlName="answer"
+          [class.is-invalid]="faqForm.get('answer')?.invalid && faqForm.get('answer')?.touched"></textarea>
+      </div>
+      <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="button" class="btn btn-outline-secondary" (click)="closeFaqModal()">Annuler</button>
+        <button type="submit" class="btn btn-primary" [disabled]="savingFaq()">
+          @if (savingFaq()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+          Enregistrer
+        </button>
+      </div>
+    </form>
+  </app-modal>
 
 </div>

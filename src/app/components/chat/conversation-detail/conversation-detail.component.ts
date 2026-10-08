@@ -8,6 +8,9 @@ import Swal from 'sweetalert2';
 import { ChatService } from '../../../services/chat.service';
 import { ChatSocketService } from '../../../services/chat-socket.service';
 import { AuthService } from '../../../services/auth.service';
+import { ChurchService } from '../../../services/church.service';
+import { FaqService } from '../../../services/faq.service';
+import { UserRole } from '../../../models/user.model';
 import {
   ActorType,
   CONVERSATION_STATUS_LABELS,
@@ -18,6 +21,7 @@ import {
   PARTICIPANT_ROLE_LABELS,
 } from '../../../models/chat.model';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
+import { ModalComponent } from '../../../shared/modal/modal.component';
 
 const MAX_TEXTAREA_HEIGHT = 160; // px — au-delà, la zone de texte scrolle au lieu de grandir
 
@@ -29,7 +33,7 @@ export interface SelectedFile {
 
 @Component({
   selector: 'app-conversation-detail',
-  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent, ModalComponent],
   templateUrl: './conversation-detail.component.html',
   styleUrl: './conversation-detail.component.scss',
 })
@@ -40,6 +44,14 @@ export class ConversationDetailComponent implements OnInit, OnDestroy {
   readonly chatService = inject(ChatService);
   readonly chatSocket = inject(ChatSocketService);
   readonly authService = inject(AuthService);
+  readonly churchService = inject(ChurchService);
+  private readonly faqService = inject(FaqService);
+
+  /** Mêmes rôles que POST /faq côté backend */
+  readonly canSaveAsFaq = computed(() => {
+    const roles = this.authService.user()?.roles ?? [];
+    return roles.includes(UserRole.admin) || roles.includes(UserRole.manager);
+  });
 
   @ViewChild('bodyTextarea') private bodyTextareaRef?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('videoPreview') private videoPreviewRef?: ElementRef<HTMLVideoElement>;
@@ -102,8 +114,10 @@ export class ConversationDetailComponent implements OnInit, OnDestroy {
   participants = signal<Participant[] | undefined>(undefined);
   handingOff = signal(false);
 
+  // fromActorId vide = aucun participant ne quitte le fil — cas d'une
+  // conversation de l'assistant (bot-widget), où le fidèle doit rester.
   readonly handoffForm: FormGroup = this.fb.group({
-    fromActorId: ['', [Validators.required]],
+    fromActorId: [''],
     toRole: [ParticipantRole.CLERGY, [Validators.required]],
   });
 
@@ -179,6 +193,9 @@ export class ConversationDetailComponent implements OnInit, OnDestroy {
     this.chatService.getById(this.conversationId).subscribe({
       next: (conversation) => {
         this.conversation.set(conversation);
+        if (conversation.escalatedChurchId) {
+          this.churchService.resolveDisplayInfo([conversation.escalatedChurchId]);
+        }
         this.loading.set(false);
         this.refreshing.set(false);
         if (showLoader) Swal.close();
@@ -270,6 +287,85 @@ export class ConversationDetailComponent implements OnInit, OnDestroy {
           Swal.fire('Erreur', err?.error?.msg ?? 'Suppression impossible.', 'error');
         },
       });
+    });
+  }
+
+  // ── Retour AGENT -> BOT ─────────────────────────────────────
+
+  releasingToBot = signal(false);
+
+  releaseToBot(): void {
+    Swal.fire({
+      title: "Rendre la main à l'assistant ?",
+      text: "L'assistant répondra de nouveau automatiquement au fidèle.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Rendre la main',
+      cancelButtonText: 'Annuler',
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+      this.releasingToBot.set(true);
+      this.chatService.releaseToBot(this.conversationId).subscribe({
+        next: (conversation) => {
+          this.releasingToBot.set(false);
+          this.conversation.set(conversation);
+        },
+        error: (err) => {
+          this.releasingToBot.set(false);
+          Swal.fire('Erreur', err?.error?.msg ?? 'Opération impossible.', 'error');
+        },
+      });
+    });
+  }
+
+  // ── Enregistrer comme FAQ ───────────────────────────────────
+  // La réponse d'un humain devient une FAQ publiée, que l'assistant retrouve
+  // ensuite via search_faq. Question pré-remplie avec le dernier message du
+  // fidèle/visiteur qui précède la réponse — modifiable avant enregistrement.
+
+  faqModalOpen = signal(false);
+  savingFaq = signal(false);
+
+  readonly faqForm: FormGroup = this.fb.group({
+    question: ['', [Validators.required]],
+    answer: ['', [Validators.required]],
+  });
+
+  saveAsFaq(message: Message): void {
+    const list = this.messages() ?? [];
+    const index = list.findIndex((m) => m.id === message.id);
+    const question =
+      list
+        .slice(0, index)
+        .reverse()
+        .find((m) => m.body && !m.contentDeletedAt && m.senderType !== ActorType.AI && !this.isMine(m))
+        ?.body ?? '';
+
+    this.faqForm.reset({ question, answer: message.body ?? '' });
+    this.faqModalOpen.set(true);
+  }
+
+  closeFaqModal(): void {
+    this.faqModalOpen.set(false);
+  }
+
+  submitFaq(): void {
+    if (this.faqForm.invalid) {
+      this.faqForm.markAllAsTouched();
+      return;
+    }
+    this.savingFaq.set(true);
+    const { question, answer } = this.faqForm.value;
+    this.faqService.create({ question: question.trim(), answer: answer.trim() }).subscribe({
+      next: () => {
+        this.savingFaq.set(false);
+        this.closeFaqModal();
+        Swal.fire({ icon: 'success', title: 'FAQ enregistrée', timer: 1200, showConfirmButton: false });
+      },
+      error: (err) => {
+        this.savingFaq.set(false);
+        Swal.fire('Erreur', err?.error?.msg ?? 'Enregistrement impossible.', 'error');
+      },
     });
   }
 
@@ -459,7 +555,7 @@ export class ConversationDetailComponent implements OnInit, OnDestroy {
     this.handingOff.set(true);
     this.chatService
       .handoff(this.conversationId, {
-        fromActorId: this.handoffForm.value.fromActorId,
+        fromActorId: this.handoffForm.value.fromActorId || undefined,
         toActorId: me.id,
         toActorType: ActorType.HUMAN,
         toRole: this.handoffForm.value.toRole,

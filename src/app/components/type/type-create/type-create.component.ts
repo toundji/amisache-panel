@@ -21,7 +21,8 @@ export class TypeCreateComponent {
   private readonly router = inject(Router);
   private readonly typeService = inject(TypeService);
 
-  scopeList = Object.values(TypeScope);
+  // INTENTION/SACRAMENT vivent dans une table dédiée — voir /request-types.
+  scopeList = Object.values(TypeScope).filter((s) => s !== TypeScope.INTENTION && s !== TypeScope.SACRAMENT);
   scopeLabels = TYPE_SCOPE_LABELS;
 
   readonly form: FormGroup = this.fb.group({
@@ -31,11 +32,6 @@ export class TypeCreateComponent {
     minLeadDays: [2, [Validators.required, Validators.min(0)]],
     requiresScheduleMatch: [false],
   });
-
-  /** Ces trois règles ne s'appliquent qu'aux demandes (intentions/sacrements). */
-  isRequestScope(): boolean {
-    return this.form.value.scope === TypeScope.INTENTION || this.form.value.scope === TypeScope.SACRAMENT;
-  }
 
   submitting = signal(false);
   error?: ServerError;

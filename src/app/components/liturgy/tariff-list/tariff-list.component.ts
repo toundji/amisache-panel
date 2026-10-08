@@ -7,19 +7,19 @@ import Swal from 'sweetalert2';
 import { TariffService } from '../../../services/tariff.service';
 import { ChurchService } from '../../../services/church.service';
 import { ClergyContextService } from '../../../services/clergy-context.service';
-import { TypeService } from '../../../services/type.service';
+import { RequestTypeService } from '../../../services/request-type.service';
 import { Tariff } from '../../../models/tariff.model';
-import { TYPE_SCOPE_LABELS, TypeScope } from '../../../models/type.model';
+import { REQUEST_TYPE_SCOPE_LABELS, RequestTypeScope } from '../../../models/request-type.model';
 import { PaginationService } from '../../../shared/pagination/pagination.service';
 import { PaginationComponent } from '../../../shared/pagination/pagination.component';
 
 // Un tarif ne porte que sur une intention de messe ou un sacrement (jamais
 // un don — offrande libre par nature, cf. TariffService côté backend).
-const TARIFFABLE_SCOPES = [TypeScope.INTENTION, TypeScope.SACRAMENT];
+const TARIFFABLE_SCOPES = [RequestTypeScope.INTENTION, RequestTypeScope.SACRAMENT];
 
 interface TariffFilters {
   churchId: string;
-  scope: TypeScope | '';
+  scope: RequestTypeScope | '';
   activeOnly: boolean;
   search: string;
 }
@@ -45,12 +45,12 @@ export class TariffListComponent {
   readonly tariffService = inject(TariffService);
   readonly churchService = inject(ChurchService);
   readonly clergyContext = inject(ClergyContextService);
-  readonly typeService = inject(TypeService);
+  readonly requestTypeService = inject(RequestTypeService);
 
   readonly pagination = inject(PaginationService);
 
   scopeList = TARIFFABLE_SCOPES;
-  scopeLabels = TYPE_SCOPE_LABELS;
+  scopeLabels = REQUEST_TYPE_SCOPE_LABELS;
 
   tariffs = this.tariffService.tariffs;
   churches = this.churchService.allForSelect;
@@ -97,8 +97,8 @@ export class TariffListComponent {
       this.churchService.listAllForSelect().subscribe({ error: () => undefined });
     }
     for (const scope of TARIFFABLE_SCOPES) {
-      if (this.typeService.activeForScope(scope) === undefined) {
-        this.typeService.listActive(scope).subscribe({ error: () => undefined });
+      if (this.requestTypeService.activeForScope(scope) === undefined) {
+        this.requestTypeService.listActive(scope).subscribe({ error: () => undefined });
       }
     }
     this.load();
@@ -152,7 +152,7 @@ export class TariffListComponent {
   }
 
   private allTypes() {
-    return TARIFFABLE_SCOPES.flatMap((s) => this.typeService.activeForScope(s) ?? []);
+    return TARIFFABLE_SCOPES.flatMap((s) => this.requestTypeService.activeForScope(s) ?? []);
   }
 
   typeOf(t: Tariff) {

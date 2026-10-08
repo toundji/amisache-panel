@@ -155,7 +155,7 @@
           <div class="card-header">Informations</div>
           <div class="card-body">
             <div class="quick-info">
-              <div class="quick-info-item"><i class="fas fa-sitemap text-primary-app"></i><span>{{ typeLabels[c.type] }}</span></div>
+              <div class="quick-info-item"><i class="fas fa-sitemap text-primary-app"></i><span>{{ typeLabels[c.type] }} · {{ natureLabels[c.nature] }}</span></div>
               <div class="quick-info-item"><i class="fas fa-link text-primary-app"></i><span>{{ c.slug }}</span></div>
               @if (c.code) {
                 <div class="quick-info-item"><i class="fas fa-hashtag text-primary-app"></i><span>Code {{ c.code }}</span></div>
@@ -213,6 +213,50 @@
             </div>
           </div>
 
+          <!-- Nature (physique / virtuelle) -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Nature</span>
+              @if (isFieldModified('nature') && !isFieldSaving('nature')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('nature')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('nature')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('nature')) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (isFieldJustSaved('nature')) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+            </div>
+            <div class="card-body">
+              <select class="form-select" formControlName="nature"
+                [class.border-warning]="isFieldModified('nature') && !isFieldJustSaved('nature') && !isFieldSaving('nature')"
+                [class.border-success]="isFieldJustSaved('nature')">
+                @for (n of natureList; track n) { <option [value]="n">{{ natureLabels[n] }}</option> }
+              </select>
+              <div class="form-text">Physique = un lieu réel (paroisse, chapelle...) ; virtuelle = un regroupement (vicariat, diocèse...).</div>
+            </div>
+          </div>
+
+          <!-- Description / présentation de l'église -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Description</span>
+              @if (isDescriptionModified() && !descriptionSaving()) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveDescription()"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetDescription()"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (descriptionSaving()) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (descriptionJustSaved()) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+            </div>
+            <div class="card-body">
+              <textarea class="form-control" rows="4" [formControl]="descriptionControl"
+                placeholder="Présentation de l'église, affichée sur sa fiche publique."
+                [class.border-warning]="isDescriptionModified() && !descriptionJustSaved() && !descriptionSaving()"
+                [class.border-success]="descriptionJustSaved()"></textarea>
+            </div>
+          </div>
+
           <!-- Message du responsable -->
           <div class="card mb-3">
             <div class="card-header d-flex align-items-center justify-content-between">
@@ -230,6 +274,28 @@
               <textarea class="form-control" rows="4" [formControl]="leaderMessageControl"
                 [class.border-warning]="isLeaderMessageModified() && !profileJustSaved() && !profileSaving()"
                 [class.border-success]="profileJustSaved()"></textarea>
+            </div>
+          </div>
+
+          <!-- Site web propre à l'église -->
+          <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Site web de la paroisse</span>
+              @if (isWebsiteModified() && !websiteSaving()) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveWebsite()"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetWebsite()"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (websiteSaving()) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (websiteJustSaved()) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+            </div>
+            <div class="card-body">
+              <input type="url" class="form-control" [formControl]="websiteControl"
+                placeholder="https://exemple-de-paroisse.org"
+                [class.border-warning]="isWebsiteModified() && !websiteJustSaved() && !websiteSaving()"
+                [class.border-success]="websiteJustSaved()">
+              <div class="form-text">Si cette église a déjà son propre site, un lien s'affiche sur sa fiche publique.</div>
             </div>
           </div>
 
@@ -285,19 +351,20 @@
             </div>
             <div class="card-body">
               <div class="row g-3">
-                <div class="col-md-6">
-                  <label class="form-label">Zone</label>
-                  <select class="form-select" formControlName="zoneId" (change)="onZoneChange()">
-                    <option value="">Choisir une zone...</option>
-                    @for (z of zones() ?? []; track z.id) { <option [value]="z.id">{{ z.name }}</option> }
-                  </select>
+                <div class="col-md-4">
+                  <label class="form-label">Région <span class="text-muted">(filtre les zones)</span></label>
+                  <app-search-select [ngModel]="regionId()" [ngModelOptions]="{ standalone: true }" [options]="regionOptions()"
+                    placeholder="Rechercher une région..." emptyLabel="Toutes les régions" (picked)="onRegionChange($event)"></app-search-select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
+                  <label class="form-label">Zone</label>
+                  <app-search-select formControlName="zoneId" [options]="zoneOptions()"
+                    placeholder="Rechercher une zone..." (picked)="onZoneChange()"></app-search-select>
+                </div>
+                <div class="col-md-4">
                   <label class="form-label">Village / Quartier</label>
-                  <select class="form-select" formControlName="villageId" [disabled]="!form.get('zoneId')?.value">
-                    <option value="">Aucun</option>
-                    @for (v of villagesForZone(); track v.id) { <option [value]="v.id">{{ v.name }}</option> }
-                  </select>
+                  <app-search-select formControlName="villageId" [options]="villageOptions()" [isDisabled]="!form.get('zoneId')?.value"
+                    placeholder="Rechercher un village..." emptyLabel="Aucun"></app-search-select>
                 </div>
                 <div class="col-md-6">
                   <label class="form-label">Précision locale</label>
@@ -319,6 +386,14 @@
                   <button type="button" class="btn btn-outline-secondary btn-sm" (click)="locationMapOpen.set(true)">
                     <i class="fas fa-map-location-dot me-1"></i>Choisir sur la carte
                   </button>
+                  <button type="button" class="btn btn-outline-primary btn-sm ms-2" [disabled]="locating()" (click)="useCurrentPosition()">
+                    @if (locating()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                    <i class="fas fa-location-crosshairs me-1"></i>Utiliser ma position actuelle
+                  </button>
+                  <div class="form-text mb-0">À faire depuis l'église elle-même — la position de votre appareil remplit la latitude et la longitude.</div>
+                  @if (locateError(); as err) {
+                    <div class="text-danger small mt-1">{{ err }}</div>
+                  }
                 </div>
               </div>
               <div class="form-text mt-2">L'enregistrement remplace l'intégralité de l'adresse. L'emprise géographique (polygone) se gère à part.</div>

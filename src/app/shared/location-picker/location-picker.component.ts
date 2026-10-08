@@ -63,7 +63,8 @@ export class LocationPickerComponent implements AfterViewInit, OnChanges, OnDest
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 18,
+      // 19 = maximum réel des tuiles OpenStreetMap standard.
+      maxZoom: 19,
     }).addTo(this.map);
 
     this.placeReferenceMarker();

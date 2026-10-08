@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import { EntranceService } from '../../../services/entrance.service';
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { ENTRANCE_TYPE_LABELS, EntranceType } from '../../../models/entrance.model';
 import { ServerError } from '../../../models/server-error.model';
 import { FieldErrorsComponent } from '../../../shared/field-errors/field-errors.component';
@@ -33,6 +34,7 @@ export class EntranceCreateComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly entranceService = inject(EntranceService);
   private readonly churchService = inject(ChurchService);
+  readonly clergyContext = inject(ClergyContextService);
 
   typeList = Object.values(EntranceType);
   typeLabels = ENTRANCE_TYPE_LABELS;
@@ -58,6 +60,15 @@ export class EntranceCreateComponent {
   constructor() {
     if (this.churches() === undefined) this.churchService.listAllForSelect().subscribe({ error: () => undefined });
     this.form.get('churchId')!.valueChanges.subscribe((id) => this.selectedChurchId.set(id));
+
+    // Clergé (pas admin/engineer) : jamais de choix d'église — c'est déjà celle qu'il
+    // administre (topbar). `effect()` plutôt qu'une lecture ponctuelle : `activeChurchId()`
+    // peut encore être vide à la construction (chargement des affectations en cours).
+    effect(() => {
+      if (this.clergyContext.isFullAccess()) return;
+      const churchId = this.clergyContext.activeChurchId();
+      if (churchId) this.form.patchValue({ churchId });
+    });
   }
 
   invalid(controlName: string): boolean {

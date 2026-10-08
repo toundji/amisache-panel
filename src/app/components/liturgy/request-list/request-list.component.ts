@@ -11,12 +11,23 @@ import { UserService } from '../../../services/user.service';
 import { Request, REQUEST_STATUS_LABELS, RequestStatus } from '../../../models/request.model';
 import { PaginationService } from '../../../shared/pagination/pagination.service';
 import { PaginationComponent } from '../../../shared/pagination/pagination.component';
+import { exportRequestsDocx, exportRequestsPdf, RequestExportRow } from './request-export';
 
 interface RequestFilters {
   churchId: string;
   status: RequestStatus | '';
   search: string;
+  // Filtres client (non persistés, comme la recherche) — ciblent un export
+  // précis, ex. « messe du 25/04/2026 à 18h ».
+  dateFrom: string;
+  dateTo: string;
+  time: string;
+  typeId: string;
 }
+
+const EMPTY_FILTERS: RequestFilters = {
+  churchId: '', status: '', search: '', dateFrom: '', dateTo: '', time: '', typeId: '',
+};
 
 const STORAGE_KEY = 'requestFilters';
 
@@ -60,22 +71,38 @@ export class RequestListComponent {
   error = signal<string | null>(null);
   refreshing = signal(false);
 
-  filters = signal<RequestFilters>({ churchId: '', status: '', search: '', ...loadPersisted() });
-  hasFilter = computed(() => {
-    const f = this.filters();
-    return !!f.churchId || !!f.status || !!f.search;
+  filters = signal<RequestFilters>({ ...EMPTY_FILTERS, ...loadPersisted() });
+  hasFilter = computed(() => Object.values(this.filters()).some((v) => !!v));
+
+  /** Heures de célébration présentes dans les demandes chargées. */
+  timeOptions = computed(() =>
+    [...new Set((this.requests() ?? []).map((r) => this.timeOf(r)).filter((t) => !!t))].sort(),
+  );
+
+  /** Types présents dans les demandes chargées. */
+  typeOptions = computed(() => {
+    const map = new Map<string, string>();
+    for (const r of this.requests() ?? []) map.set(r.typeId, this.typeName(r));
+    return [...map].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name));
   });
 
   filtered = computed(() => {
     const items = this.requests() ?? [];
-    const { search } = this.filters();
+    const { search, dateFrom, dateTo, time, typeId } = this.filters();
     const term = search.trim().toLowerCase();
-    if (!term) return items;
     return items.filter((r) => {
+      const day = r.date?.slice(0, 10) ?? '';
+      if (dateFrom && day < dateFrom) return false;
+      if (dateTo && day > dateTo) return false;
+      if (time && this.timeOf(r) !== time) return false;
+      if (typeId && r.typeId !== typeId) return false;
+      if (!term) return true;
       const hay = `${this.requesterName(r)} ${this.typeName(r)}`.toLowerCase();
       return hay.includes(term);
     });
   });
+
+  exporting = signal(false);
 
   paged = computed(() => this.pagination.slice(this.filtered()));
 
@@ -149,7 +176,7 @@ export class RequestListComponent {
   }
 
   resetFilters(): void {
-    this.filters.set({ churchId: '', status: '', search: '' });
+    this.filters.set({ ...EMPTY_FILTERS });
     this.pagination.reset();
   }
 
@@ -174,5 +201,57 @@ export class RequestListComponent {
 
   statusBadge(status: RequestStatus): string {
     return STATUS_BADGE[status];
+  }
+
+  /** Heure de la célébration (HH:mm), issue de l'horaire lié. */
+  timeOf(r: Request): string {
+    return r.schedule?.time?.slice(0, 5) ?? '';
+  }
+
+  async export(format: 'pdf' | 'docx'): Promise<void> {
+    const items = this.filtered();
+    if (items.length === 0) {
+      Swal.fire('Aucune demande', 'Aucune demande ne correspond aux filtres.', 'info');
+      return;
+    }
+
+    const f = this.filters();
+    const fmt = (d: string) => d.split('-').reverse().join('/');
+    const parts: string[] = [];
+    if (f.dateFrom && f.dateFrom === f.dateTo) parts.push(`le ${fmt(f.dateFrom)}`);
+    else {
+      if (f.dateFrom) parts.push(`du ${fmt(f.dateFrom)}`);
+      if (f.dateTo) parts.push(`au ${fmt(f.dateTo)}`);
+    }
+    if (f.time) parts.push(`à ${f.time.replace(':', 'h')}`);
+    if (f.typeId) parts.push(`type : ${this.typeOptions().find((t) => t.id === f.typeId)?.name ?? ''}`);
+    if (f.churchId) parts.push(`église : ${(this.churches() ?? []).find((c) => c.id === f.churchId)?.name ?? ''}`);
+    if (f.status) parts.push(`statut : ${this.statusLabels[f.status]}`);
+    if (f.search) parts.push(`recherche : « ${f.search} »`);
+
+    const rows: RequestExportRow[] = items.map((r) => ({
+      requester: this.requesterName(r),
+      type: this.typeName(r),
+      text: r.text ?? '',
+      date: r.date ? fmt(r.date.slice(0, 10)) : '',
+      time: this.timeOf(r),
+      church: this.churchName(r),
+      offering: r.offering ?? '',
+      status: this.statusLabels[r.status],
+    }));
+    const meta = {
+      title: 'Demandes',
+      subtitle: `${items.length} demande(s)${parts.length ? ' · ' + parts.join(' · ') : ''} · exporté le ${new Date().toLocaleString('fr-FR')}`,
+      fileName: `demandes-${new Date().toISOString().slice(0, 10)}`,
+    };
+
+    this.exporting.set(true);
+    try {
+      await (format === 'pdf' ? exportRequestsPdf(rows, meta) : exportRequestsDocx(rows, meta));
+    } catch {
+      Swal.fire('Erreur', "L'export a échoué.", 'error');
+    } finally {
+      this.exporting.set(false);
+    }
   }
 }

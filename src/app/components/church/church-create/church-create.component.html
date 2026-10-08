@@ -29,7 +29,15 @@
                 </select>
                 <app-field-errors [formGroup]="form" controlName="type" fieldLabel="Le type" [serverErrors]="error?.validations"></app-field-errors>
               </div>
-              <div class="col-md-8">
+              <div class="col-md-3">
+                <label class="form-label">Nature</label>
+                <select class="form-select" formControlName="nature">
+                  @for (n of natureList; track n) {
+                    <option [value]="n">{{ natureLabels[n] }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-5">
                 <label class="form-label">Nom</label>
                 <input type="text" class="form-control" formControlName="name" maxlength="160"
                   [class.is-invalid]="invalid('name')" placeholder="Paroisse Saint-Michel">
@@ -50,12 +58,8 @@
               } @else {
                 <div class="col-md-6">
                   <label class="form-label">Église parente</label>
-                  <select class="form-select" formControlName="parentId" [class.is-invalid]="invalid('parentId')">
-                    <option value="">Choisir une église parente...</option>
-                    @for (p of parents() ?? []; track p.id) {
-                      <option [value]="p.id">{{ p.name }} — {{ typeLabels[p.type] }}</option>
-                    }
-                  </select>
+                  <app-search-select formControlName="parentId" [options]="parentOptions()"
+                    placeholder="Rechercher une église parente..." [invalid]="invalid('parentId')"></app-search-select>
                   <app-field-errors [formGroup]="form" controlName="parentId" fieldLabel="Le parent" [serverErrors]="error?.validations"></app-field-errors>
                 </div>
               }
@@ -93,24 +97,21 @@
           <div class="card-header">Adresse</div>
           <div class="card-body">
             <div class="row g-3">
-              <div class="col-md-6">
+              <div class="col-md-4">
+                <label class="form-label">Région <span class="text-muted">(filtre les zones)</span></label>
+                <app-search-select [ngModel]="regionId()" [ngModelOptions]="{ standalone: true }" [options]="regionOptions()"
+                  placeholder="Rechercher une région..." emptyLabel="Toutes les régions" (picked)="onRegionChange($event)"></app-search-select>
+              </div>
+              <div class="col-md-4">
                 <label class="form-label">Zone</label>
-                <select class="form-select" formControlName="zoneId" [class.is-invalid]="invalid('zoneId')" (change)="onZoneChange()">
-                  <option value="">Choisir une zone...</option>
-                  @for (z of zones() ?? []; track z.id) {
-                    <option [value]="z.id">{{ z.name }}</option>
-                  }
-                </select>
+                <app-search-select formControlName="zoneId" [options]="zoneOptions()"
+                  placeholder="Rechercher une zone..." [invalid]="invalid('zoneId')" (picked)="onZoneChange()"></app-search-select>
                 <app-field-errors [formGroup]="form" controlName="zoneId" fieldLabel="La zone" [serverErrors]="error?.validations"></app-field-errors>
               </div>
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label class="form-label">Village / Quartier <span class="text-muted">(optionnel)</span></label>
-                <select class="form-select" formControlName="villageId" [disabled]="!form.get('zoneId')?.value">
-                  <option value="">Aucun</option>
-                  @for (v of villagesForZone(); track v.id) {
-                    <option [value]="v.id">{{ v.name }}</option>
-                  }
-                </select>
+                <app-search-select formControlName="villageId" [options]="villageOptions()" [isDisabled]="!form.get('zoneId')?.value"
+                  placeholder="Rechercher un village..." emptyLabel="Aucun"></app-search-select>
               </div>
               <div class="col-md-6">
                 <label class="form-label">Précision locale <span class="text-muted">(optionnel)</span></label>
@@ -132,6 +133,14 @@
                 <button type="button" class="btn btn-outline-secondary btn-sm" (click)="mapOpen.set(true)">
                   <i class="fas fa-map-location-dot me-1"></i>Choisir sur la carte
                 </button>
+                <button type="button" class="btn btn-outline-primary btn-sm ms-2" [disabled]="locating()" (click)="useCurrentPosition()">
+                  @if (locating()) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                  <i class="fas fa-location-crosshairs me-1"></i>Utiliser ma position actuelle
+                </button>
+                <div class="form-text mb-0">À faire depuis l'église elle-même — la position de votre appareil remplit la latitude et la longitude.</div>
+                @if (locateError(); as err) {
+                  <div class="text-danger small mt-1">{{ err }}</div>
+                }
               </div>
             </div>
             <div class="form-text mt-2">Cliquez sur la carte, ou renseignez latitude ET longitude à la main.</div>

@@ -21,6 +21,10 @@ interface ClergyFilters {
 
 const STORAGE_KEY = 'clergyFilters';
 
+// Limite panel — un clergé sans accès complet ne peut plus créer d'affectation une
+// fois son église à ce compte (pas d'application côté serveur, demandé ainsi).
+export const MAX_CLERGY_PER_CHURCH = 4;
+
 function loadPersisted(): Partial<Pick<ClergyFilters, 'churchId' | 'role' | 'activeOnly'>> {
   try {
     return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
@@ -52,6 +56,15 @@ export class ClergyMemberListComponent {
   isLoading = computed(() => this.members() === undefined);
   error = signal<string | null>(null);
   refreshing = signal(false);
+
+  // Clergé sans accès complet : `members()` ne porte déjà que SA propre église
+  // (listForChurch, cf. load() plus bas) — le compte d'actifs est donc directement
+  // celui de son église, sans filtre supplémentaire. Admin/engineer : pas de plafond.
+  readonly MAX_CLERGY_PER_CHURCH = MAX_CLERGY_PER_CHURCH;
+  activeMemberCount = computed(() => (this.members() ?? []).filter((m) => !m.endDate).length);
+  canAddClergyMember = computed(
+    () => this.clergyContext.isFullAccess() || this.activeMemberCount() < MAX_CLERGY_PER_CHURCH,
+  );
 
   filters = signal<ClergyFilters>({ churchId: '', role: '', activeOnly: false, search: '', ...loadPersisted() });
   hasFilter = computed(() => {

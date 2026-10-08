@@ -29,6 +29,7 @@ export class ScheduleService {
     this.selectedSignal.set(schedule);
   }
 
+  /** `churchId` est en réalité requis côté backend (GET /schedules public) — voir `listAdmin()`. */
   list(query: ListScheduleQuery = {}): Observable<Schedule[]> {
     let params = new HttpParams();
     Object.entries(query).forEach(([key, value]) => {
@@ -37,6 +38,13 @@ export class ScheduleService {
       }
     });
     return this.http.get<Schedule[]>('schedules', { params }).pipe(
+      tap((schedules) => this.schedulesSignal.set(schedules)),
+    );
+  }
+
+  /** GET /schedules/admin — toutes les églises confondues (admin/engineer uniquement). */
+  listAdmin(): Observable<Schedule[]> {
+    return this.http.get<Schedule[]>('schedules/admin').pipe(
       tap((schedules) => this.schedulesSignal.set(schedules)),
     );
   }

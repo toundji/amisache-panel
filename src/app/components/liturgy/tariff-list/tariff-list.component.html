@@ -2,7 +2,7 @@
 
   <div class="page-header">
     <div>
-      <h1 class="page-title"><i class="fas fa-coins me-2 text-primary-app"></i>Tarifs</h1>
+      <h1 class="page-title"><i class="fas fa-coins me-2 text-primary-app"></i>Tarifs & délais</h1>
       <p class="page-subtitle">{{ pagination.totalItems() }} tarif(s)</p>
     </div>
     <div class="d-flex gap-2">
@@ -17,7 +17,7 @@
 
   <p class="text-muted" style="font-size:.85rem;max-width:48rem;">
     Une église qui ne définit pas son propre tarif hérite de celui de l'église
-    supérieure la plus proche (doyenné, diocèse/archidiocèse, conférence) —
+    supérieure la plus proche (vicariat, diocèse/archidiocèse, conférence) —
     voir <a routerLink="/liturgy/tariffs/new">Nouveau tarif</a> pour publier un tarif à ce niveau.
   </p>
 
@@ -66,6 +66,7 @@
             <th>Motif</th>
             <th class="d-none d-md-table-cell">Église</th>
             <th>Montant</th>
+            <th>Délai</th>
             <th>État</th>
             <th style="width:90px;">Actions</th>
           </tr>
@@ -86,12 +87,12 @@
           }
 
           @if (!isLoading() && error()) {
-            <tr><td colspan="6"><div class="alert alert-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div></td></tr>
+            <tr><td colspan="7"><div class="alert alert-danger mb-0"><i class="fas fa-exclamation-triangle me-2"></i>{{ error() }}</div></td></tr>
           }
 
           @if (!isLoading() && !error() && filtered().length === 0) {
             <tr>
-              <td colspan="6">
+              <td colspan="7">
                 <div class="empty-state">
                   <i class="fas fa-coins empty-icon"></i>
                   <p class="empty-title">Aucun tarif</p>
@@ -114,7 +115,8 @@
                   }
                 </td>
                 <td class="d-none d-md-table-cell" data-label="Église" style="font-size:.85rem;">{{ churchName(t) }}</td>
-                <td data-label="Montant" style="font-size:.85rem;">{{ t.amount | number:'1.0-0' }} FCFA</td>
+                <td data-label="Montant" style="font-size:.85rem;">{{ t.amount != null ? (t.amount | number:'1.0-0') + ' FCFA' : '—' }}</td>
+                <td data-label="Délai" style="font-size:.85rem;">{{ t.minLeadDays != null ? t.minLeadDays + ' j' : '—' }}</td>
                 <td data-label="État">
                   <span class="status-badge" [class]="t.active ? 'status-success' : 'status-disabled'">
                     {{ t.active ? 'Actif' : 'Désactivé' }}

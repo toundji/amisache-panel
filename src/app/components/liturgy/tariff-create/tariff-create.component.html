@@ -4,7 +4,7 @@
     <div class="d-flex align-items-center gap-3">
       <app-back-button fallback="/liturgy/tariffs"></app-back-button>
       <div>
-        <h1 class="page-title mb-0">Nouveau tarif</h1>
+        <h1 class="page-title mb-0">Nouveau tarif / délai</h1>
         <p class="page-subtitle mb-0">L'église et le motif ne pourront plus être modifiés après création.</p>
       </div>
     </div>
@@ -19,13 +19,17 @@
             <div class="row g-3">
               <div class="col-md-6">
                 <label class="form-label">Église</label>
-                <select class="form-select" formControlName="churchId" [class.is-invalid]="invalid('churchId')">
-                  <option value="">Choisir une église...</option>
-                  @for (c of churches() ?? []; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
-                </select>
-                <app-field-errors [formGroup]="form" controlName="churchId" fieldLabel="L'église" [serverErrors]="error?.validations"></app-field-errors>
+                @if (clergyContext.isFullAccess()) {
+                  <select class="form-select" formControlName="churchId" [class.is-invalid]="invalid('churchId')">
+                    <option value="">Choisir une église...</option>
+                    @for (c of churches() ?? []; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+                  </select>
+                  <app-field-errors [formGroup]="form" controlName="churchId" fieldLabel="L'église" [serverErrors]="error?.validations"></app-field-errors>
+                } @else {
+                  <input type="text" class="form-control" [value]="clergyContext.activeChurch()?.name ?? '—'" disabled>
+                }
                 <div class="form-text">
-                  Une église sans tarif propre hérite de celui de son église supérieure (doyenné,
+                  Une église sans tarif propre hérite de celui de son église supérieure (vicariat,
                   diocèse/archidiocèse, conférence) — publier ici un tarif sur une église de niveau
                   supérieur en fait le tarif par défaut de toutes ses églises filles qui n'en ont pas.
                 </div>
@@ -51,7 +55,17 @@
                 <label class="form-label">Montant (FCFA)</label>
                 <input type="number" min="1" class="form-control" formControlName="amount" [class.is-invalid]="invalid('amount')">
                 <app-field-errors [formGroup]="form" controlName="amount" fieldLabel="Le montant" [serverErrors]="error?.validations"></app-field-errors>
+                <div class="form-text">Vide : hérité de l'église supérieure (ou montant libre).</div>
               </div>
+              <div class="col-md-6">
+                <label class="form-label">Délai minimum (jours)</label>
+                <input type="number" min="0" max="365" class="form-control" formControlName="minLeadDays" [class.is-invalid]="invalid('minLeadDays')">
+                <app-field-errors [formGroup]="form" controlName="minLeadDays" fieldLabel="Le délai" [serverErrors]="error?.validations"></app-field-errors>
+                <div class="form-text">Vide : hérité de l'église supérieure, sinon délai par défaut du motif.</div>
+              </div>
+              @if (form.touched && missingBoth()) {
+                <div class="col-12"><div class="text-danger" style="font-size:.85rem;">Indiquez au moins un montant ou un délai.</div></div>
+              }
             </div>
 
             @if (error?.msg) {
@@ -61,7 +75,7 @@
             <div class="d-flex gap-2 mt-4">
               <button type="submit" class="btn btn-primary" [disabled]="submitting()">
                 @if (submitting()) { <span class="spinner-border spinner-border-sm me-2"></span> }
-                Publier le tarif
+                Publier
               </button>
               <a routerLink="/liturgy/tariffs" class="btn btn-outline-secondary">Annuler</a>
             </div>

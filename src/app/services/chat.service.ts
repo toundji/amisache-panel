@@ -183,6 +183,9 @@ export class ChatService {
     lastMessageAt?: string;
     lastMessagePreview?: string;
     lastMessageSenderId?: string | null;
+    escalatedAt?: string | null;
+    escalationReason?: string | null;
+    escalatedChurchId?: string | null;
   }): boolean {
     let found = false;
     this.conversationsSignal.update((current) => {
@@ -254,5 +257,10 @@ export class ChatService {
   /** Transfert BOT -> AGENT — l'agent cible peut être différent de l'appelant */
   handoff(conversationId: string, body: HandoffDto): Observable<Participant> {
     return this.http.post<Participant>(`chat/conversations/${conversationId}/handoff`, body);
+  }
+
+  /** Retour AGENT -> BOT — l'assistant répond de nouveau au fidèle. */
+  releaseToBot(conversationId: string): Observable<Conversation> {
+    return this.http.post<Conversation>(`chat/conversations/${conversationId}/release`, {});
   }
 }

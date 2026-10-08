@@ -45,7 +45,27 @@ _(aucune pour l'instant)_
 
 ## Remontées (historique)
 
-_(rien encore)_
+### FIX-001 — Référence d'erreur (`errorId`) absente du message affiché  ✅ Remontée le 2026-09-26
+- **Couche/fichier socle** : `core/interceptors/error.interceptor.ts`
+- **Symptôme** : un 5xx affichait `msg` sans aucun moyen de le relier au log serveur
+  (le backend, `nest-auth`, ajoute désormais un `errorId` aux réponses 5xx).
+- **Correctif** : si `error.error.errorId` est présent, `« (réf. xxxx) »` est ajouté au
+  `msg`, sans changer le comportement existant (redirection sur 401 inchangée).
+- **Reportée dans le template** : `angular-panel` — fichier copié à l'identique,
+  `ng build` propre.
+- **Date** : 2026-09-26
+
+### FIX-002 — Page « Erreurs serveur » (consulter/supprimer les 5xx tracés)  ✅ Remontée le 2026-09-26
+- **Couche/fichier socle** : nouveaux `models/api-error.model.ts`,
+  `services/api-error.service.ts`, `components/system/api-error-list/`, route
+  `/api-errors`, entrée sidebar « Système ».
+- **Contexte** : le backend (`nest-auth`, FEAT-002) trace les 5xx dans `api_errors`
+  (`GET /api-errors/admin`, `DELETE /api-errors/:id`) — cette page les consomme :
+  pagination serveur (comme `UserListComponent`), pile complète dans une Swal,
+  suppression une fois l'erreur corrigée.
+- **Reportée dans le template** : `angular-panel` — fichiers copiés à l'identique,
+  route et entrée sidebar ajoutées, `ng build` propre.
+- **Date** : 2026-09-26
 
 <!-- Quand une entrée est portée dans le template, la déplacer ici :
 

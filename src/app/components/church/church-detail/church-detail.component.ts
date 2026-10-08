@@ -1,4 +1,5 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, linkedSignal, OnInit, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -7,10 +8,13 @@ import Swal from 'sweetalert2';
 
 import { ChurchService } from '../../../services/church.service';
 import { ChurchProfileService } from '../../../services/church-profile.service';
+import { RegionService } from '../../../services/region.service';
 import { ZoneService } from '../../../services/zone.service';
 import { VillageService } from '../../../services/village.service';
 import {
+  CHURCH_NATURE_LABELS,
   Church,
+  ChurchNature,
   ENTITY_TYPE_LABELS,
   VALIDATION_STATUS_LABELS,
   ValidationStatus,
@@ -21,6 +25,7 @@ import { BackButtonComponent } from '../../../shared/navigation/back-button.comp
 import { LocationPickerComponent } from '../../../shared/location-picker/location-picker.component';
 import { PerimeterPoint, PolygonPickerComponent } from '../../../shared/polygon-picker/polygon-picker.component';
 import { ModalComponent } from '../../../shared/modal/modal.component';
+import { SearchSelectComponent } from '../../../shared/search-select/search-select.component';
 
 @Component({
   selector: 'app-church-detail',
@@ -32,6 +37,7 @@ import { ModalComponent } from '../../../shared/modal/modal.component';
     LocationPickerComponent,
     PolygonPickerComponent,
     ModalComponent,
+    SearchSelectComponent,
   ],
   templateUrl: './church-detail.component.html',
   styleUrl: './church-detail.component.scss',
@@ -41,6 +47,7 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
   private readonly router = inject(Router);
   private readonly churchService = inject(ChurchService);
   private readonly churchProfileService = inject(ChurchProfileService);
+  private readonly regionService = inject(RegionService);
   private readonly zoneService = inject(ZoneService);
   private readonly villageService = inject(VillageService);
   private readonly fb = inject(FormBuilder);
@@ -50,6 +57,7 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
     this.churchService.selected()?.id === this.churchId ? this.churchService.selected() : null;
 
   church = signal<Church | null>(this.stub);
+  regions = this.regionService.regions;
   zones = this.zoneService.zones;
   villages = this.villageService.villages;
   loading = signal(!this.stub);
@@ -61,6 +69,10 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
   // pour se situer par rapport à elle plutôt que face à des lat/lng nus.
   locationMapOpen = signal(false);
   perimeterMapOpen = signal(false);
+  // Géolocalisation du navigateur — à faire sur place, à l'église (même mécanisme
+  // que ma-paroisse côté portail).
+  locating = signal(false);
+  locateError = signal<string | null>(null);
   parents = this.churchService.allForSelect;
   selectedParent = computed(() => (this.parents() ?? []).find((c) => c.id === this.church()?.parentId));
 
@@ -87,6 +99,8 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
   readonly PERIMETER_MAX = 20;
 
   typeLabels = ENTITY_TYPE_LABELS;
+  natureList = Object.values(ChurchNature);
+  natureLabels = CHURCH_NATURE_LABELS;
   statusLabels = VALIDATION_STATUS_LABELS;
   statusList = Object.values(ValidationStatus);
 
@@ -95,16 +109,26 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
   addressSaving = signal(false);
   addressJustSaved = signal(false);
 
-  // ── Message du responsable (ChurchProfile, table séparée de Church) ──
+  // ── Description + message du responsable (ChurchProfile, table séparée de Church) ──
   churchProfile = signal<ChurchProfile | null>(null);
+  descriptionControl = this.fb.control('');
+  private originalDescription = '';
+  descriptionSaving = signal(false);
+  descriptionJustSaved = signal(false);
   leaderMessageControl = this.fb.control('');
   private originalLeaderMessage = '';
   profileSaving = signal(false);
   profileJustSaved = signal(false);
+  // Site web propre à l'église (certaines en ont déjà un) — lien affiché sur sa fiche publique.
+  websiteControl = this.fb.control('');
+  private originalWebsite = '';
+  websiteSaving = signal(false);
+  websiteJustSaved = signal(false);
 
   form: FormGroup = this.fb.group({
     name: [this.stub?.name ?? ''],
     slug: [this.stub?.slug ?? ''],
+    nature: [this.stub?.nature ?? ChurchNature.VIRTUAL],
     accentColor: [this.stub?.accentColor ?? '#16235C'],
     defaultLanguage: [this.stub?.defaultLanguage ?? 'fr'],
     zoneId: [this.stub?.address?.zoneId ?? ''],
@@ -117,10 +141,24 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
 
   private readonly addressKeys = ['zoneId', 'villageId', 'locality', 'landmark', 'lat', 'lng'];
 
-  villagesForZone = computed(() => {
-    const zoneId = this.form.get('zoneId')?.value;
-    return (this.villages() ?? []).filter((v) => v.zoneId === zoneId);
+  // Région : simple filtre de la liste des zones (non envoyée). Elle suit la
+  // zone choisie, mais reste en place quand la zone est vidée.
+  private zoneId = toSignal(this.form.get('zoneId')!.valueChanges, { initialValue: this.form.value.zoneId as string });
+  regionId = linkedSignal({
+    source: () => ({ zoneId: this.zoneId(), zones: this.zones() }),
+    computation: ({ zoneId, zones }, previous) =>
+      (zones ?? []).find((z) => z.id === zoneId)?.regionId ?? previous?.value ?? ('' as string),
   });
+
+  regionOptions = computed(() => (this.regions() ?? []).map((r) => ({ value: r.id, label: r.name })));
+  zoneOptions = computed(() =>
+    (this.zones() ?? [])
+      .filter((z) => !this.regionId() || z.regionId === this.regionId())
+      .map((z) => ({ value: z.id, label: z.name })),
+  );
+  villageOptions = computed(() =>
+    (this.villages() ?? []).filter((v) => v.zoneId === this.zoneId()).map((v) => ({ value: v.id, label: v.name })),
+  );
 
   protected getFormGroup(): FormGroup {
     return this.form;
@@ -138,6 +176,7 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
   }
 
   ngOnInit(): void {
+    if (this.regions() === undefined) this.regionService.list().subscribe({ error: () => undefined });
     if (this.zones() === undefined) this.zoneService.list().subscribe({ error: () => undefined });
     if (this.villages() === undefined) this.villageService.list().subscribe({ error: () => undefined });
     if (this.parents() === undefined) this.churchService.listAllForSelect().subscribe({ error: () => undefined });
@@ -154,6 +193,7 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
         this.form.patchValue({
           name: church.name,
           slug: church.slug,
+          nature: church.nature,
           accentColor: church.accentColor ?? '#16235C',
           defaultLanguage: church.defaultLanguage ?? 'fr',
           zoneId: church.address?.zoneId ?? '',
@@ -182,10 +222,44 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
     this.churchProfileService.getForChurch(this.churchId).subscribe({
       next: (profile) => {
         this.churchProfile.set(profile);
+        this.descriptionControl.setValue(profile?.description ?? '');
+        this.originalDescription = profile?.description ?? '';
         this.leaderMessageControl.setValue(profile?.leaderMessage ?? '');
         this.originalLeaderMessage = profile?.leaderMessage ?? '';
+        this.websiteControl.setValue(profile?.website ?? '');
+        this.originalWebsite = profile?.website ?? '';
       },
       error: () => undefined,
+    });
+  }
+
+  // ── Description (ChurchProfile) ────────────────────────────
+  isDescriptionModified(): boolean {
+    return (this.descriptionControl.value ?? '') !== this.originalDescription;
+  }
+
+  resetDescription(): void {
+    this.descriptionControl.setValue(this.originalDescription);
+  }
+
+  saveDescription(): void {
+    if (!this.isDescriptionModified() || this.descriptionSaving()) return;
+    const description = this.descriptionControl.value?.trim() || undefined;
+
+    this.descriptionSaving.set(true);
+    this.churchProfileService.upsertForChurch(this.churchId, { description }).subscribe({
+      next: (profile) => {
+        this.churchProfile.set(profile);
+        this.originalDescription = profile.description ?? '';
+        this.descriptionControl.setValue(this.originalDescription);
+        this.descriptionSaving.set(false);
+        this.descriptionJustSaved.set(true);
+        setTimeout(() => this.descriptionJustSaved.set(false), 2000);
+      },
+      error: (err) => {
+        this.descriptionSaving.set(false);
+        Swal.fire('Erreur', err?.error?.msg ?? 'Enregistrement impossible.', 'error');
+      },
     });
   }
 
@@ -219,6 +293,36 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
     });
   }
 
+  // ── Site web (ChurchProfile) ───────────────────────────────
+  isWebsiteModified(): boolean {
+    return (this.websiteControl.value ?? '') !== this.originalWebsite;
+  }
+
+  resetWebsite(): void {
+    this.websiteControl.setValue(this.originalWebsite);
+  }
+
+  saveWebsite(): void {
+    if (!this.isWebsiteModified() || this.websiteSaving()) return;
+    const website = this.websiteControl.value?.trim() || undefined;
+
+    this.websiteSaving.set(true);
+    this.churchProfileService.upsertForChurch(this.churchId, { website }).subscribe({
+      next: (profile) => {
+        this.churchProfile.set(profile);
+        this.originalWebsite = profile.website ?? '';
+        this.websiteControl.setValue(this.originalWebsite);
+        this.websiteSaving.set(false);
+        this.websiteJustSaved.set(true);
+        setTimeout(() => this.websiteJustSaved.set(false), 2000);
+      },
+      error: (err) => {
+        this.websiteSaving.set(false);
+        Swal.fire('Erreur', err?.error?.msg ?? 'Enregistrement impossible.', 'error');
+      },
+    });
+  }
+
   refresh(): void {
     this.refreshing.set(true);
     this.load(true);
@@ -242,8 +346,46 @@ export class ChurchDetailComponent extends FieldSaveMixin implements OnInit {
     this.form.patchValue(patch);
   }
 
+  onRegionChange(regionId: string): void {
+    this.regionId.set(regionId);
+    // La zone doit appartenir à la région choisie.
+    const zone = (this.zones() ?? []).find((z) => z.id === this.form.get('zoneId')?.value);
+    if (zone && regionId && zone.regionId !== regionId) {
+      this.form.get('zoneId')?.setValue('');
+      this.onZoneChange();
+    }
+  }
+
   onZoneChange(): void {
     this.form.get('villageId')?.setValue('');
+  }
+
+  /** Remplit lat/lng avec la position du téléphone — à faire sur place, à l'église. */
+  useCurrentPosition(): void {
+    if (!navigator.geolocation) {
+      this.locateError.set("La géolocalisation n'est pas disponible sur cet appareil.");
+      return;
+    }
+    this.locating.set(true);
+    this.locateError.set(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        this.locating.set(false);
+        this.form.patchValue({
+          lat: Math.round(position.coords.latitude * 1e6) / 1e6,
+          lng: Math.round(position.coords.longitude * 1e6) / 1e6,
+        });
+      },
+      (err) => {
+        this.locating.set(false);
+        this.locateError.set(
+          err.code === err.PERMISSION_DENIED
+            ? "Autorisez l'accès à votre position dans le navigateur, puis réessayez."
+            : 'Position introuvable pour le moment. Réessayez.',
+        );
+      },
+      { enableHighAccuracy: true, timeout: 15000 },
+    );
   }
 
   saveAddress(): void {

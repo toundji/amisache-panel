@@ -32,6 +32,140 @@ Prochaines étapes ouvertes :
 > Format d'une entrée : `### AAAA-MM-JJ — Titre court` puis **Décision**, **Pourquoi**,
 > et si utile **Conséquences** (fichiers touchés, invariantes à tenir).
 
+### 2026-09-26 — Référence des erreurs serveur
+- **Décision** : `errorInterceptor` ajoute `« (réf. xxxx) »` au `msg` d'une erreur qui
+  contient un `errorId` (5xx, backend même date). `ng build` propre.
+
+### 2026-09-26 — Nouveau menu « Types de demande » (table dediee)
+- **Decision** (demande) : suite de la sortie backend de `request_types` (voir
+  EVOLUTION.md backend, meme date) — nouvelles pages `request-type-list`/
+  `request-type-create`/`request-type-detail` (dossier `liturgy/`, copiees du modele
+  `type/` existant), routes `/request-types`, `/request-types/new`, `/request-types/:id`,
+  entree dediee dans la sidebar (a cote de « Types », meme regle adminOnly). Formulaires
+  toujours "Regles de la demande" (delai, domicile, horaire) — plus besoin du
+  `isRequestScope()` conditionnel, la table ne contient que ces deux categories.
+- Nouveaux `models/request-type.model.ts`, `services/request-type.service.ts`.
+  `tariff-create`/`tariff-detail`/`tariff-list` et `models/tariff.model.ts`/
+  `models/request.model.ts` basculent sur ce nouveau service (au lieu de `TypeService`
+  filtre par scope INTENTION/SACRAMENT).
+- **Garde-fou** : la page « Types » (generique) ne propose plus les scopes Intention/
+  Sacrement dans son formulaire — retires de `scopeList`, section "Regles de demande"
+  supprimee (n'a plus de sens pour les 3 scopes restants : don, publication, horaire).
+- **Consequences** : `ng build` propre. Necessite la migration `AddRequestTypes`
+  (backend) + son redeploiement — sinon `/request-types` renvoie 404/500.
+
+### 2026-09-26 — `church-detail` : site web propre a l'eglise
+- **Decision** (demande) : nouveau champ "Site web de la paroisse" (meme
+  save/reset/badge que description/mot du responsable), envoye a
+  `ChurchProfileService.upsertForChurch`. Affiche cote portail sur la fiche
+  publique (voir EVOLUTION client, meme date) si renseigne.
+- **Consequences** : `ng build` propre. Necessite la migration
+  `AddChurchProfileWebsite` (backend) + son redeploiement.
+
+### 2026-09-26 — Corrections clerge : selecteur d'eglise, plafond, description, export PDF, geolocalisation
+- **Selecteur d'eglise retire des formulaires de creation** (demande) : les 7
+  formulaires qui affichaient un menu deroulant "Eglise" meme pour un clerge qui
+  n'en gere qu'une (`entrance-create`, `group-create`, `publication-create`,
+  `schedule-create`, `tariff-create`, `payment-method-create`,
+  `clergy-member-create`) — un clerge (pas admin/engineer) ne voit plus ce menu ;
+  le formulaire utilise directement `ClergyContextService.activeChurchId()` (meme
+  eglise que le selecteur de la topbar), patchee via un `effect()` reactif plutot
+  qu'une lecture ponctuelle a la construction.
+- **Vraie cause trouvee** : ce menu se remplissait via `ChurchService.
+  listAllForSelect()`, qui pour un clerge derive la liste de
+  `ClergyContextService.myChurches()` — charge de facon asynchrone apres la
+  connexion. Ouvrir un formulaire de creation avant la fin de ce chargement
+  figeait le menu **vide pour toujours** (appel ponctuel, jamais reexecute) : champ
+  obligatoire, aucune option, creation impossible. Meme defaut, en pire, dans
+  `clergy-member-create` : la liste des fidèles a affecter (`membershipService.
+  listForChurch`) etait lue une seule fois dans le constructeur avec la meme
+  condition de course — corrige avec le meme `effect()` reactif.
+- **Plafond de 4 gerants par eglise** (demande, panel seulement — pas d'application
+  cote serveur) : `clergy-member-list` masque le bouton "Nouvelle affectation" des
+  que l'eglise active du clerge compte deja 4 affectations actives
+  (`MAX_CLERGY_PER_CHURCH`, exporte du composant). Admin/engineer : pas de plafond.
+- **Description de l'eglise** (demande, "ne s'affiche pas") : le champ
+  `ChurchProfile.description` existait deja cote backend et dans
+  `ChurchProfileService`, mais n'etait cable nulle part dans `church-detail` — seul
+  le "mot du curé" l'etait. Ajoute juste au-dessus, meme mecanisme
+  save/reset/badge que `leaderMessage` (signaux distincts, upsert partiel cote
+  backend deja verifie — n'ecrase pas l'autre champ).
+- **Export PDF des demandes tronque** (demande, "la modif n'est pas complete") :
+  `request-export.ts` avait deja une largeur fixe (80mm) sur la seule colonne
+  "Intention / texte" (correctif anterieur incomplet) — les 8 autres colonnes en
+  largeur 'auto' pouvaient faire recalculer l'ensemble par l'algorithme de mise a
+  l'echelle de jspdf-autotable si le total depassait la page, rognant en pratique
+  la colonne texte. Corrige : largeur explicite sur les 9 colonnes (somme 267mm,
+  marge 14mm de chaque cote sur une page a4 paysage de 297mm), `overflow:
+  'linebreak'` explicite — le texte s'affiche desormais entierement, sur plusieurs
+  lignes si besoin.
+- **Geolocalisation sur la fiche eglise** (demande) : bouton "Utiliser ma position
+  actuelle" a cote de "Choisir sur la carte" (`church-detail`), meme mecanisme
+  (`navigator.geolocation.getCurrentPosition`) que `ma-paroisse` cote portail.
+- **Zoom maximum des cartes** (demande, "ne suffit pas pour bien piquer les
+  points") : `maxZoom` des tuiles OpenStreetMap passe de 18 a 19 (plafond reel de
+  ce fournisseur de tuiles) sur `location-picker` et `polygon-picker`.
+- **Consequences** : `ng build` propre. Non teste en conditions reelles (necessite
+  le redeploiement backend pour le detail de paiement).
+
+### 2026-09-26 — Fix : liste des horaires (admin) plantait en production
+- **Constat** : `ScheduleListComponent` appelait `scheduleService.list()` sans
+  `churchId` pour un admin/engineer — jamais valide cote backend, provoquait un 500
+  (`TypeORMError` sur `Schedule.churchId undefined`), trouve via l'`errorId`
+  (backend, meme date).
+- **Decision** : nouveau `ScheduleService.listAdmin()` (panel) -> `GET
+  /schedules/admin`, deja construit exactement pour ce cas. Remplace l'appel a
+  `list()` sans argument dans `ScheduleListComponent`.
+- **Consequences** : `ng build` propre. Non teste en conditions reelles (necessite
+  le redeploiement backend).
+
+### 2026-09-26 — Page « Erreurs serveur » (`/api-errors`)
+- **Decision** (demande) : nouvelle page sous `Systeme` (sidebar, admin/engineer),
+  meme gabarit que `MailFailedListComponent` mais pagination SERVEUR (comme
+  `UserListComponent`) — `GET /api-errors/admin` (backend, meme date). Colonnes :
+  requete (methode+route+reference errorId), statut, message, utilisateur, date.
+  Bouton « oeil » affiche la pile complete dans une Swal ; bouton « corbeille »
+  supprime l'erreur (confirmation Swal) une fois corrigee — `DELETE /api-errors/:id`.
+  Nouveaux `models/api-error.model.ts`/`services/api-error.service.ts`.
+- **Consequences** : `ng build` propre. Non teste en conditions reelles.
+
+### 2026-09-24 — Chat : bouton « Rendre la main à l'assistant »
+- **Décision** : sur une conversation en mode `AGENT`, bouton (confirmation Swal) qui
+  appelle `ChatService.releaseToBot` (`POST /chat/conversations/:id/release`, backend même
+  date) — le bot répond de nouveau au fidèle. Les messages système de changement de mode
+  arrivent par socket et s'affichent avec le libellé « Système » déjà existant.
+
+### 2026-09-24 — Chat : « Enregistrer comme FAQ » depuis une réponse humaine
+- **Décision** : sur chaque message que l'on a soi-même envoyé dans une conversation,
+  bouton (icône `fa-book-bookmark`) qui ouvre une `<app-modal>` pré-remplie : question =
+  dernier message du fidèle/visiteur qui précède, réponse = ce message ; les deux sont
+  modifiables. Enregistrement via `FaqService.create` (`POST /faq`) → FAQ publiée
+  immédiatement, que l'assistant retrouve ensuite via `search_faq`. Aucun changement backend.
+- **Pourquoi** : demandé explicitement — capitaliser les réponses aux questions que
+  l'assistant n'a pas su traiter. Choix utilisateur : bouton dans le chat (pas de brouillon
+  automatique), FAQ **globales** (pas de FAQ par paroisse — une réponse propre à une
+  paroisse ne doit pas être enregistrée ainsi).
+- **Conséquences** : bouton visible pour `admin`/`manager` uniquement (mêmes rôles que
+  `POST /faq`) — un compte clergé seul ne le voit pas.
+
+### 2026-09-23 — Chat : escalades de l'assistant LLM
+- **Décision** (`chatbot-llm-spec.md` v2, backend `EVOLUTION.md` même date) : une
+  conversation escaladée par l'assistant affiche un badge « À traiter » (tant que le mode
+  est BOT) + la raison + le destinataire (clergé de la paroisse, résolu via le nouveau
+  `ChurchService.resolveDisplayInfo`/`displayInfo`, ou « Équipe Amisache ») dans la liste
+  et dans une carte « Question transmise » du détail. Sujet `bot-widget` libellé
+  « Assistant ».
+- Un clergé ne voit que les escalades de ses paroisses : le backend l'ajoute comme
+  participant, elles arrivent donc dans `myConversations` sans nouvel endpoint ; la
+  notification temps réel (room `user:{id}`) déclenche le rechargement silencieux déjà en
+  place.
+- Handoff : « Participant à remplacer » devient optionnel (« Aucun ») — pour une
+  conversation de l'assistant, le fidèle doit rester participant.
+- Alerte « Mistral indisponible » et escalades : notifications in-app (cloche) ; un clic
+  sur une notification portant `data.conversationId` ouvre la conversation.
+- **Conséquences** : `ng build` propre. Pas testé en conditions réelles (backend non
+  déployé, migration non appliquée).
+
 ### 2026-09-21 — Chat : temps réel via Socket.io (`ChatSocketService`)
 - **Décision** : demandé explicitement (« ajouter le websocket pour que ce soit
   instantané »), en même temps que côté backend et `amisache-client` (voir

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -6,6 +6,7 @@ import Swal from 'sweetalert2';
 
 import { PaymentMethodService } from '../../../services/payment-method.service';
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { PAYMENT_OPERATOR_LABELS, PaymentOperator } from '../../../models/payment.model';
 import { ServerError } from '../../../models/server-error.model';
 import { FieldErrorsComponent } from '../../../shared/field-errors/field-errors.component';
@@ -23,6 +24,7 @@ export class PaymentMethodCreateComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly methodService = inject(PaymentMethodService);
   private readonly churchService = inject(ChurchService);
+  readonly clergyContext = inject(ClergyContextService);
 
   operatorList = Object.values(PaymentOperator);
   operatorLabels = PAYMENT_OPERATOR_LABELS;
@@ -43,6 +45,15 @@ export class PaymentMethodCreateComponent {
     if (this.churches() === undefined) {
       this.churchService.listAllForSelect().subscribe({ error: () => undefined });
     }
+
+    // Clergé (pas admin/engineer) : jamais de choix d'église — c'est déjà celle qu'il
+    // administre (topbar). `effect()` plutôt qu'une lecture ponctuelle : `activeChurchId()`
+    // peut encore être vide à la construction (chargement des affectations en cours).
+    effect(() => {
+      if (this.clergyContext.isFullAccess()) return;
+      const churchId = this.clergyContext.activeChurchId();
+      if (churchId) this.form.patchValue({ churchId });
+    });
   }
 
   invalid(controlName: string): boolean {

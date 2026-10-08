@@ -7,13 +7,13 @@ import Swal from 'sweetalert2';
 
 import { TariffService } from '../../../services/tariff.service';
 import { ChurchService } from '../../../services/church.service';
-import { TypeService } from '../../../services/type.service';
+import { RequestTypeService } from '../../../services/request-type.service';
 import { Tariff } from '../../../models/tariff.model';
-import { TypeScope } from '../../../models/type.model';
+import { RequestTypeScope } from '../../../models/request-type.model';
 import { FieldSaveMixin } from '../../../shared/mixins/field-save.mixin';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
 
-const TARIFFABLE_SCOPES = [TypeScope.INTENTION, TypeScope.SACRAMENT];
+const TARIFFABLE_SCOPES = [RequestTypeScope.INTENTION, RequestTypeScope.SACRAMENT];
 
 @Component({
   selector: 'app-tariff-detail',
@@ -26,7 +26,7 @@ export class TariffDetailComponent extends FieldSaveMixin implements OnInit {
   private readonly router = inject(Router);
   private readonly tariffService = inject(TariffService);
   private readonly churchService = inject(ChurchService);
-  private readonly typeService = inject(TypeService);
+  private readonly requestTypeService = inject(RequestTypeService);
   private readonly fb = inject(FormBuilder);
 
   private readonly tariffId = this.route.snapshot.paramMap.get('id')!;
@@ -41,7 +41,8 @@ export class TariffDetailComponent extends FieldSaveMixin implements OnInit {
   activeSaving = signal(false);
 
   form: FormGroup = this.fb.group({
-    amount: [this.stub?.amount ? Number(this.stub.amount) : null],
+    amount: [this.stub?.amount != null ? Number(this.stub.amount) : null],
+    minLeadDays: [this.stub?.minLeadDays ?? null],
   });
 
   protected getFormGroup(): FormGroup {
@@ -49,7 +50,9 @@ export class TariffDetailComponent extends FieldSaveMixin implements OnInit {
   }
 
   protected saveField(field: string, value: any): Observable<any> {
-    return this.tariffService.update(this.tariff()!.id, { [field]: value });
+    // Champ vidé = null : la valeur se résout alors plus haut dans la hiérarchie.
+    const normalized = value === null || value === '' ? null : Number(value);
+    return this.tariffService.update(this.tariff()!.id, { [field]: normalized });
   }
 
   constructor() {
@@ -62,8 +65,8 @@ export class TariffDetailComponent extends FieldSaveMixin implements OnInit {
       this.churchService.listAllForSelect().subscribe({ error: () => undefined });
     }
     for (const scope of TARIFFABLE_SCOPES) {
-      if (this.typeService.activeForScope(scope) === undefined) {
-        this.typeService.listActive(scope).subscribe({ error: () => undefined });
+      if (this.requestTypeService.activeForScope(scope) === undefined) {
+        this.requestTypeService.listActive(scope).subscribe({ error: () => undefined });
       }
     }
     this.load();
@@ -76,7 +79,10 @@ export class TariffDetailComponent extends FieldSaveMixin implements OnInit {
     this.tariffService.getById(this.tariffId).subscribe({
       next: (tariff) => {
         this.tariff.set(tariff);
-        this.form.patchValue({ amount: Number(tariff.amount) });
+        this.form.patchValue({
+          amount: tariff.amount != null ? Number(tariff.amount) : null,
+          minLeadDays: tariff.minLeadDays,
+        });
         this.initOriginalValues();
 
         this.loading.set(false);
@@ -107,7 +113,7 @@ export class TariffDetailComponent extends FieldSaveMixin implements OnInit {
     const t = this.tariff();
     if (!t) return '';
     if (t.type) return t.type.name;
-    const allTypes = TARIFFABLE_SCOPES.flatMap((s) => this.typeService.activeForScope(s) ?? []);
+    const allTypes = TARIFFABLE_SCOPES.flatMap((s) => this.requestTypeService.activeForScope(s) ?? []);
     return allTypes.find((ty) => ty.id === t.typeId)?.name ?? t.typeId;
   }
 

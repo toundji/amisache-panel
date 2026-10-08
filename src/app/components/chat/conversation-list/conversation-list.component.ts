@@ -10,6 +10,7 @@ import { Conversation, ConversationMode, ConversationStatus, CONVERSATION_STATUS
 import { PaginationService } from '../../../shared/pagination/pagination.service';
 import { PaginationComponent } from '../../../shared/pagination/pagination.component';
 import { ClergyContextService } from '../../../services/clergy-context.service';
+import { ChurchService } from '../../../services/church.service';
 
 interface ConversationUpdatedEvent {
   conversation: {
@@ -19,6 +20,9 @@ interface ConversationUpdatedEvent {
     lastMessageAt?: string;
     lastMessagePreview?: string;
     lastMessageSenderId?: string | null;
+    escalatedAt?: string | null;
+    escalationReason?: string | null;
+    escalatedChurchId?: string | null;
   };
 }
 
@@ -36,6 +40,7 @@ export class ConversationListComponent {
   readonly chatSocket = inject(ChatSocketService);
   readonly pagination = inject(PaginationService);
   private readonly clergyContext = inject(ClergyContextService);
+  readonly churchService = inject(ChurchService);
   private readonly destroyRef = inject(DestroyRef);
 
   statusLabels = CONVERSATION_STATUS_LABELS;
@@ -112,6 +117,14 @@ export class ConversationListComponent {
     this.joinedRooms = ids;
   });
 
+  // Libellé de la paroisse des conversations escaladées affichées.
+  private resolveChurches = effect(() => {
+    const ids = (this.conversations() ?? [])
+      .map((c) => c.escalatedChurchId)
+      .filter((id): id is string => !!id);
+    if (ids.length) this.churchService.resolveDisplayInfo(ids);
+  });
+
   constructor() {
     this.chatSocket.connect();
 
@@ -135,7 +148,14 @@ export class ConversationListComponent {
     this.reloadTrigger.update((v) => v + 1);
   }
 
+  /** Destinataire d'une escalade de l'assistant : clergé d'une paroisse, ou équipe Amisache. */
+  escalationTarget(conversation: Conversation): string {
+    if (!conversation.escalatedChurchId) return 'Équipe Amisache';
+    return this.churchService.displayInfo(conversation.escalatedChurchId)?.name ?? '…';
+  }
+
   subjectLabel(conversation: Conversation): string {
+    if (conversation.subjectType === 'bot-widget') return 'Assistant';
     return conversation.subjectType && conversation.subjectId
       ? `${conversation.subjectType} #${conversation.subjectId.slice(0, 8)}`
       : 'Libre';

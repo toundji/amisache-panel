@@ -4,7 +4,7 @@
     <div class="d-flex align-items-center gap-3">
       <app-back-button fallback="/liturgy/tariffs"></app-back-button>
       <div>
-        <h1 class="page-title mb-0">Détail tarif</h1>
+        <h1 class="page-title mb-0">Détail tarif / délai</h1>
         <p class="page-subtitle mb-0" *ngIf="tariff()">{{ typeName() }} · {{ churchName() }}</p>
       </div>
     </div>
@@ -86,6 +86,27 @@
               <input type="number" min="1" class="form-control" formControlName="amount"
                 [class.border-warning]="isFieldModified('amount') && !isFieldJustSaved('amount') && !isFieldSaving('amount')"
                 [class.border-success]="isFieldJustSaved('amount')">
+              <div class="form-text">Vide : hérité de l'église supérieure (ou montant libre).</div>
+            </div>
+          </div>
+
+          <div class="card mt-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+              <span>Délai minimum (jours)</span>
+              @if (isFieldModified('minLeadDays') && !isFieldSaving('minLeadDays')) {
+                <div class="btn-group btn-group-sm">
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('minLeadDays')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('minLeadDays')"><i class="fas fa-undo"></i></button>
+                </div>
+              }
+              @if (isFieldSaving('minLeadDays')) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (isFieldJustSaved('minLeadDays')) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+            </div>
+            <div class="card-body">
+              <input type="number" min="0" max="365" class="form-control" formControlName="minLeadDays"
+                [class.border-warning]="isFieldModified('minLeadDays') && !isFieldJustSaved('minLeadDays') && !isFieldSaving('minLeadDays')"
+                [class.border-success]="isFieldJustSaved('minLeadDays')">
+              <div class="form-text">Vide : hérité de l'église supérieure, sinon délai par défaut du motif.</div>
             </div>
           </div>
         </form>

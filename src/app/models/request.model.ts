@@ -5,7 +5,7 @@
 
 import { Church } from './church.model';
 import { Schedule } from './schedule.model';
-import { TypeItem } from './type.model';
+import { RequestTypeItem } from './request-type.model';
 import { User } from './user.model';
 
 export enum RequestStatus {
@@ -45,7 +45,7 @@ export interface Request {
   church?: Church;
   user?: User;
   schedule?: Schedule;
-  type?: TypeItem;
+  type?: RequestTypeItem;
   code?: string;
   createdAt?: string;
   updatedAt?: string;

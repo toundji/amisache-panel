@@ -35,8 +35,42 @@ export class ChurchService {
   readonly selected = this.selectedSignal.asReadonly();
   readonly allForSelect = this.allForSelectSignal.asReadonly();
 
+  // Libellé d'une église référencée par id ailleurs (ex. paroisse d'une
+  // escalade de conversation) — cf. CLAUDE.md § Résolution d'un id de relation.
+  private displayInfoSignal = signal<Record<string, { name: string }>>({});
+  private displayInfoInFlight = new Set<string>();
+
   select(church: Church): void {
     this.selectedSignal.set(church);
+  }
+
+  displayInfo(id: string): { name: string } | undefined {
+    return this.displayInfoSignal()[id];
+  }
+
+  /** Cache déjà chargé (listes) d'abord, sinon lookup ciblé par id — jamais la table entière. */
+  resolveDisplayInfo(ids: string[]): void {
+    const cached = [...(this.churchesSignal() ?? []), ...(this.allForSelectSignal() ?? [])];
+    for (const id of new Set(ids)) {
+      if (this.displayInfoSignal()[id] || this.displayInfoInFlight.has(id)) continue;
+      const known = cached.find((c) => c.id === id);
+      if (known) {
+        this.setDisplayInfo(id, known);
+        continue;
+      }
+      this.displayInfoInFlight.add(id);
+      this.getById(id).subscribe({
+        next: (church) => {
+          this.displayInfoInFlight.delete(id);
+          this.setDisplayInfo(id, church);
+        },
+        error: () => this.displayInfoInFlight.delete(id),
+      });
+    }
+  }
+
+  private setDisplayInfo(id: string, church: Church): void {
+    this.displayInfoSignal.update((current) => ({ ...current, [id]: { name: church.name } }));
   }
 
   listAdmin(query: ListChurchAdminQuery = {}): Observable<PaginatedChurches> {

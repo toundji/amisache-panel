@@ -33,7 +33,8 @@ export class TypeDetailComponent extends FieldSaveMixin implements OnInit {
   deleting = signal(false);
   togglingActive = signal(false);
 
-  scopeList = Object.values(TypeScope);
+  // INTENTION/SACRAMENT vivent dans une table dédiée — voir /request-types.
+  scopeList = Object.values(TypeScope).filter((s) => s !== TypeScope.INTENTION && s !== TypeScope.SACRAMENT);
   scopeLabels = TYPE_SCOPE_LABELS;
 
   form: FormGroup = this.fb.group({
@@ -43,12 +44,6 @@ export class TypeDetailComponent extends FieldSaveMixin implements OnInit {
     minLeadDays: [this.stub?.minLeadDays ?? 2],
     requiresScheduleMatch: [this.stub?.requiresScheduleMatch ?? false],
   });
-
-  /** Ces trois règles ne s'appliquent qu'aux demandes (intentions/sacrements). */
-  isRequestScope(): boolean {
-    const scope = this.type()?.scope;
-    return scope === TypeScope.INTENTION || scope === TypeScope.SACRAMENT;
-  }
 
   protected getFormGroup(): FormGroup {
     return this.form;

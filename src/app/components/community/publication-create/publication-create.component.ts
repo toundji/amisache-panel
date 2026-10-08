@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -7,6 +7,7 @@ import Swal from 'sweetalert2';
 import { PublicationService } from '../../../services/publication.service';
 import { GroupService } from '../../../services/group.service';
 import { ChurchService } from '../../../services/church.service';
+import { ClergyContextService } from '../../../services/clergy-context.service';
 import { TypeService } from '../../../services/type.service';
 import { TypeScope } from '../../../models/type.model';
 import { ServerError } from '../../../models/server-error.model';
@@ -27,6 +28,7 @@ export class PublicationCreateComponent {
   private readonly groupService = inject(GroupService);
   private readonly churchService = inject(ChurchService);
   private readonly typeService = inject(TypeService);
+  readonly clergyContext = inject(ClergyContextService);
 
   churches = this.churchService.allForSelect;
   private groups = this.groupService.groups;
@@ -65,6 +67,15 @@ export class PublicationCreateComponent {
     this.form.get('churchId')!.valueChanges.subscribe((v) => {
       this.churchIdSig.set(v);
       this.form.get('groupId')!.setValue('');
+    });
+
+    // Clergé (pas admin/engineer) : jamais de choix d'église — c'est déjà celle qu'il
+    // administre (topbar). `effect()` plutôt qu'une lecture ponctuelle : `activeChurchId()`
+    // peut encore être vide à la construction (chargement des affectations en cours).
+    effect(() => {
+      if (this.clergyContext.isFullAccess()) return;
+      const churchId = this.clergyContext.activeChurchId();
+      if (churchId) this.form.patchValue({ churchId });
     });
   }
 
