@@ -12,12 +12,13 @@ import { Tariff } from '../../../models/tariff.model';
 import { RequestTypeScope } from '../../../models/request-type.model';
 import { FieldSaveMixin } from '../../../shared/mixins/field-save.mixin';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
+import { LeadTimeInputComponent } from '../../../shared/lead-time/lead-time-input.component';
 
 const TARIFFABLE_SCOPES = [RequestTypeScope.INTENTION, RequestTypeScope.SACRAMENT];
 
 @Component({
   selector: 'app-tariff-detail',
-  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent, LeadTimeInputComponent],
   templateUrl: './tariff-detail.component.html',
   styleUrl: './tariff-detail.component.scss',
 })
@@ -42,7 +43,7 @@ export class TariffDetailComponent extends FieldSaveMixin implements OnInit {
 
   form: FormGroup = this.fb.group({
     amount: [this.stub?.amount != null ? Number(this.stub.amount) : null],
-    minLeadDays: [this.stub?.minLeadDays ?? null],
+    minLeadHours: [this.stub?.minLeadHours ?? null],
   });
 
   protected getFormGroup(): FormGroup {
@@ -81,7 +82,7 @@ export class TariffDetailComponent extends FieldSaveMixin implements OnInit {
         this.tariff.set(tariff);
         this.form.patchValue({
           amount: tariff.amount != null ? Number(tariff.amount) : null,
-          minLeadDays: tariff.minLeadDays,
+          minLeadHours: tariff.minLeadHours,
         });
         this.initOriginalValues();
 

@@ -3,7 +3,15 @@
   <div class="page-header">
     <div>
       <h1 class="page-title"><i class="fas fa-th-large me-2 text-primary-app"></i>Tableau de bord</h1>
-      <p class="page-subtitle">Vue d'ensemble des utilisateurs et de vos sessions</p>
+      <p class="page-subtitle">
+        @if (clergyContext.isFullAccess()) {
+          Vue d'ensemble de la plateforme, des demandes et de vos sessions
+        } @else if (clergyContext.activeChurch()) {
+          Vue d'ensemble de {{ clergyContext.activeChurch()!.name }}
+        } @else {
+          Vue d'ensemble de votre église et de vos sessions
+        }
+      </p>
     </div>
     <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
       <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
@@ -17,7 +25,7 @@
   }
 
   @if (loading()) {
-    @if (clergyContext.isFullAccess()) {
+    @for (row of clergyContext.isFullAccess() ? [1, 2] : [1]; track row) {
       <div class="row g-3 mb-4">
         @for (i of [1,2,3,4]; track i) {
           <div class="col-6 col-lg-3">
@@ -36,13 +44,15 @@
     @if (clergyContext.isFullAccess()) {
       <div class="row g-3 mb-4">
         <div class="col-6 col-lg-3">
-          <div class="stat-card">
-            <div class="stat-icon icon-primary"><i class="fas fa-users"></i></div>
-            <div>
-              <div class="stat-value">{{ stats().total }}</div>
-              <div class="stat-label">Utilisateurs</div>
+          <a routerLink="/users" class="text-decoration-none">
+            <div class="stat-card">
+              <div class="stat-icon icon-primary"><i class="fas fa-users"></i></div>
+              <div>
+                <div class="stat-value">{{ stats().total }}</div>
+                <div class="stat-label">Utilisateurs</div>
+              </div>
             </div>
-          </div>
+          </a>
         </div>
         <div class="col-6 col-lg-3">
           <div class="stat-card">
@@ -74,17 +84,103 @@
       </div>
     }
 
+    <!-- Chiffres métier Amisache — ce qui attend une action en premier -->
+    @if (amisacheStats(); as ds) {
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+          <a routerLink="/liturgy/requests" class="text-decoration-none">
+            <div class="stat-card">
+              <div class="stat-icon icon-warning"><i class="fas fa-inbox"></i></div>
+              <div>
+                <div class="stat-value">{{ ds.pendingRequests }}</div>
+                <div class="stat-label">Demandes reçues</div>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="col-6 col-lg-3">
+          <a routerLink="/liturgy/requests" class="text-decoration-none">
+            <div class="stat-card">
+              <div class="stat-icon icon-info"><i class="fas fa-hourglass-half"></i></div>
+              <div>
+                <div class="stat-value">{{ ds.inProgressRequests }}</div>
+                <div class="stat-label">Demandes en cours</div>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="col-6 col-lg-3">
+          <a routerLink="/payment/transactions" class="text-decoration-none">
+            <div class="stat-card">
+              <div class="stat-icon icon-danger"><i class="fas fa-receipt"></i></div>
+              <div>
+                <div class="stat-value">{{ ds.pendingPayments }}</div>
+                <div class="stat-label">Paiements à confirmer</div>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="col-6 col-lg-3">
+          @if (ds.pendingChurches !== null) {
+            <a routerLink="/churches" class="text-decoration-none">
+              <div class="stat-card">
+                <div class="stat-icon icon-primary"><i class="fas fa-church"></i></div>
+                <div>
+                  <div class="stat-value">{{ ds.pendingChurches }}</div>
+                  <div class="stat-label">Églises à valider · {{ ds.churches }} au total</div>
+                </div>
+              </div>
+            </a>
+          } @else {
+            <a routerLink="/community/publications" class="text-decoration-none">
+              <div class="stat-card">
+                <div class="stat-icon icon-success"><i class="fas fa-bullhorn"></i></div>
+                <div>
+                  <div class="stat-value">{{ ds.publishedPublications }}</div>
+                  <div class="stat-label">Publications en ligne</div>
+                </div>
+              </div>
+            </a>
+          }
+        </div>
+      </div>
+    }
+
     <div class="row g-3">
       <div class="col-lg-7">
         <div class="card">
           <div class="card-header">Accès rapides</div>
           <div class="card-body d-flex flex-wrap gap-2">
+            <a routerLink="/liturgy/requests" class="btn btn-outline-primary btn-sm">
+              <i class="fas fa-inbox me-2"></i>Demandes
+            </a>
+            <a routerLink="/payment/transactions" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-receipt me-2"></i>Paiements
+            </a>
+            <a routerLink="/liturgy/schedules" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-clock me-2"></i>Horaires
+            </a>
+            <a routerLink="/community/publications" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-bullhorn me-2"></i>Publications
+            </a>
+            <a routerLink="/liturgy/tariffs" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-tags me-2"></i>Tarifs &amp; délais
+            </a>
             @if (clergyContext.isFullAccess()) {
-              <a routerLink="/users" class="btn btn-outline-primary btn-sm">
-                <i class="fas fa-users me-2"></i>Gérer les utilisateurs
+              <a routerLink="/users" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-users me-2"></i>Utilisateurs
+              </a>
+              <a routerLink="/churches" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-church me-2"></i>Églises
+              </a>
+              <a routerLink="/request-types" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-list-ul me-2"></i>Types de demande
+              </a>
+              <a routerLink="/settings" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-sliders-h me-2"></i>Paramètres
               </a>
             } @else {
-              <a routerLink="/churches" class="btn btn-outline-primary btn-sm">
+              <a routerLink="/churches" class="btn btn-outline-secondary btn-sm">
                 <i class="fas fa-church me-2"></i>Mon église
               </a>
             }

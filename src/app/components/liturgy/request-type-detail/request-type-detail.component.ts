@@ -9,10 +9,11 @@ import { RequestTypeService } from '../../../services/request-type.service';
 import { REQUEST_TYPE_SCOPE_LABELS, RequestTypeItem, RequestTypeScope } from '../../../models/request-type.model';
 import { FieldSaveMixin } from '../../../shared/mixins/field-save.mixin';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
+import { LeadTimeInputComponent } from '../../../shared/lead-time/lead-time-input.component';
 
 @Component({
   selector: 'app-request-type-detail',
-  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, BackButtonComponent, LeadTimeInputComponent],
   templateUrl: './request-type-detail.component.html',
   styleUrl: './request-type-detail.component.scss',
 })
@@ -40,7 +41,8 @@ export class RequestTypeDetailComponent extends FieldSaveMixin implements OnInit
     name: [this.stub?.name ?? ''],
     scope: [this.stub?.scope ?? ''],
     allowHomeCelebration: [this.stub?.allowHomeCelebration ?? false],
-    minLeadDays: [this.stub?.minLeadDays ?? 2],
+    allowAttachment: [this.stub?.allowAttachment ?? false],
+    minLeadHours: [this.stub?.minLeadHours ?? 48],
     requiresScheduleMatch: [this.stub?.requiresScheduleMatch ?? false],
   });
 
@@ -72,7 +74,8 @@ export class RequestTypeDetailComponent extends FieldSaveMixin implements OnInit
           name: type.name,
           scope: type.scope,
           allowHomeCelebration: type.allowHomeCelebration,
-          minLeadDays: type.minLeadDays,
+          allowAttachment: type.allowAttachment,
+          minLeadHours: type.minLeadHours,
           requiresScheduleMatch: type.requiresScheduleMatch,
         });
         this.initOriginalValues();

@@ -32,6 +32,18 @@ Prochaines étapes ouvertes :
 > Format d'une entrée : `### AAAA-MM-JJ — Titre court` puis **Décision**, **Pourquoi**,
 > et si utile **Conséquences** (fichiers touchés, invariantes à tenir).
 
+### 2026-10-15 — Délai en heures/jours/semaines, pièce jointe par type, accueil revu
+- **Délai minimum** : nouveau `shared/lead-time/` — `<app-lead-time-input>` (nombre + unité
+  heures/jours/semaines, valeur du contrôle en heures, compatible FieldSaveMixin) et pipe
+  `leadTime` (« 2 jours »). Utilisé sur création/détail des types de demande et des tarifs,
+  et dans la liste des tarifs. Champ API renommé `minLeadHours`.
+- **Pièce jointe** : bascule « Le fidèle peut joindre un fichier » (`allowAttachment`,
+  désactivée par défaut) sur la création et le détail d'un type de demande.
+- **Accueil** : repris sur le modèle de nutito-panel — rangée de chiffres métier cliquables
+  (`GET /dashboard/stats` : demandes reçues/en cours, paiements à confirmer, églises à
+  valider ou publications pour le clergé — scopé à l'église active), accès rapides étoffés.
+- **Conséquences** : `ng build` propre. Nécessite le backend du même jour.
+
 ### 2026-09-26 — Référence des erreurs serveur
 - **Décision** : `errorInterceptor` ajoute `« (réf. xxxx) »` au `msg` d'une erreur qui
   contient un `errorId` (5xx, backend même date). `ng build` propre.

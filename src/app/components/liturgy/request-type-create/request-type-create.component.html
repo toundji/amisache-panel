@@ -40,16 +40,17 @@
             <div class="row g-3">
               <div class="col-md-5">
                 <label class="form-label">Délai minimum avant la date souhaitée</label>
-                <div class="input-group">
-                  <input type="number" class="form-control" formControlName="minLeadDays" min="0">
-                  <span class="input-group-text">jour(s)</span>
-                </div>
-                <app-field-errors [formGroup]="form" controlName="minLeadDays" fieldLabel="Le délai" [serverErrors]="error?.validations"></app-field-errors>
+                <app-lead-time-input formControlName="minLeadHours"></app-lead-time-input>
+                <app-field-errors [formGroup]="form" controlName="minLeadHours" fieldLabel="Le délai" [serverErrors]="error?.validations"></app-field-errors>
               </div>
               <div class="col-md-7 d-flex flex-column gap-2 justify-content-center">
                 <div class="form-check form-switch">
                   <input type="checkbox" class="form-check-input" id="allowHomeCelebration" formControlName="allowHomeCelebration">
                   <label class="form-check-label" for="allowHomeCelebration">Peut être célébré à domicile</label>
+                </div>
+                <div class="form-check form-switch">
+                  <input type="checkbox" class="form-check-input" id="allowAttachment" formControlName="allowAttachment">
+                  <label class="form-check-label" for="allowAttachment">Le fidèle peut joindre un fichier</label>
                 </div>
                 <div class="form-check form-switch">
                   <input type="checkbox" class="form-check-input" id="requiresScheduleMatch" formControlName="requiresScheduleMatch">
