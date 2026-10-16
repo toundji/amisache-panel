@@ -4,7 +4,8 @@ import { map, Observable } from 'rxjs';
 
 import { DashboardStats } from '../models/dashboard.model';
 import { Request } from '../models/request.model';
-import { UserStatus } from '../models/user.model';
+import { User, UserStatus } from '../models/user.model';
+import { Church, ValidationStatus } from '../models/church.model';
 import { ContactMessageStatus } from '../models/contact.model';
 import { MailFailedJob, MailFailedStatus } from '../models/mail-failed.model';
 import { toHttpParams } from '../core/utils/http-params.util';
@@ -43,12 +44,31 @@ export class DashboardService {
   }
 
   /**
-   * Demandes — `GET /requests/admin` (plateforme) ou `GET /requests/church/:id`
+   * Demandes — `GET /requests/church/:id`, ou `GET /requests/admin` (plateforme)
    * (une église). Non paginé serveur : la liste complète sert à la fois aux
-   * demandes récentes et à la répartition par statut.
+   * demandes à traiter et à la répartition par statut de l'accueil église.
    */
   requests(churchId?: string): Observable<Request[]> {
     return this.http.get<Request[]>(churchId ? `requests/church/${churchId}` : 'requests/admin');
+  }
+
+  /** Dernières inscriptions d'églises en attente de validation, et leur nombre total. */
+  pendingChurches(limit = 6): Observable<Paginated<Church>> {
+    return this.http.get<Paginated<Church>>('churches/admin', {
+      params: toHttpParams({ status: ValidationStatus.PENDING, page: 1, limit }),
+    });
+  }
+
+  /** Derniers comptes créés. */
+  latestUsers(limit = 5): Observable<User[]> {
+    return this.http
+      .get<Paginated<User>>('users', { params: toHttpParams({ page: 1, limit, sortBy: 'createdAt', sortOrder: 'desc' }) })
+      .pipe(map((result) => result.data));
+  }
+
+  /** Erreurs serveur journalisées (GET /api-errors/admin, paginé). */
+  countApiErrors(): Observable<number> {
+    return this.count('api-errors/admin', {});
   }
 
   /** GET /mail/failed n'est pas paginé — renvoie la liste complète. */

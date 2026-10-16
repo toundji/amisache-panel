@@ -32,6 +32,22 @@ Prochaines étapes ouvertes :
 > Format d'une entrée : `### AAAA-MM-JJ — Titre court` puis **Décision**, **Pourquoi**,
 > et si utile **Conséquences** (fichiers touchés, invariantes à tenir).
 
+### 2026-10-16 — Deux accueils : plateforme et église
+- **Décision** : `HomeComponent` ne fait plus qu'aiguiller selon `isFullAccess` vers
+  `PlatformHomeComponent` (admin/engineer) ou `ChurchHomeComponent` (clergé).
+  - **Plateforme** : tuiles églises inscrites / à valider + comptes utilisateurs, liste des
+    églises à valider, « À surveiller » (églises à valider, messages non lus, emails échoués,
+    erreurs serveur), activité des églises en lecture seule (chiffres de `/dashboard/stats`,
+    sans liste de demandes), derniers inscrits, accès rapides d'administration.
+  - **Église** : demandes au premier plan — « Demandes à traiter » (Soumise + En cours,
+    célébration la plus proche d'abord, date passée signalée), « À traiter », répartition par
+    statut, accès rapides du clergé.
+- **Pourquoi** : le traitement des demandes revient au clergé ; pour l'administration de la
+  plateforme ce n'est pas une file de travail mais un indicateur.
+- **Conséquences** : styles partagés dans `home.component.scss` (styleUrl des deux enfants),
+  types d'UI dans `home/dashboard-ui.ts`. L'accueil plateforme ne charge plus la liste complète
+  des demandes ni l'annuaire des utilisateurs. Aucun changement de menu ni du rôle `manager`.
+
 ### 2026-10-16 — Tableau de bord aligné sur l'accueil de nutito-panel
 - **Décision** : l'accueil reprend la structure de nutito-panel — tuiles cliquables vers la
   liste préfiltrée, « Demandes récentes » (6 dernières, lien vers le détail avec stub),
