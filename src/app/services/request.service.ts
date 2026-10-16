@@ -6,8 +6,9 @@ import { ListRequestQuery, Request, RequestStatus } from '../models/request.mode
 
 /**
  * Miroir de RequestController (amisache-backend src/liturgy/controllers/request.controller.ts).
- * Le panel n'utilise que GET /requests/admin (toutes demandes, filtrable
- * église/statut), GET /requests/:id et PATCH /requests/:id/status. Le dépôt
+ * Le panel utilise GET /requests/admin (toutes demandes, admin/engineer),
+ * GET /requests/church/:churchId (clergé : son église seulement),
+ * GET /requests/:id et PATCH /requests/:id/status. Le dépôt
  * d'une demande est du self-service fidèle, hors back-office. Liste non
  * paginée serveur, relations non chargées → pagination + libellés côté CLIENT.
  */
@@ -16,6 +17,13 @@ export class RequestService {
   private readonly http = inject(HttpClient);
 
   private requestsSignal = signal<Request[] | undefined>(undefined);
+  // Périmètre de la dernière liste chargée : 'admin' (toutes églises) ou
+  // 'church:<id>'. Le signal survit à la navigation et au changement de
+  // compte (service root) — le composant n'affiche la liste que si ce
+  // périmètre correspond au sien, sinon un clergé pourrait voir, le temps
+  // d'un rechargement, les demandes d'autres églises chargées avant lui.
+  private scopeSignal = signal<string | null>(null);
+  readonly scope = this.scopeSignal.asReadonly();
   private selectedSignal = signal<Request | null>(null);
 
   readonly requests = this.requestsSignal.asReadonly();
@@ -33,7 +41,10 @@ export class RequestService {
       }
     });
     return this.http.get<Request[]>('requests/admin', { params }).pipe(
-      tap((requests) => this.requestsSignal.set(requests)),
+      tap((requests) => {
+        this.requestsSignal.set(requests);
+        this.scopeSignal.set('admin');
+      }),
     );
   }
 
@@ -42,7 +53,10 @@ export class RequestService {
     let params = new HttpParams();
     if (query.status) params = params.set('status', query.status);
     return this.http.get<Request[]>(`requests/church/${churchId}`, { params }).pipe(
-      tap((requests) => this.requestsSignal.set(requests)),
+      tap((requests) => {
+        this.requestsSignal.set(requests);
+        this.scopeSignal.set(`church:${churchId}`);
+      }),
     );
   }
 

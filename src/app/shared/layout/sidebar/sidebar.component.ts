@@ -67,7 +67,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       ],
     },
     {
-      title: 'Addressage', icon: 'fas fa-map-location-dot',
+      title: 'Adressage', icon: 'fas fa-map-location-dot', adminOnly: true,
       children: [
         { title: 'Pays', icon: 'fas fa-flag', route: '/geo/countries' },
         { title: 'Régions', icon: 'fas fa-map', route: '/geo/regions' },

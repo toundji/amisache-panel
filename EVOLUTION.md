@@ -32,6 +32,21 @@ Prochaines étapes ouvertes :
 > Format d'une entrée : `### AAAA-MM-JJ — Titre court` puis **Décision**, **Pourquoi**,
 > et si utile **Conséquences** (fichiers touchés, invariantes à tenir).
 
+### 2026-10-16 — Clergé : demandes de son église uniquement, adressage masqué
+- **Constat** (signalé) : le backend filtre déjà (`GET /requests/church/:churchId` vérifie
+  l'affectation active, `/requests/admin` réservé admin/engineer), mais `RequestService`
+  (root) gardait en mémoire la dernière liste chargée : après une session admin sur le même
+  navigateur, pendant un rechargement, ou sans église active, un clergé pouvait voir des
+  demandes d'autres églises.
+- **Décision** : le service mémorise le périmètre de la liste (`admin` / `church:<id>`) ;
+  `RequestListComponent` ne l'affiche que s'il correspond au sien (toutes églises pour
+  admin/engineer, église active pour le clergé, vide sans église active). Le filtre
+  « Toutes les églises » n'est plus proposé au clergé.
+- **Sidebar** : groupe « Adressage » (pays, régions, zones, villages) réservé à
+  admin/engineer, et routes `geo/*` protégées par `RoleGuard`.
+- **Conséquences** : `ng build` propre. Même motif de signal partagé sur dons/paiements
+  (non traité ici).
+
 ### 2026-10-15 — Délai en heures/jours/semaines, pièce jointe par type, accueil revu
 - **Délai minimum** : nouveau `shared/lead-time/` — `<app-lead-time-input>` (nombre + unité
   heures/jours/semaines, valeur du contrôle en heures, compatible FieldSaveMixin) et pipe
