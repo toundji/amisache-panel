@@ -116,7 +116,7 @@
                 </td>
                 <td class="d-none d-md-table-cell" data-label="Église" style="font-size:.85rem;">{{ churchName(t) }}</td>
                 <td data-label="Montant" style="font-size:.85rem;">{{ t.amount != null ? (t.amount | number:'1.0-0') + ' FCFA' : '—' }}</td>
-                <td data-label="Délai" style="font-size:.85rem;">{{ t.minLeadDays != null ? t.minLeadDays + ' j' : '—' }}</td>
+                <td data-label="Délai" style="font-size:.85rem;">{{ t.minLeadHours | leadTime }}</td>
                 <td data-label="État">
                   <span class="status-badge" [class]="t.active ? 'status-success' : 'status-disabled'">
                     {{ t.active ? 'Actif' : 'Désactivé' }}

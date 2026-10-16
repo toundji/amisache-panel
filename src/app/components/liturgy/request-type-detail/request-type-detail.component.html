@@ -137,27 +137,24 @@
             <div class="card mt-3">
               <div class="card-header d-flex align-items-center justify-content-between">
                 <span>Délai minimum avant la date souhaitée</span>
-                @if (isFieldModified('minLeadDays') && !isFieldSaving('minLeadDays')) {
+                @if (isFieldModified('minLeadHours') && !isFieldSaving('minLeadHours')) {
                   <div class="btn-group btn-group-sm">
-                    <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('minLeadDays')"><i class="fas fa-save"></i></button>
-                    <button type="button" class="btn btn-outline-secondary" (click)="resetField('minLeadDays')"><i class="fas fa-undo"></i></button>
+                    <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('minLeadHours')"><i class="fas fa-save"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" (click)="resetField('minLeadHours')"><i class="fas fa-undo"></i></button>
                   </div>
                 }
-                @if (isFieldSaving('minLeadDays')) {
+                @if (isFieldSaving('minLeadHours')) {
                   <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
                 }
-                @if (isFieldJustSaved('minLeadDays')) {
+                @if (isFieldJustSaved('minLeadHours')) {
                   <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
                 }
               </div>
               <div class="card-body">
-                <div class="input-group" style="max-width:220px;">
-                  <input type="number" class="form-control" formControlName="minLeadDays" min="0"
-                    [class.border-warning]="isFieldModified('minLeadDays') && !isFieldJustSaved('minLeadDays') && !isFieldSaving('minLeadDays')"
-                    [class.border-success]="isFieldJustSaved('minLeadDays')">
-                  <span class="input-group-text">jour(s)</span>
-                </div>
-                <div class="form-text">Une demande de ce type doit être envoyée au moins ce nombre de jours avant la date souhaitée.</div>
+                <app-lead-time-input formControlName="minLeadHours" style="display:block;max-width:320px;"
+                  [modified]="isFieldModified('minLeadHours') && !isFieldJustSaved('minLeadHours') && !isFieldSaving('minLeadHours')"
+                  [saved]="isFieldJustSaved('minLeadHours')"></app-lead-time-input>
+                <div class="form-text">Une demande de ce type doit être envoyée au moins ce délai avant la date souhaitée — en heures, jours ou semaines.</div>
               </div>
             </div>
 
@@ -182,6 +179,31 @@
                 <div class="form-check form-switch">
                   <input type="checkbox" class="form-check-input" id="allowHomeCelebration" formControlName="allowHomeCelebration">
                   <label class="form-check-label" for="allowHomeCelebration">Ce type peut être demandé en célébration à domicile plutôt qu'à l'église</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pièce jointe -->
+            <div class="card mt-3">
+              <div class="card-header d-flex align-items-center justify-content-between">
+                <span>Pièce jointe</span>
+                @if (isFieldModified('allowAttachment') && !isFieldSaving('allowAttachment')) {
+                  <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('allowAttachment')"><i class="fas fa-save"></i></button>
+                    <button type="button" class="btn btn-outline-secondary" (click)="resetField('allowAttachment')"><i class="fas fa-undo"></i></button>
+                  </div>
+                }
+                @if (isFieldSaving('allowAttachment')) {
+                  <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span>
+                }
+                @if (isFieldJustSaved('allowAttachment')) {
+                  <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span>
+                }
+              </div>
+              <div class="card-body">
+                <div class="form-check form-switch">
+                  <input type="checkbox" class="form-check-input" id="allowAttachment" formControlName="allowAttachment">
+                  <label class="form-check-label" for="allowAttachment">Le fidèle peut joindre un fichier (prière, texte — image ou PDF) à sa demande</label>
                 </div>
               </div>
             </div>

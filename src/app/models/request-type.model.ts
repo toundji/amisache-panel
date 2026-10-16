@@ -24,8 +24,10 @@ export interface RequestTypeItem {
   updatedAt?: string;
   /** Ce type peut-il être demandé en célébration à domicile ? */
   allowHomeCelebration: boolean;
-  /** Délai minimum, en jours, entre l'envoi d'une demande de ce type et la date souhaitée. */
-  minLeadDays: number;
+  /** Le fidèle peut-il joindre un fichier à sa demande ? Désactivé par défaut. */
+  allowAttachment: boolean;
+  /** Délai minimum, en heures (24 = 1 jour, 168 = 1 semaine), entre l'envoi d'une demande et la date souhaitée. */
+  minLeadHours: number;
   /** La date doit correspondre à un horaire déjà publié par la paroisse (ignoré si elle n'en a aucun). */
   requiresScheduleMatch: boolean;
 }
@@ -34,7 +36,8 @@ export interface CreateRequestTypeDto {
   name: string;
   scope: RequestTypeScope;
   allowHomeCelebration?: boolean;
-  minLeadDays?: number;
+  allowAttachment?: boolean;
+  minLeadHours?: number;
   requiresScheduleMatch?: boolean;
 }
 
@@ -43,7 +46,8 @@ export interface UpdateRequestTypeDto {
   scope?: RequestTypeScope;
   active?: boolean;
   allowHomeCelebration?: boolean;
-  minLeadDays?: number;
+  allowAttachment?: boolean;
+  minLeadHours?: number;
   requiresScheduleMatch?: boolean;
 }
 

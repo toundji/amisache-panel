@@ -15,8 +15,8 @@ export interface Tariff {
   id: string;
   /** null : l'église ne fixe que le délai, le montant se résout plus haut */
   amount: string | null;
-  /** Délai minimum (jours) — null : se résout plus haut, puis Type.minLeadDays */
-  minLeadDays: number | null;
+  /** Délai minimum (heures) — null : se résout plus haut, puis RequestType.minLeadHours */
+  minLeadHours: number | null;
   active: boolean;
   churchId: string;
   church?: Church;
@@ -31,12 +31,12 @@ export interface CreateTariffDto {
   churchId: string;
   typeId: string;
   amount?: number;
-  minLeadDays?: number;
+  minLeadHours?: number;
 }
 
 export interface UpdateTariffDto {
   amount?: number | null;
-  minLeadDays?: number | null;
+  minLeadHours?: number | null;
   active?: boolean;
 }
 

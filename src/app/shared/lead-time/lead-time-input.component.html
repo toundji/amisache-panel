@@ -1,0 +1,28 @@
+<div class="input-group">
+  <input
+    type="number"
+    min="0"
+    step="1"
+    class="form-control"
+    [class.border-warning]="modified()"
+    [class.border-success]="saved()"
+    [value]="amount() ?? ''"
+    [disabled]="disabled()"
+    [placeholder]="nullable() ? 'Hérité' : ''"
+    (input)="onAmountInput($any($event.target).value)"
+    (blur)="onTouched()"
+  />
+  <select
+    class="form-select"
+    [class.border-warning]="modified()"
+    [class.border-success]="saved()"
+    style="max-width: 9.5rem;"
+    [value]="unit()"
+    [disabled]="disabled()"
+    (change)="onUnitChange($any($event.target).value)"
+  >
+    @for (u of units; track u) {
+      <option [value]="u" [selected]="u === unit()">{{ unitLabels[u] }}</option>
+    }
+  </select>
+</div>

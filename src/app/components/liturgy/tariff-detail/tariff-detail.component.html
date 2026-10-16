@@ -92,20 +92,20 @@
 
           <div class="card mt-3">
             <div class="card-header d-flex align-items-center justify-content-between">
-              <span>Délai minimum (jours)</span>
-              @if (isFieldModified('minLeadDays') && !isFieldSaving('minLeadDays')) {
+              <span>Délai minimum</span>
+              @if (isFieldModified('minLeadHours') && !isFieldSaving('minLeadHours')) {
                 <div class="btn-group btn-group-sm">
-                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('minLeadDays')"><i class="fas fa-save"></i></button>
-                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('minLeadDays')"><i class="fas fa-undo"></i></button>
+                  <button type="button" class="btn btn-outline-warning" (click)="saveSingleField('minLeadHours')"><i class="fas fa-save"></i></button>
+                  <button type="button" class="btn btn-outline-secondary" (click)="resetField('minLeadHours')"><i class="fas fa-undo"></i></button>
                 </div>
               }
-              @if (isFieldSaving('minLeadDays')) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
-              @if (isFieldJustSaved('minLeadDays')) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
+              @if (isFieldSaving('minLeadHours')) { <span class="badge bg-info text-white"><span class="spinner-border spinner-border-sm me-1"></span>Sauvegarde...</span> }
+              @if (isFieldJustSaved('minLeadHours')) { <span class="badge bg-success text-white"><i class="fas fa-check me-1"></i>Sauvegardé</span> }
             </div>
             <div class="card-body">
-              <input type="number" min="0" max="365" class="form-control" formControlName="minLeadDays"
-                [class.border-warning]="isFieldModified('minLeadDays') && !isFieldJustSaved('minLeadDays') && !isFieldSaving('minLeadDays')"
-                [class.border-success]="isFieldJustSaved('minLeadDays')">
+              <app-lead-time-input formControlName="minLeadHours" [nullable]="true" style="display:block;max-width:320px;"
+                [modified]="isFieldModified('minLeadHours') && !isFieldJustSaved('minLeadHours') && !isFieldSaving('minLeadHours')"
+                [saved]="isFieldJustSaved('minLeadHours')"></app-lead-time-input>
               <div class="form-text">Vide : hérité de l'église supérieure, sinon délai par défaut du motif.</div>
             </div>
           </div>

@@ -12,6 +12,7 @@ import { Tariff } from '../../../models/tariff.model';
 import { REQUEST_TYPE_SCOPE_LABELS, RequestTypeScope } from '../../../models/request-type.model';
 import { PaginationService } from '../../../shared/pagination/pagination.service';
 import { PaginationComponent } from '../../../shared/pagination/pagination.component';
+import { LeadTimePipe } from '../../../shared/lead-time/lead-time.pipe';
 
 // Un tarif ne porte que sur une intention de messe ou un sacrement (jamais
 // un don — offrande libre par nature, cf. TariffService côté backend).
@@ -37,7 +38,7 @@ function loadPersisted(): Partial<Pick<TariffFilters, 'churchId' | 'scope' | 'ac
 @Component({
   selector: 'app-tariff-list',
   providers: [PaginationService],
-  imports: [CommonModule, FormsModule, RouterLink, PaginationComponent],
+  imports: [CommonModule, FormsModule, RouterLink, PaginationComponent, LeadTimePipe],
   templateUrl: './tariff-list.component.html',
   styleUrl: './tariff-list.component.scss',
 })

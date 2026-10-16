@@ -12,6 +12,7 @@ import { RequestTypeScope } from '../../../models/request-type.model';
 import { ServerError } from '../../../models/server-error.model';
 import { FieldErrorsComponent } from '../../../shared/field-errors/field-errors.component';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
+import { LeadTimeInputComponent } from '../../../shared/lead-time/lead-time-input.component';
 
 // Un tarif ne porte que sur une intention de messe ou un sacrement (jamais
 // un don — offrande libre par nature, cf. TariffService côté backend).
@@ -19,7 +20,7 @@ const TARIFFABLE_SCOPES = [RequestTypeScope.INTENTION, RequestTypeScope.SACRAMEN
 
 @Component({
   selector: 'app-tariff-create',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, FieldErrorsComponent, BackButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, FieldErrorsComponent, BackButtonComponent, LeadTimeInputComponent],
   templateUrl: './tariff-create.component.html',
   styleUrl: './tariff-create.component.scss',
 })
@@ -40,7 +41,7 @@ export class TariffCreateComponent {
     churchId: [this.route.snapshot.queryParamMap.get('churchId') ?? '', [Validators.required]],
     typeId: ['', [Validators.required]],
     amount: [null, [Validators.min(1)]],
-    minLeadDays: [null, [Validators.min(0), Validators.max(365)]],
+    minLeadHours: [null, [Validators.min(0), Validators.max(8760)]],
   });
 
   // Un tarif fixe un montant, un délai, ou les deux — jamais aucun.
@@ -50,7 +51,7 @@ export class TariffCreateComponent {
 
   missingBoth(): boolean {
     const v = this.form.value;
-    return this.isBlank(v.amount) && this.isBlank(v.minLeadDays);
+    return this.isBlank(v.amount) && this.isBlank(v.minLeadHours);
   }
 
   submitting = signal(false);
@@ -96,7 +97,7 @@ export class TariffCreateComponent {
         churchId: v.churchId,
         typeId: v.typeId,
         ...(this.isBlank(v.amount) ? {} : { amount: Number(v.amount) }),
-        ...(this.isBlank(v.minLeadDays) ? {} : { minLeadDays: Number(v.minLeadDays) }),
+        ...(this.isBlank(v.minLeadHours) ? {} : { minLeadHours: Number(v.minLeadHours) }),
       })
       .subscribe({
         next: (tariff) => {

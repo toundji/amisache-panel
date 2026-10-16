@@ -58,9 +58,9 @@
                 <div class="form-text">Vide : hérité de l'église supérieure (ou montant libre).</div>
               </div>
               <div class="col-md-6">
-                <label class="form-label">Délai minimum (jours)</label>
-                <input type="number" min="0" max="365" class="form-control" formControlName="minLeadDays" [class.is-invalid]="invalid('minLeadDays')">
-                <app-field-errors [formGroup]="form" controlName="minLeadDays" fieldLabel="Le délai" [serverErrors]="error?.validations"></app-field-errors>
+                <label class="form-label">Délai minimum</label>
+                <app-lead-time-input formControlName="minLeadHours" [nullable]="true"></app-lead-time-input>
+                <app-field-errors [formGroup]="form" controlName="minLeadHours" fieldLabel="Le délai" [serverErrors]="error?.validations"></app-field-errors>
                 <div class="form-text">Vide : hérité de l'église supérieure, sinon délai par défaut du motif.</div>
               </div>
               @if (form.touched && missingBoth()) {

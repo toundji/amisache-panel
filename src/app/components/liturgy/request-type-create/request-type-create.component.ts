@@ -9,10 +9,11 @@ import { REQUEST_TYPE_SCOPE_LABELS, RequestTypeScope } from '../../../models/req
 import { ServerError } from '../../../models/server-error.model';
 import { FieldErrorsComponent } from '../../../shared/field-errors/field-errors.component';
 import { BackButtonComponent } from '../../../shared/navigation/back-button.component';
+import { LeadTimeInputComponent } from '../../../shared/lead-time/lead-time-input.component';
 
 @Component({
   selector: 'app-request-type-create',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, FieldErrorsComponent, BackButtonComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, FieldErrorsComponent, BackButtonComponent, LeadTimeInputComponent],
   templateUrl: './request-type-create.component.html',
   styleUrl: './request-type-create.component.scss',
 })
@@ -28,7 +29,8 @@ export class RequestTypeCreateComponent {
     name: ['', [Validators.required, Validators.maxLength(120)]],
     scope: ['', [Validators.required]],
     allowHomeCelebration: [false],
-    minLeadDays: [2, [Validators.required, Validators.min(0)]],
+    allowAttachment: [false],
+    minLeadHours: [48, [Validators.required, Validators.min(0)]],
     requiresScheduleMatch: [false],
   });
 
@@ -54,7 +56,8 @@ export class RequestTypeCreateComponent {
         name: String(this.form.value.name).trim(),
         scope: this.form.value.scope as RequestTypeScope,
         allowHomeCelebration: !!this.form.value.allowHomeCelebration,
-        minLeadDays: Number(this.form.value.minLeadDays),
+        allowAttachment: !!this.form.value.allowAttachment,
+        minLeadHours: Number(this.form.value.minLeadHours),
         requiresScheduleMatch: !!this.form.value.requiresScheduleMatch,
       })
       .subscribe({
