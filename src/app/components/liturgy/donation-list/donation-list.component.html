@@ -22,11 +22,13 @@
         </div>
       </div>
 
-      <select class="form-select form-select-sm" style="max-width:220px;"
-        [ngModel]="filters().churchId" (ngModelChange)="updateFilter('churchId', $event)">
-        <option value="">Toutes les églises</option>
-        @for (c of churches() ?? []; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
-      </select>
+      @if (clergyContext.isFullAccess()) {
+        <select class="form-select form-select-sm" style="max-width:220px;"
+          [ngModel]="filters().churchId" (ngModelChange)="updateFilter('churchId', $event)">
+          <option value="">Toutes les églises</option>
+          @for (c of churches() ?? []; track c.id) { <option [value]="c.id">{{ c.name }}</option> }
+        </select>
+      }
 
       @if (hasFilter()) {
         <button class="btn btn-sm btn-link text-muted text-decoration-none" (click)="resetFilters()">

@@ -41,7 +41,18 @@ export class DonationListComponent {
   private readonly userService = inject(UserService);
   readonly pagination = inject(PaginationService);
 
-  donations = this.donationService.donations;
+  // Périmètre attendu : toutes églises pour admin/engineer, sinon l'église
+  // active du clergé (aucune → rien) — jamais une liste d'un autre périmètre.
+  private expectedScope = computed(() => {
+    if (this.clergyContext.isFullAccess()) return 'admin';
+    const churchId = this.clergyContext.activeChurchId();
+    return churchId ? `church:${churchId}` : null;
+  });
+  donations = computed<Donation[] | undefined>(() => {
+    const expected = this.expectedScope();
+    if (expected === null) return this.clergyContext.myChurches() === undefined ? undefined : [];
+    return this.donationService.scope() === expected ? this.donationService.donations() : undefined;
+  });
   churches = this.churchService.allForSelect;
 
   isLoading = computed(() => this.donations() === undefined);
@@ -49,7 +60,7 @@ export class DonationListComponent {
   refreshing = signal(false);
 
   filters = signal<DonationFilters>({ churchId: '', search: '', ...loadPersisted() });
-  hasFilter = computed(() => !!this.filters().churchId || !!this.filters().search);
+  hasFilter = computed(() => (this.clergyContext.isFullAccess() && !!this.filters().churchId) || !!this.filters().search);
 
   filtered = computed(() => {
     const items = this.donations() ?? [];

@@ -60,7 +60,21 @@ export class RequestListComponent {
   statusList = Object.values(RequestStatus);
   statusLabels = REQUEST_STATUS_LABELS;
 
-  requests = this.requestService.requests;
+  // Périmètre attendu : toutes églises pour admin/engineer, sinon l'église
+  // active du clergé uniquement (aucune église active → rien à afficher).
+  private expectedScope = computed(() => {
+    if (this.clergyContext.isFullAccess()) return 'admin';
+    const churchId = this.clergyContext.activeChurchId();
+    return churchId ? `church:${churchId}` : null;
+  });
+
+  // Jamais une liste chargée pour un autre périmètre (ex. celle d'un admin
+  // connecté avant sur ce navigateur, ou d'une autre église du clergé).
+  requests = computed<Request[] | undefined>(() => {
+    const expected = this.expectedScope();
+    if (expected === null) return this.clergyContext.myChurches() === undefined ? undefined : [];
+    return this.requestService.scope() === expected ? this.requestService.requests() : undefined;
+  });
   churches = this.churchService.allForSelect;
 
   isLoading = computed(() => this.requests() === undefined);
@@ -227,7 +241,7 @@ export class RequestListComponent {
     }
     if (f.time) parts.push(`à ${f.time.replace(':', 'h')}`);
     if (f.typeId) parts.push(`type : ${this.typeOptions().find((t) => t.id === f.typeId)?.name ?? ''}`);
-    if (f.churchId) parts.push(`église : ${(this.churches() ?? []).find((c) => c.id === f.churchId)?.name ?? ''}`);
+    if (f.churchId && this.clergyContext.isFullAccess()) parts.push(`église : ${(this.churches() ?? []).find((c) => c.id === f.churchId)?.name ?? ''}`);
     if (f.status) parts.push(`statut : ${this.statusLabels[f.status]}`);
     if (f.search) parts.push(`recherche : « ${f.search} »`);
 

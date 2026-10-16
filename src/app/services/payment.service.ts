@@ -17,6 +17,11 @@ export class PaymentService {
   private readonly http = inject(HttpClient);
 
   private paymentsSignal = signal<Payment[] | undefined>(undefined);
+  // Périmètre de la dernière liste chargée : 'admin' (toutes églises) ou
+  // 'church:<id>' — le composant ne l'affiche que si c'est le sien (cf.
+  // RequestService, même raison).
+  private scopeSignal = signal<string | null>(null);
+  readonly scope = this.scopeSignal.asReadonly();
   private selectedSignal = signal<Payment | null>(null);
 
   readonly payments = this.paymentsSignal.asReadonly();
@@ -30,7 +35,10 @@ export class PaymentService {
     let params = new HttpParams();
     if (query.status) params = params.set('status', query.status);
     return this.http.get<Payment[]>('payments/admin', { params }).pipe(
-      tap((payments) => this.paymentsSignal.set(payments)),
+      tap((payments) => {
+        this.paymentsSignal.set(payments);
+        this.scopeSignal.set('admin');
+      }),
     );
   }
 
@@ -38,7 +46,10 @@ export class PaymentService {
     let params = new HttpParams();
     if (query.status) params = params.set('status', query.status);
     return this.http.get<Payment[]>(`payments/church/${churchId}`, { params }).pipe(
-      tap((payments) => this.paymentsSignal.set(payments)),
+      tap((payments) => {
+        this.paymentsSignal.set(payments);
+        this.scopeSignal.set(`church:${churchId}`);
+      }),
     );
   }
 
