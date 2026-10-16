@@ -1,21 +1,24 @@
 <div class="container-fluid px-0">
 
+  <!-- En-tête -->
   <div class="page-header">
     <div>
       <h1 class="page-title"><i class="fas fa-th-large me-2 text-primary-app"></i>Tableau de bord</h1>
       <p class="page-subtitle">
-        @if (clergyContext.isFullAccess()) {
-          Vue d'ensemble de la plateforme, des demandes et de vos sessions
-        } @else if (clergyContext.activeChurch()) {
-          Vue d'ensemble de {{ clergyContext.activeChurch()!.name }}
-        } @else {
-          Vue d'ensemble de votre église et de vos sessions
+        Bienvenue{{ firstName() ? ', ' + firstName() : '' }} — <span class="text-capitalize-first">{{ today }}</span>
+        @if (!clergyContext.isFullAccess() && clergyContext.activeChurch()) {
+          · {{ clergyContext.activeChurch()!.name }}
         }
       </p>
     </div>
-    <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
-      <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
-    </button>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary btn-sm" [disabled]="refreshing()" (click)="refresh()">
+        <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing()"></i>Actualiser
+      </button>
+      <a routerLink="/liturgy/requests" [queryParams]="{ status: 'SUBMITTED', churchId: '' }" class="btn btn-primary btn-sm">
+        <i class="fas fa-inbox me-1"></i><span class="d-none d-sm-inline">Demandes à traiter</span><span class="d-sm-none">Demandes</span>
+      </a>
+    </div>
   </div>
 
   @if (error()) {
@@ -24,6 +27,7 @@
     </div>
   }
 
+  <!-- ── KPIs — chaque tuile ouvre la liste dédiée, préfiltrée ─────────────── -->
   @if (loading()) {
     @for (row of clergyContext.isFullAccess() ? [1, 2] : [1]; track row) {
       <div class="row g-3 mb-4">
@@ -41,177 +45,179 @@
       </div>
     }
   } @else {
-    @if (clergyContext.isFullAccess()) {
-      <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-3">
-          <a routerLink="/users" class="text-decoration-none">
-            <div class="stat-card">
-              <div class="stat-icon icon-primary"><i class="fas fa-users"></i></div>
-              <div>
-                <div class="stat-value">{{ stats().total }}</div>
-                <div class="stat-label">Utilisateurs</div>
+    @for (tiles of [userTiles(), amisacheTiles()]; track $index) {
+      @if (tiles.length) {
+        <div class="row g-3 mb-4">
+          @for (tile of tiles; track tile.label) {
+            <div class="col-6 col-lg-3">
+              <a [routerLink]="tile.route" [queryParams]="tile.queryParams" class="stat-card stat-card-link"
+                [attr.aria-label]="tile.label + ' : ' + tile.value + ' — voir la liste'">
+                <div class="stat-icon" [class]="'icon-' + tile.color"><i [class]="tile.icon"></i></div>
+                <div class="min-w-0">
+                  <div class="stat-value">{{ tile.value | number }}</div>
+                  <div class="stat-label">{{ tile.label }}</div>
+                </div>
+                <i class="fas fa-chevron-right stat-card-arrow"></i>
+              </a>
+            </div>
+          }
+        </div>
+      }
+    }
+  }
+
+  <!-- ── Ligne 2 : demandes récentes + accès rapides ──────────────────────── -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-lg-8">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span><i class="fas fa-inbox me-2 text-primary-app"></i>Demandes récentes</span>
+          <a routerLink="/liturgy/requests" [queryParams]="{ status: '', churchId: '' }" class="btn btn-outline-secondary btn-sm">Voir tout</a>
+        </div>
+        <div class="card-body p-0">
+          @if (recentRequests() === undefined) {
+            @for (i of [1,2,3,4]; track i) {
+              <div class="activity-item">
+                <div class="skeleton-line" style="width:34px;height:34px;border-radius:8px;flex-shrink:0;"></div>
+                <div class="flex-grow-1">
+                  <div class="skeleton-line mb-2" style="width:160px;"></div>
+                  <div class="skeleton-line" style="width:110px;"></div>
+                </div>
+                <div class="skeleton-line" style="width:70px;height:22px;border-radius:20px;"></div>
               </div>
+            }
+          } @else if (recentRequests() === null) {
+            <div class="alert alert-danger m-3 mb-3">
+              <i class="fas fa-exclamation-triangle me-2"></i>Impossible de charger les demandes récentes.
             </div>
-          </a>
-        </div>
-        <div class="col-6 col-lg-3">
-          <div class="stat-card">
-            <div class="stat-icon icon-success"><i class="fas fa-user-check"></i></div>
-            <div>
-              <div class="stat-value">{{ stats().active }}</div>
-              <div class="stat-label">Actifs</div>
+          } @else if (recentRequests()!.length === 0) {
+            <div class="empty-state">
+              <i class="fas fa-inbox empty-icon"></i>
+              <p class="empty-title">Aucune demande</p>
+              <p class="empty-text">Les intentions de messe et demandes de sacrement des fidèles apparaîtront ici</p>
             </div>
-          </div>
-        </div>
-        <div class="col-6 col-lg-3">
-          <div class="stat-card">
-            <div class="stat-icon icon-warning"><i class="fas fa-user-clock"></i></div>
-            <div>
-              <div class="stat-value">{{ stats().unverified }}</div>
-              <div class="stat-label">Non vérifiés</div>
-            </div>
-          </div>
-        </div>
-        <div class="col-6 col-lg-3">
-          <div class="stat-card">
-            <div class="stat-icon icon-danger"><i class="fas fa-user-slash"></i></div>
-            <div>
-              <div class="stat-value">{{ stats().blocked }}</div>
-              <div class="stat-label">Bloqués</div>
-            </div>
-          </div>
+          } @else {
+            @for (request of recentRequests()!; track request.id) {
+              <a class="activity-item" [routerLink]="['/liturgy/requests', request.id]" (click)="requestService.select(request)">
+                <div class="activity-icon" [class]="'type-' + request.status">
+                  <i [class]="requestIcon[request.status]"></i>
+                </div>
+                <div class="flex-grow-1 min-w-0">
+                  <p class="activity-title text-truncate">{{ request.type?.name ?? 'Demande' }}</p>
+                  <p class="activity-desc text-truncate">{{ requestSubtitle(request) }}</p>
+                </div>
+                <div class="activity-meta">
+                  <span class="status-badge" [class]="requestBadge[request.status]">{{ requestStatusLabels[request.status] }}</span>
+                  <span class="activity-time">{{ request.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+              </a>
+            }
+          }
         </div>
       </div>
-    }
+    </div>
 
-    <!-- Chiffres métier Amisache — ce qui attend une action en premier -->
-    @if (amisacheStats(); as ds) {
-      <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-3">
-          <a routerLink="/liturgy/requests" class="text-decoration-none">
-            <div class="stat-card">
-              <div class="stat-icon icon-warning"><i class="fas fa-inbox"></i></div>
-              <div>
-                <div class="stat-value">{{ ds.pendingRequests }}</div>
-                <div class="stat-label">Demandes reçues</div>
-              </div>
-            </div>
-          </a>
+    <div class="col-lg-4">
+      <div class="card h-100">
+        <div class="card-header">
+          <i class="fas fa-bolt me-2 text-primary-app"></i>Accès rapides
         </div>
-        <div class="col-6 col-lg-3">
-          <a routerLink="/liturgy/requests" class="text-decoration-none">
-            <div class="stat-card">
-              <div class="stat-icon icon-info"><i class="fas fa-hourglass-half"></i></div>
-              <div>
-                <div class="stat-value">{{ ds.inProgressRequests }}</div>
-                <div class="stat-label">Demandes en cours</div>
+        <div class="card-body d-flex flex-column gap-1">
+          @for (link of quickLinks(); track link.route) {
+            <a [routerLink]="link.route" class="quick-link-item">
+              <div class="ql-icon" [class]="'icon-' + link.color"><i [class]="link.icon"></i></div>
+              <div class="min-w-0">
+                <div class="ql-title">{{ link.title }}</div>
+                <div class="ql-desc">{{ link.desc }}</div>
               </div>
-            </div>
-          </a>
-        </div>
-        <div class="col-6 col-lg-3">
-          <a routerLink="/payment/transactions" class="text-decoration-none">
-            <div class="stat-card">
-              <div class="stat-icon icon-danger"><i class="fas fa-receipt"></i></div>
-              <div>
-                <div class="stat-value">{{ ds.pendingPayments }}</div>
-                <div class="stat-label">Paiements à confirmer</div>
-              </div>
-            </div>
-          </a>
-        </div>
-        <div class="col-6 col-lg-3">
-          @if (ds.pendingChurches !== null) {
-            <a routerLink="/churches" class="text-decoration-none">
-              <div class="stat-card">
-                <div class="stat-icon icon-primary"><i class="fas fa-church"></i></div>
-                <div>
-                  <div class="stat-value">{{ ds.pendingChurches }}</div>
-                  <div class="stat-label">Églises à valider · {{ ds.churches }} au total</div>
-                </div>
-              </div>
-            </a>
-          } @else {
-            <a routerLink="/community/publications" class="text-decoration-none">
-              <div class="stat-card">
-                <div class="stat-icon icon-success"><i class="fas fa-bullhorn"></i></div>
-                <div>
-                  <div class="stat-value">{{ ds.publishedPublications }}</div>
-                  <div class="stat-label">Publications en ligne</div>
-                </div>
-              </div>
+              <i class="fas fa-chevron-right ql-arrow"></i>
             </a>
           }
         </div>
       </div>
-    }
+    </div>
 
-    <div class="row g-3">
-      <div class="col-lg-7">
-        <div class="card">
-          <div class="card-header">Accès rapides</div>
-          <div class="card-body d-flex flex-wrap gap-2">
-            <a routerLink="/liturgy/requests" class="btn btn-outline-primary btn-sm">
-              <i class="fas fa-inbox me-2"></i>Demandes
-            </a>
-            <a routerLink="/payment/transactions" class="btn btn-outline-secondary btn-sm">
-              <i class="fas fa-receipt me-2"></i>Paiements
-            </a>
-            <a routerLink="/liturgy/schedules" class="btn btn-outline-secondary btn-sm">
-              <i class="fas fa-clock me-2"></i>Horaires
-            </a>
-            <a routerLink="/community/publications" class="btn btn-outline-secondary btn-sm">
-              <i class="fas fa-bullhorn me-2"></i>Publications
-            </a>
-            <a routerLink="/liturgy/tariffs" class="btn btn-outline-secondary btn-sm">
-              <i class="fas fa-tags me-2"></i>Tarifs &amp; délais
-            </a>
-            @if (clergyContext.isFullAccess()) {
-              <a routerLink="/users" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-users me-2"></i>Utilisateurs
-              </a>
-              <a routerLink="/churches" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-church me-2"></i>Églises
-              </a>
-              <a routerLink="/request-types" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-list-ul me-2"></i>Types de demande
-              </a>
-              <a routerLink="/settings" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-sliders-h me-2"></i>Paramètres
-              </a>
-            } @else {
-              <a routerLink="/churches" class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-church me-2"></i>Mon église
-              </a>
-            }
-            <a routerLink="/profile" class="btn btn-outline-secondary btn-sm">
-              <i class="fas fa-user me-2"></i>Mon profil
-            </a>
-            <a routerLink="/sessions" class="btn btn-outline-secondary btn-sm">
-              <i class="fas fa-shield-alt me-2"></i>Mes sessions
-            </a>
-          </div>
+  </div>
+
+  <!-- ── Ligne 3 : répartition des demandes + à traiter ───────────────────── -->
+  <div class="row g-3">
+
+    <div class="col-lg-7">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between">
+          <span><i class="fas fa-chart-bar me-2 text-primary-app"></i>Répartition des demandes</span>
+          @if (requests()) {
+            <span class="text-muted text-sm">{{ requestTotal() | number }} au total</span>
+          }
         </div>
-      </div>
-
-      <div class="col-lg-5">
-        <div class="card">
-          <div class="card-header">Mes équipements connectés</div>
-          <ul class="list-group list-group-flush">
-            @for (session of recentSessions(); track session.id) {
-              <li class="list-group-item quick-info-item">
-                <i class="fas fa-laptop text-primary-app"></i>
-                <div>
-                  {{ session.deviceName }}
-                  <div class="text-muted text-xs">{{ session.os }} · {{ session.ip }}</div>
-                </div>
-              </li>
-            } @empty {
-              <li class="list-group-item text-muted text-sm">Aucune session active</li>
+        <div class="card-body">
+          @if (requests() === undefined) {
+            @for (i of [1,2,3,4,5]; track i) {
+              <div class="breakdown-item">
+                <div class="skeleton-line mb-2" style="width:120px;"></div>
+                <div class="skeleton-line" style="width:100%;height:5px;"></div>
+              </div>
             }
-          </ul>
+          } @else if (requests() === null) {
+            <p class="text-muted text-sm mb-0">Répartition indisponible.</p>
+          } @else {
+            @for (row of requestBreakdown(); track row.status) {
+              <a class="breakdown-item" routerLink="/liturgy/requests" [queryParams]="{ status: row.status, churchId: '' }">
+                <div class="breakdown-header">
+                  <span class="status-badge" [class]="requestBadge[row.status]">{{ row.label }}</span>
+                  <span class="breakdown-count">{{ row.count | number }} <span class="breakdown-pct">· {{ row.pct }} %</span></span>
+                </div>
+                <div class="breakdown-bar-wrap">
+                  <div class="breakdown-bar" [style.width.%]="row.pct" [class]="'bar-' + row.status"></div>
+                </div>
+              </a>
+            }
+          }
         </div>
       </div>
     </div>
-  }
+
+    <div class="col-lg-5">
+      <div class="card h-100 d-flex flex-column">
+        <div class="card-header">
+          <i class="fas fa-bell me-2 text-primary-app"></i>À traiter
+        </div>
+        <div class="card-body p-0 flex-grow-1">
+          @if (loading()) {
+            @for (i of [1,2,3]; track i) {
+              <div class="todo-item">
+                <div class="skeleton-line" style="width:30px;height:30px;border-radius:7px;flex-shrink:0;"></div>
+                <div class="flex-grow-1"><div class="skeleton-line" style="width:150px;"></div></div>
+              </div>
+            }
+          } @else {
+            @for (item of todoItems(); track item.title) {
+              <a class="todo-item" [routerLink]="item.route" [queryParams]="item.queryParams" [class.is-clear]="item.count === 0">
+                <div class="todo-icon" [class]="'level-' + (item.count ? item.level : 'clear')"><i [class]="item.icon"></i></div>
+                <div class="flex-grow-1 min-w-0">
+                  <p class="todo-title">{{ item.title }}</p>
+                  <p class="todo-desc">{{ item.desc }}</p>
+                </div>
+                <span class="todo-count">{{ item.count | number }}</span>
+              </a>
+            } @empty {
+              <div class="empty-state">
+                <i class="fas fa-church empty-icon"></i>
+                <p class="empty-title">Aucune église active</p>
+                <p class="empty-text">Sélectionnez une église dans le topbar pour voir ce qui vous attend</p>
+              </div>
+            }
+          }
+        </div>
+        @if (allClear()) {
+          <div class="todo-footer">
+            <span class="dot-online"></span>
+            <span>Rien en attente — tout est à jour</span>
+          </div>
+        }
+      </div>
+    </div>
+
+  </div>
 </div>

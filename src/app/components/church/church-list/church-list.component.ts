@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 
 import { ChurchService } from '../../../services/church.service';
@@ -16,6 +16,7 @@ import {
 import { PaginationService } from '../../../shared/pagination/pagination.service';
 import { PaginationComponent } from '../../../shared/pagination/pagination.component';
 import { BackDismissDirective } from '../../../shared/navigation/back-dismiss.directive';
+import { filtersFromQueryParams, loadPersistedFilters, persistFilters } from '../../../core/utils/list-filters.util';
 
 interface ChurchFilters {
   status: ValidationStatus | '';
@@ -25,14 +26,6 @@ interface ChurchFilters {
 
 type PersistedChurchFilters = Pick<ChurchFilters, 'status' | 'type'>;
 const STORAGE_KEY = 'churchFilters';
-
-function loadPersistedFilters(): Partial<PersistedChurchFilters> {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
-  } catch {
-    return {};
-  }
-}
 
 @Component({
   selector: 'app-church-list',
@@ -45,6 +38,7 @@ export class ChurchListComponent {
   readonly churchService = inject(ChurchService);
   readonly clergyContext = inject(ClergyContextService);
   readonly pagination = inject(PaginationService);
+  private readonly route = inject(ActivatedRoute);
 
   typeList = Object.values(EntityType);
   typeLabels = ENTITY_TYPE_LABELS;
@@ -69,13 +63,16 @@ export class ChurchListComponent {
     status: '',
     type: '',
     search: '',
-    ...loadPersistedFilters(),
+    // Filtres de l'URL (tuile du tableau de bord) prioritaires sur les filtres
+    // persistés — cf. filtersFromQueryParams.
+    ...(filtersFromQueryParams<ChurchFilters>(this.route.snapshot.queryParamMap, ['status', 'type'])
+      ?? loadPersistedFilters<PersistedChurchFilters>(STORAGE_KEY)),
   });
   hasAdvancedFilters = computed(() => this.filters().status !== '' || this.filters().type !== '');
 
   private persistFilters = effect(() => {
     const { status, type } = this.filters();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ status, type }));
+    persistFilters(STORAGE_KEY, { status, type });
   });
 
   private reloadTrigger = signal(0);

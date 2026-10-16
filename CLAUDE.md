@@ -138,6 +138,22 @@ pagination à la page 1 (`pagination.reset()`) — sinon on peut se retrouver su
 une page 4 devenue inexistante après un filtrage qui réduit le nombre total
 de résultats.
 
+**Filtres passés dans l'URL** (`core/utils/list-filters.util.ts`) : une liste
+lit ses filtres de contexte dans les query params via
+`filtersFromQueryParams(route.snapshot.queryParamMap, ['status', ...])` —
+c'est ainsi que les tuiles du tableau de bord ouvrent une liste préfiltrée
+(`/liturgy/requests?status=SUBMITTED&churchId=`). Dès qu'une des clés est
+présente, l'URL décrit **tout** le contexte : défauts + paramètres, sans les
+filtres persistés (une église mémorisée fausserait le chiffre cliqué). Un lien
+qui veut « tous » passe la clé vide (`{ status: '' }`).
+`loadPersistedFilters`/`persistFilters` du même fichier remplacent le
+`try/JSON.parse` recopié par liste.
+
+**Comptages hors liste** (tableau de bord) : passer par `DashboardService`
+(`HttpClient` direct), jamais par `listXxx({ limit: 1 })` d'un service de
+liste — son `tap()` écraserait le signal partagé avec une page d'un seul
+élément, visible au prochain passage sur la liste.
+
 ### Tri
 
 Colonnes triables = en-têtes cliquables avec icône `fa-sort` /

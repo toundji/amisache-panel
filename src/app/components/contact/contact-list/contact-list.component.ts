@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 
 import { ContactService } from '../../../services/contact.service';
@@ -9,6 +9,7 @@ import { ContactMessage, ContactMessageStatus, ListContactMessagesSortBy } from 
 import { PaginationService } from '../../../shared/pagination/pagination.service';
 import { PaginationComponent } from '../../../shared/pagination/pagination.component';
 import { BackDismissDirective } from '../../../shared/navigation/back-dismiss.directive';
+import { filtersFromQueryParams, loadPersistedFilters, persistFilters } from '../../../core/utils/list-filters.util';
 
 interface ContactFilters {
   status: ContactMessageStatus | '';
@@ -20,14 +21,6 @@ interface ContactFilters {
 // Persisté entre visites — jamais `search`, cf. CLAUDE.md § Filtres et recherche.
 type PersistedContactFilters = Pick<ContactFilters, 'status' | 'sortBy' | 'sortOrder'>;
 const STORAGE_KEY = 'contactFilters';
-
-function loadPersistedFilters(): Partial<PersistedContactFilters> {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
-  } catch {
-    return {};
-  }
-}
 
 @Component({
   selector: 'app-contact-list',
@@ -41,6 +34,7 @@ export class ContactListComponent {
   // Non privé : le template appelle `contactService.select(message)` avant de naviguer vers le détail.
   readonly contactService = inject(ContactService);
   readonly pagination = inject(PaginationService);
+  private readonly route = inject(ActivatedRoute);
 
   ContactMessageStatus = ContactMessageStatus;
   statusList = Object.values(ContactMessageStatus);
@@ -57,13 +51,16 @@ export class ContactListComponent {
     search: '',
     sortBy: 'createdAt',
     sortOrder: 'desc',
-    ...loadPersistedFilters(),
+    // Filtres de l'URL (tuile du tableau de bord) prioritaires sur les filtres
+    // persistés — cf. filtersFromQueryParams.
+    ...(filtersFromQueryParams<ContactFilters>(this.route.snapshot.queryParamMap, ['status'])
+      ?? loadPersistedFilters<PersistedContactFilters>(STORAGE_KEY)),
   });
   hasAdvancedFilters = computed(() => !!this.filters().status);
 
   private persistFilters = effect(() => {
     const { status, sortBy, sortOrder } = this.filters();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ status, sortBy, sortOrder }));
+    persistFilters(STORAGE_KEY, { status, sortBy, sortOrder });
   });
 
   // Incrémenté pour forcer un rechargement de la page courante (ex: après une

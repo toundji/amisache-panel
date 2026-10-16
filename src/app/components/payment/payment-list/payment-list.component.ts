@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 
 import { PaymentService } from '../../../services/payment.service';
@@ -16,6 +16,7 @@ import {
 } from '../../../models/payment.model';
 import { PaginationService } from '../../../shared/pagination/pagination.service';
 import { PaginationComponent } from '../../../shared/pagination/pagination.component';
+import { filtersFromQueryParams, loadPersistedFilters, persistFilters } from '../../../core/utils/list-filters.util';
 
 interface PaymentFilters {
   status: PaymentStatus | '';
@@ -26,13 +27,7 @@ interface PaymentFilters {
 
 const STORAGE_KEY = 'paymentFilters';
 
-function loadPersisted(): Partial<Pick<PaymentFilters, 'status' | 'operator' | 'churchId'>> {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
-  } catch {
-    return {};
-  }
-}
+type PersistedPaymentFilters = Pick<PaymentFilters, 'status' | 'operator' | 'churchId'>;
 
 const STATUS_BADGE: Record<PaymentStatus, string> = {
   [PaymentStatus.SUBMITTED]: 'status-warning',
@@ -52,6 +47,7 @@ export class PaymentListComponent {
   readonly churchService = inject(ChurchService);
   readonly clergyContext = inject(ClergyContextService);
   readonly pagination = inject(PaginationService);
+  private readonly route = inject(ActivatedRoute);
 
   statusList = Object.values(PaymentStatus);
   statusLabels = PAYMENT_STATUS_LABELS;
@@ -65,7 +61,16 @@ export class PaymentListComponent {
   error = signal<string | null>(null);
   refreshing = signal(false);
 
-  filters = signal<PaymentFilters>({ status: '', operator: '', churchId: '', search: '', ...loadPersisted() });
+  // Filtres de l'URL (tuile du tableau de bord) prioritaires sur les filtres
+  // persistés — cf. filtersFromQueryParams.
+  filters = signal<PaymentFilters>({
+    status: '',
+    operator: '',
+    churchId: '',
+    search: '',
+    ...(filtersFromQueryParams<PaymentFilters>(this.route.snapshot.queryParamMap, ['status', 'operator', 'churchId'])
+      ?? loadPersistedFilters<PersistedPaymentFilters>(STORAGE_KEY)),
+  });
   hasFilter = computed(() => {
     const f = this.filters();
     return !!f.status || !!f.operator || !!f.churchId || !!f.search;
@@ -96,7 +101,7 @@ export class PaymentListComponent {
 
   private persist = effect(() => {
     const { status, operator, churchId } = this.filters();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ status, operator, churchId }));
+    persistFilters(STORAGE_KEY, { status, operator, churchId });
   });
 
   private syncTotal = effect(() => {

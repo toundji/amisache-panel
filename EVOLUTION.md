@@ -32,6 +32,21 @@ Prochaines étapes ouvertes :
 > Format d'une entrée : `### AAAA-MM-JJ — Titre court` puis **Décision**, **Pourquoi**,
 > et si utile **Conséquences** (fichiers touchés, invariantes à tenir).
 
+### 2026-10-16 — Tableau de bord aligné sur l'accueil de nutito-panel
+- **Décision** : l'accueil reprend la structure de nutito-panel — tuiles cliquables vers la
+  liste préfiltrée, « Demandes récentes » (6 dernières, lien vers le détail avec stub),
+  « Accès rapides » en cartes, « Répartition des demandes » par statut (barres) et
+  « À traiter » (demandes reçues, paiements à confirmer, églises à valider, messages non lus,
+  emails échoués — ces trois derniers pour admin/engineer seulement). La carte
+  « Mes équipements connectés » disparaît (sessions accessibles depuis le topbar).
+- **Pourquoi** : un accueil qui mène directement au travail en attente, cohérent entre les panels.
+- **Conséquences** : `core/utils/list-filters.util.ts` (+ `http-params.util.ts`) — les listes
+  Demandes, Paiements, Utilisateurs, Églises et Contact lisent leurs filtres de contexte dans
+  l'URL (`/liturgy/requests?status=SUBMITTED&churchId=`), prioritaires sur les filtres persistés.
+  `DashboardService` compte en `HttpClient` direct (plus de `userService.listUsers({ limit: 1 })`
+  qui écrasait la page de la liste Utilisateurs). Récentes et répartition sont calculées côté
+  panel à partir de la liste complète des demandes (API non paginée), sans changement backend.
+
 ### 2026-10-15 — Délai en heures/jours/semaines, pièce jointe par type, accueil revu
 - **Délai minimum** : nouveau `shared/lead-time/` — `<app-lead-time-input>` (nombre + unité
   heures/jours/semaines, valeur du contrôle en heures, compatible FieldSaveMixin) et pipe

@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 
 import { RequestService } from '../../../services/request.service';
@@ -11,6 +11,7 @@ import { UserService } from '../../../services/user.service';
 import { Request, REQUEST_STATUS_LABELS, RequestStatus } from '../../../models/request.model';
 import { PaginationService } from '../../../shared/pagination/pagination.service';
 import { PaginationComponent } from '../../../shared/pagination/pagination.component';
+import { filtersFromQueryParams, loadPersistedFilters, persistFilters } from '../../../core/utils/list-filters.util';
 import { exportRequestsDocx, exportRequestsPdf, RequestExportRow } from './request-export';
 
 interface RequestFilters {
@@ -31,13 +32,7 @@ const EMPTY_FILTERS: RequestFilters = {
 
 const STORAGE_KEY = 'requestFilters';
 
-function loadPersisted(): Partial<Pick<RequestFilters, 'churchId' | 'status'>> {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
-  } catch {
-    return {};
-  }
-}
+type PersistedRequestFilters = Pick<RequestFilters, 'churchId' | 'status'>;
 
 const STATUS_BADGE: Record<RequestStatus, string> = {
   [RequestStatus.SUBMITTED]: 'status-warning',
@@ -60,6 +55,7 @@ export class RequestListComponent {
   readonly clergyContext = inject(ClergyContextService);
   private readonly userService = inject(UserService);
   readonly pagination = inject(PaginationService);
+  private readonly route = inject(ActivatedRoute);
 
   statusList = Object.values(RequestStatus);
   statusLabels = REQUEST_STATUS_LABELS;
@@ -71,7 +67,13 @@ export class RequestListComponent {
   error = signal<string | null>(null);
   refreshing = signal(false);
 
-  filters = signal<RequestFilters>({ ...EMPTY_FILTERS, ...loadPersisted() });
+  // Filtres de l'URL (tuile du tableau de bord) prioritaires sur les filtres
+  // persistés — cf. filtersFromQueryParams.
+  filters = signal<RequestFilters>({
+    ...EMPTY_FILTERS,
+    ...(filtersFromQueryParams<RequestFilters>(this.route.snapshot.queryParamMap, ['churchId', 'status'])
+      ?? loadPersistedFilters<PersistedRequestFilters>(STORAGE_KEY)),
+  });
   hasFilter = computed(() => Object.values(this.filters()).some((v) => !!v));
 
   /** Heures de célébration présentes dans les demandes chargées. */
@@ -108,7 +110,7 @@ export class RequestListComponent {
 
   private persist = effect(() => {
     const { churchId, status } = this.filters();
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ churchId, status }));
+    persistFilters(STORAGE_KEY, { churchId, status });
   });
 
   private syncTotal = effect(() => {

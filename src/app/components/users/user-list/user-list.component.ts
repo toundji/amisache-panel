@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import Swal from 'sweetalert2';
 
 import { UserService } from '../../../services/user.service';
@@ -12,6 +12,7 @@ import { UserAvatarComponent } from '../../../shared/avatar/user-avatar.componen
 import { ColumnDef, ColumnVisibilityService } from '../../../shared/column-visibility/column-visibility.service';
 import { ColumnVisibilityComponent } from '../../../shared/column-visibility/column-visibility.component';
 import { BackDismissDirective } from '../../../shared/navigation/back-dismiss.directive';
+import { filtersFromQueryParams, loadPersistedFilters, persistFilters } from '../../../core/utils/list-filters.util';
 
 interface UserFilters {
   status: UserStatus | '';
@@ -25,14 +26,6 @@ interface UserFilters {
 // se réapplique silencieusement à la prochaine visite serait déroutant.
 type PersistedUserFilters = Pick<UserFilters, 'status' | 'role' | 'sortBy' | 'sortOrder'>;
 const USERS_FILTERS_STORAGE_KEY = 'usersFilters';
-
-function loadPersistedFilters(): Partial<PersistedUserFilters> {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_FILTERS_STORAGE_KEY) ?? '{}');
-  } catch {
-    return {};
-  }
-}
 
 // Colonnes réellement masquables. "Utilisateur" (avatar+nom) et "Actions"
 // restent toujours affichées — pas de sens à les cacher — donc elles ne
@@ -57,6 +50,7 @@ export class UserListComponent {
   readonly userService = inject(UserService);
   readonly pagination = inject(PaginationService);
   readonly columnVisibility = inject(ColumnVisibilityService);
+  private readonly route = inject(ActivatedRoute);
 
   constructor() {
     this.columnVisibility.init('users', USER_COLUMNS);
@@ -80,14 +74,17 @@ export class UserListComponent {
     search: '',
     sortBy: 'createdAt',
     sortOrder: 'desc',
-    ...loadPersistedFilters(),
+    // Filtres de l'URL (tuile du tableau de bord) prioritaires sur les filtres
+    // persistés — cf. filtersFromQueryParams.
+    ...(filtersFromQueryParams<UserFilters>(this.route.snapshot.queryParamMap, ['status', 'role'])
+      ?? loadPersistedFilters<PersistedUserFilters>(USERS_FILTERS_STORAGE_KEY)),
   });
   hasAdvancedFilters = computed(() => !!(this.filters().status || this.filters().role));
 
-  // Persiste statut/rôle/tri à chaque changement — cf. loadPersistedFilters() ci-dessus.
+  // Persiste statut/rôle/tri à chaque changement — jamais `search`.
   private persistFilters = effect(() => {
     const { status, role, sortBy, sortOrder } = this.filters();
-    localStorage.setItem(USERS_FILTERS_STORAGE_KEY, JSON.stringify({ status, role, sortBy, sortOrder }));
+    persistFilters(USERS_FILTERS_STORAGE_KEY, { status, role, sortBy, sortOrder });
   });
 
   // Incrémenté pour forcer un rechargement de la page courante (ex: après une
