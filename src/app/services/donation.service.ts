@@ -16,6 +16,11 @@ export class DonationService {
   private readonly http = inject(HttpClient);
 
   private donationsSignal = signal<Donation[] | undefined>(undefined);
+  // Périmètre de la dernière liste chargée : 'admin' (toutes églises) ou
+  // 'church:<id>' — le composant ne l'affiche que si c'est le sien (cf.
+  // RequestService, même raison).
+  private scopeSignal = signal<string | null>(null);
+  readonly scope = this.scopeSignal.asReadonly();
   private selectedSignal = signal<Donation | null>(null);
 
   readonly donations = this.donationsSignal.asReadonly();
@@ -33,14 +38,20 @@ export class DonationService {
       }
     });
     return this.http.get<Donation[]>('donations/admin', { params }).pipe(
-      tap((donations) => this.donationsSignal.set(donations)),
+      tap((donations) => {
+        this.donationsSignal.set(donations);
+        this.scopeSignal.set('admin');
+      }),
     );
   }
 
   /** GET /donations/church/:churchId — dons d'une église (clergé de cette église, ou admin). */
   listForChurch(churchId: string): Observable<Donation[]> {
     return this.http.get<Donation[]>(`donations/church/${churchId}`).pipe(
-      tap((donations) => this.donationsSignal.set(donations)),
+      tap((donations) => {
+        this.donationsSignal.set(donations);
+        this.scopeSignal.set(`church:${churchId}`);
+      }),
     );
   }
 

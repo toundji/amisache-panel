@@ -58,7 +58,18 @@ export class PaymentListComponent {
   operatorList = Object.values(PaymentOperator);
   operatorLabels = PAYMENT_OPERATOR_LABELS;
 
-  payments = this.paymentService.payments;
+  // Périmètre attendu : toutes églises pour admin/engineer, sinon l'église
+  // active du clergé (aucune → rien) — jamais une liste d'un autre périmètre.
+  private expectedScope = computed(() => {
+    if (this.clergyContext.isFullAccess()) return 'admin';
+    const churchId = this.clergyContext.activeChurchId();
+    return churchId ? `church:${churchId}` : null;
+  });
+  payments = computed<Payment[] | undefined>(() => {
+    const expected = this.expectedScope();
+    if (expected === null) return this.clergyContext.myChurches() === undefined ? undefined : [];
+    return this.paymentService.scope() === expected ? this.paymentService.payments() : undefined;
+  });
   churches = this.churchService.allForSelect;
 
   isLoading = computed(() => this.payments() === undefined);
@@ -68,7 +79,7 @@ export class PaymentListComponent {
   filters = signal<PaymentFilters>({ status: '', operator: '', churchId: '', search: '', ...loadPersisted() });
   hasFilter = computed(() => {
     const f = this.filters();
-    return !!f.status || !!f.operator || !!f.churchId || !!f.search;
+    return !!f.status || !!f.operator || (this.clergyContext.isFullAccess() && !!f.churchId) || !!f.search;
   });
 
   filtered = computed(() => {
@@ -77,7 +88,8 @@ export class PaymentListComponent {
     const term = search.trim().toLowerCase();
     return items.filter((p) => {
       if (operator && p.operator !== operator) return false;
-      if (churchId && p.paymentMethod?.churchId !== churchId) return false;
+      // Filtre église : admin/engineer seulement (le clergé ne charge que la sienne).
+      if (churchId && this.clergyContext.isFullAccess() && p.paymentMethod?.churchId !== churchId) return false;
       if (term) {
         const hay = `${p.reference} ${p.paymentMethod?.accountName ?? ''}`.toLowerCase();
         if (!hay.includes(term)) return false;

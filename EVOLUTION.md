@@ -44,8 +44,11 @@ Prochaines étapes ouvertes :
   « Toutes les églises » n'est plus proposé au clergé.
 - **Sidebar** : groupe « Adressage » (pays, régions, zones, villages) réservé à
   admin/engineer, et routes `geo/*` protégées par `RoleGuard`.
-- **Conséquences** : `ng build` propre. Même motif de signal partagé sur dons/paiements
-  (non traité ici).
+- **Suite (même jour, demandé)** : même correctif sur les dons et les paiements
+  (`DonationService`/`PaymentService` mémorisent le périmètre, listes filtrées par
+  périmètre, filtre église réservé à admin/engineer — un filtre église resté en
+  localStorage ne vide plus la liste des paiements du clergé).
+- **Conséquences** : `ng build` propre. Non testé en navigateur avec un compte clergé.
 
 ### 2026-10-15 — Délai en heures/jours/semaines, pièce jointe par type, accueil revu
 - **Délai minimum** : nouveau `shared/lead-time/` — `<app-lead-time-input>` (nombre + unité
